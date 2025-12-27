@@ -34,17 +34,18 @@ if ($provider === 'deepseek') {
     $model = 'gpt-4o-mini';
 }
 
-// Déterminer le nom de la langue cible
+// Déterminer les langues source et cible
+$sourceLangName = $targetLanguage === 'zh' ? 'français' : '中文（简体中文）';
 $targetLangName = $targetLanguage === 'zh' ? '中文（简体中文）' : 'français';
 
 // Préparer le payload
 $payload = [
     'model' => $model,
-    'temperature' => 0.3,
+    'temperature' => 0.2,  // Réduire pour plus de précision
     'messages' => [
         [
             'role' => 'system',
-            'content' => "Tu es un traducteur expert. Traduis le texte suivant en $targetLangName de manière naturelle et fluide. Réponds UNIQUEMENT avec la traduction, sans explications."
+            'content' => "Tu es un traducteur professionnel $sourceLangName-$targetLangName. Traduis DIRECTEMENT et UNIQUEMENT en $targetLangName. Ne passe PAS par une langue intermédiaire. Réponds SEULEMENT avec la traduction exacte, sans aucune explication ni commentaire."
         ],
         [
             'role' => 'user',

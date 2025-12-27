@@ -545,6 +545,7 @@
 
         // 5. TTS
         updateStatus('speaking', '🔊 Lecture audio...');
+        console.log(`🔊 TTS - Langue: ${targetLang}, Texte: "${translation}"`);
         await speakText(translation, targetLang);
 
       } catch (error) {
@@ -601,6 +602,7 @@
       state.isSpeaking = true;
 
       const voice = language === 'zh' ? 'nova' : 'onyx';
+      console.log(`🎤 Voice sélectionnée: ${voice} pour langue: ${language}`);
 
       try {
         const response = await fetch(`${API_BASE_URL}/speak.php`, {

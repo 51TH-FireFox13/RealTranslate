@@ -1,8 +1,14 @@
 <?php
 /**
  * Configuration RealTranslate
- * IMPORTANT : Protégez ce fichier avec .htaccess pour qu'il ne soit pas accessible directement
+ * Protection intégrée contre l'accès direct
  */
+
+// Interdire l'accès direct à ce fichier
+if (basename($_SERVER['PHP_SELF']) === 'config.php') {
+    http_response_code(403);
+    die('Accès interdit');
+}
 
 // Clés API - À REMPLIR avec vos vraies clés
 define('OPENAI_API_KEY', 'sk-votre-cle-openai-ici');
@@ -56,8 +62,8 @@ function detectRegion() {
 // Fonction pour envoyer une réponse JSON
 function sendJsonResponse($data, $statusCode = 200) {
     http_response_code($statusCode);
-    header('Content-Type: application/json');
-    echo json_encode($data);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit;
 }
 

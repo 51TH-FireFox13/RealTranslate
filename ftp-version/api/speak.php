@@ -22,6 +22,9 @@ if (!isset($input['text'])) {
 $text = $input['text'];
 $voice = $input['voice'] ?? 'nova';
 
+// Log pour debug
+error_log("TTS Request - Voice: $voice, Text: " . substr($text, 0, 100));
+
 // Préparer le payload
 $payload = [
     'model' => 'tts-1',

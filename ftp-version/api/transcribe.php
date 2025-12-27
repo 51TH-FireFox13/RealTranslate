@@ -75,7 +75,9 @@ function transcribeWithWhisper($audioFile, $language = null, $attempt = 1) {
     // Préparer les données
     $postData = [
         'model' => 'whisper-1',
-        'file' => $cFile
+        'file' => $cFile,
+        'temperature' => 0.0,  // Réduire les hallucinations
+        'prompt' => ''  // Pas de prompt pour éviter l'ajout de contenu
     ];
 
     if ($language) {
