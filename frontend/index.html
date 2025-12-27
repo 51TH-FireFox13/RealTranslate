@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RealTranslate - Traduction en Temps Réel FR ↔ 中文</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+      color: #ffffff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    header {
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      text-align: center;
+      border-bottom: 2px solid rgba(0, 255, 157, 0.2);
+    }
+
+    h1 {
+      font-size: 1.8em;
+      font-weight: 700;
+      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      font-size: 0.9em;
+      color: #888;
+      margin-top: 5px;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      padding: 15px;
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .status-bar.listening {
+      background: linear-gradient(90deg, #00ff9d, #00d4aa);
+      color: #000;
+    }
+
+    .status-bar.translating {
+      background: linear-gradient(90deg, #ffa500, #ff6b6b);
+      color: #fff;
+    }
+
+    .status-bar.speaking {
+      background: linear-gradient(90deg, #00a2ff, #0077ff);
+      color: #fff;
+    }
+
+    .status-bar.idle {
+      background: rgba(255, 255, 255, 0.1);
+      color: #aaa;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
+    /* Main Container */
+    .container {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    /* Panels */
+    .panel {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .panel-header h2 {
+      font-size: 1.5em;
+      font-weight: 600;
+    }
+
+    .flag {
+      font-size: 2em;
+    }
+
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      scroll-behavior: smooth;
+    }
+
+    .panel-content::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .panel-content::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+
+    .panel-content::-webkit-scrollbar-thumb {
+      background: rgba(0, 255, 157, 0.3);
+      border-radius: 10px;
+    }
+
+    .panel-content::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 255, 157, 0.5);
+    }
+
+    .message {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      line-height: 1.6;
+      font-size: 1.05em;
+      animation: slideIn 0.3s ease;
+      word-wrap: break-word;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fr-panel .message {
+      border-left: 4px solid #00a2ff;
+    }
+
+    .zh-panel .message {
+      border-left: 4px solid #ff6b6b;
+    }
+
+    /* Volume Indicator */
+    .volume-indicator {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .volume-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      width: 0%;
+      transition: width 0.1s ease;
+      border-radius: 10px;
+    }
+
+    /* Permission Modal */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: #1a1a2e;
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      max-width: 400px;
+    }
+
+    .modal-content h2 {
+      margin-bottom: 20px;
+      color: #00ff9d;
+    }
+
+    .modal-content button {
+      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      color: #000;
+      border: none;
+      padding: 15px 40px;
+      border-radius: 30px;
+      font-size: 1.1em;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: transform 0.2s ease;
+    }
+
+    .modal-content button:hover {
+      transform: scale(1.05);
+    }
+
+    .modal-content button:active {
+      transform: scale(0.95);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* Provider Badge */
+    .provider-badge {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 0.8em;
+      color: #00ff9d;
+      border: 1px solid rgba(0, 255, 157, 0.3);
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 15px;
+      }
+
+      h1 {
+        font-size: 1.3em;
+      }
+
+      .subtitle {
+        font-size: 0.8em;
+      }
+
+      .panel-header h2 {
+        font-size: 1.2em;
+      }
+
+      .flag {
+        font-size: 1.5em;
+      }
+
+      .status-bar {
+        font-size: 1em;
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Permission Modal -->
+  <div id="permissionModal" class="modal">
+    <div class="modal-content">
+      <h2>🎤 Autorisation Microphone</h2>
+      <p>RealTranslate a besoin d'accéder à votre microphone pour la traduction en temps réel.</p>
+      <button onclick="requestMicrophonePermission()">Activer le Microphone</button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <h1>RealTranslate</h1>
+    <div class="subtitle">Traduction en Temps Réel • Français ↔ 中文</div>
+  </header>
+
+  <!-- Status Bar -->
+  <div id="statusBar" class="status-bar idle">
+    <div class="status-indicator"></div>
+    <span id="statusText">Initialisation...</span>
+  </div>
+
+  <!-- Provider Badge -->
+  <div id="providerBadge" class="provider-badge hidden">
+    Provider: <span id="providerName">-</span>
+  </div>
+
+  <!-- Main Container -->
+  <div class="container">
+    <!-- French Panel -->
+    <div class="panel fr-panel">
+      <div class="panel-header">
+        <span class="flag">🇫🇷</span>
+        <h2>Français</h2>
+      </div>
+      <div id="frContent" class="panel-content"></div>
+    </div>
+
+    <!-- Chinese Panel -->
+    <div class="panel zh-panel">
+      <div class="panel-header">
+        <span class="flag">🇨🇳</span>
+        <h2>中文</h2>
+      </div>
+      <div id="zhContent" class="panel-content"></div>
+    </div>
+  </div>
+
+  <!-- Volume Indicator -->
+  <div class="volume-indicator">
+    <div id="volumeBar" class="volume-bar"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
