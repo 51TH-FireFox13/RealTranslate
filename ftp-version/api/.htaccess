@@ -1,13 +1,7 @@
 # Protection du fichier de configuration
 <Files "config.php">
-    Order Allow,Deny
-    Deny from all
+    Require all denied
 </Files>
-
-# Permettre les requêtes CORS
-Header always set Access-Control-Allow-Origin "*"
-Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
-Header always set Access-Control-Allow-Headers "Content-Type"
 
 # Augmenter la limite d'upload pour les fichiers audio (25MB)
 php_value upload_max_filesize 25M
