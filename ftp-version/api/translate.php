@@ -38,6 +38,10 @@ if ($provider === 'deepseek') {
 $sourceLangName = $targetLanguage === 'zh' ? 'français' : '中文（简体中文）';
 $targetLangName = $targetLanguage === 'zh' ? '中文（简体中文）' : 'français';
 
+// Log pour debug
+error_log("Translation Request - Source: $sourceLangName → Target: $targetLangName");
+error_log("Original text: " . substr($text, 0, 100));
+
 // Préparer le payload
 $payload = [
     'model' => $model,
@@ -91,6 +95,10 @@ if (!isset($data['choices'][0]['message']['content'])) {
 }
 
 $translatedText = trim($data['choices'][0]['message']['content']);
+
+// Log de la traduction retournée
+error_log("Translated text: " . substr($translatedText, 0, 100));
+error_log("Has chinese chars: " . (preg_match('/[\x{4e00}-\x{9fff}]/u', $translatedText) ? 'YES' : 'NO'));
 
 sendJsonResponse([
     'translatedText' => $translatedText,

@@ -530,9 +530,21 @@
         const sourceLang = isChinese ? 'zh' : 'fr';
         const targetLang = isChinese ? 'fr' : 'zh';
 
+        console.log('🔍 Détection langue:', {
+          transcription,
+          isChinese,
+          sourceLang,
+          targetLang
+        });
+
         // 3. Traduction
         const translation = await translateText(transcription, targetLang);
-        console.log('🌐 Traduction:', translation);
+        console.log('🌐 Traduction reçue:', {
+          targetLang,
+          translation,
+          length: translation.length,
+          hasChineseChars: /[\u4e00-\u9fff]/.test(translation)
+        });
 
         // 4. Affichage
         if (sourceLang === 'fr') {
