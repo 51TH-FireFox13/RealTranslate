@@ -1,0 +1,15 @@
+<?php
+/**
+ * TEMPLATE - Clés API RealTranslate
+ * Copiez ce fichier en "keys.php" et remplissez vos vraies clés
+ */
+
+// Protection contre accès direct
+if (!defined('REALTRANSLATE_CONFIG')) {
+    http_response_code(403);
+    die('Accès interdit');
+}
+
+// Clés API - À REMPLIR avec vos vraies clés
+define('OPENAI_API_KEY', 'sk-votre-cle-openai-ici');
+define('DEEPSEEK_API_KEY', 'sk-votre-cle-deepseek-ici');

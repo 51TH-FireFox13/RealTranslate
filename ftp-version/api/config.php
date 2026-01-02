@@ -10,9 +10,11 @@ if (basename($_SERVER['PHP_SELF']) === 'config.php') {
     die('Accès interdit');
 }
 
-// Clés API - À REMPLIR avec vos vraies clés
-define('OPENAI_API_KEY', 'sk-votre-cle-openai-ici');
-define('DEEPSEEK_API_KEY', 'sk-votre-cle-deepseek-ici');
+// Définir la constante pour permettre l'accès à keys.php
+define('REALTRANSLATE_CONFIG', true);
+
+// Charger les clés API depuis le fichier séparé
+require_once __DIR__ . '/keys.php';
 
 // Configuration
 define('ALLOWED_ORIGINS', [
