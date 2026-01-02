@@ -45,6 +45,11 @@ function setCorsHeaders() {
 
 // Fonction pour détecter la région
 function detectRegion() {
+    // TEMPORAIRE : Forcer OpenAI pour debug
+    error_log("Provider: openai (FORCÉ pour debug)");
+    return 'openai';
+
+    /* Code original commenté
     // Log pour debug
     error_log("Detect Region - Country: " . ($_SERVER['HTTP_CF_IPCOUNTRY'] ?? 'none'));
     error_log("Accept-Language: " . ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'none'));
@@ -62,6 +67,7 @@ function detectRegion() {
 
     error_log("Provider: openai (défaut)");
     return 'openai';
+    */
 }
 
 // Fonction pour envoyer une réponse JSON
