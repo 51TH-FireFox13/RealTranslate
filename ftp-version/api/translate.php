@@ -15,11 +15,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // Lire les données JSON
 $input = json_decode(file_get_contents('php://input'), true);
 
-if (!isset($input['text']) || !isset($input['targetLanguage'])) {
-    sendError('Texte et langue cible requis', 400);
+if (!isset($input['text']) || !isset($input['sourceLanguage']) || !isset($input['targetLanguage'])) {
+    sendError('Texte, langue source et langue cible requis', 400);
 }
 
 $text = $input['text'];
+$sourceLanguage = $input['sourceLanguage'];
 $targetLanguage = $input['targetLanguage'];
 $provider = $input['provider'] ?? detectRegion();
 
@@ -34,12 +35,26 @@ if ($provider === 'deepseek') {
     $model = 'gpt-4o-mini';
 }
 
-// Déterminer les langues source et cible
-$sourceLangName = $targetLanguage === 'zh' ? 'français' : '中文（简体中文）';
-$targetLangName = $targetLanguage === 'zh' ? '中文（简体中文）' : 'français';
+// Map des codes de langue vers noms complets
+$languageNames = [
+    'fr' => 'français',
+    'zh' => '中文（简体中文）',
+    'en' => 'English',
+    'es' => 'español',
+    'de' => 'Deutsch',
+    'it' => 'italiano',
+    'pt' => 'português',
+    'ru' => 'русский',
+    'ja' => '日本語',
+    'ko' => '한국어',
+    'ar' => 'العربية'
+];
+
+$sourceLangName = $languageNames[$sourceLanguage] ?? $sourceLanguage;
+$targetLangName = $languageNames[$targetLanguage] ?? $targetLanguage;
 
 // Log pour debug
-error_log("Translation Request - Source: $sourceLangName → Target: $targetLangName");
+error_log("Translation Request - Source: $sourceLangName ($sourceLanguage) → Target: $targetLangName ($targetLanguage)");
 error_log("Original text: " . substr($text, 0, 100));
 
 // Préparer le payload

@@ -562,12 +562,16 @@
     }
 
     // Ajout d'un message
+    // panel: 'source' (panneau gauche) ou 'target' (panneau droite)
     function addMessage(panel, text) {
       const messageDiv = document.createElement('div');
       messageDiv.className = 'message';
       messageDiv.textContent = text;
 
-      const contentElement = panel === 'fr' ? elements.frContent : elements.zhContent;
+      // frContent (panneau gauche) = langue source
+      // zhContent (panneau droite) = langue cible
+      const contentElement = panel === 'source' ? elements.frContent : elements.zhContent;
+
       contentElement.appendChild(messageDiv);
       contentElement.scrollTop = contentElement.scrollHeight;
     }
@@ -679,18 +683,65 @@
 
         console.log('📝 Transcription:', transcription);
 
-        // 2. Utiliser les langues sélectionnées
-        const sourceLang = state.selectedSourceLang;
-        const targetLang = state.selectedTargetLang;
+        // 2. Auto-détection de la langue parlée
+        const hasChineseChars = /[\u4e00-\u9fff]/.test(transcription);
+        const hasJapaneseChars = /[\u3040-\u309f\u30a0-\u30ff]/.test(transcription);
+        const hasKoreanChars = /[\uac00-\ud7af]/.test(transcription);
+        const hasArabicChars = /[\u0600-\u06ff]/.test(transcription);
+        const hasCyrillicChars = /[\u0400-\u04ff]/.test(transcription);
 
-        console.log('🔍 Langues sélectionnées:', {
+        // Détection de la langue réellement parlée
+        let detectedLang = 'en'; // Par défaut
+        if (hasChineseChars) detectedLang = 'zh';
+        else if (hasJapaneseChars) detectedLang = 'ja';
+        else if (hasKoreanChars) detectedLang = 'ko';
+        else if (hasArabicChars) detectedLang = 'ar';
+        else if (hasCyrillicChars) detectedLang = 'ru';
+        else if (/^[a-zA-Z\s,.!?'-]+$/.test(transcription)) {
+          // Texte latin - essayer de deviner entre FR/EN/ES/DE/IT/PT
+          if (/\b(le|la|les|un|une|des|je|tu|il|elle|nous|vous|ils|elles|et|ou|avec|dans|pour|sur|sous|mais|donc|car|que|qui|quoi|dont)\b/i.test(transcription)) {
+            detectedLang = 'fr';
+          } else if (/\b(the|a|an|is|are|was|were|be|been|being|have|has|had|do|does|did|will|would|could|should|may|might|can|must|and|or|but|if|then|when|where|what|who|how|why)\b/i.test(transcription)) {
+            detectedLang = 'en';
+          } else if (/\b(el|la|los|las|un|una|es|son|y|o|de|del|en|con|por|para|que|como)\b/i.test(transcription)) {
+            detectedLang = 'es';
+          } else if (/\b(der|die|das|ein|eine|ist|sind|und|oder|aber|mit|von|zu|in|auf|für|dass|was|wer|wie|wo)\b/i.test(transcription)) {
+            detectedLang = 'de';
+          } else if (/\b(il|lo|la|i|gli|le|un|una|è|sono|e|o|di|da|in|con|per|che|come)\b/i.test(transcription)) {
+            detectedLang = 'it';
+          } else if (/\b(o|a|os|as|um|uma|é|são|e|ou|de|do|da|em|com|por|para|que|como)\b/i.test(transcription)) {
+            detectedLang = 'pt';
+          } else {
+            detectedLang = state.selectedSourceLang; // Fallback sur la sélection manuelle
+          }
+        } else {
+          detectedLang = state.selectedSourceLang; // Fallback
+        }
+
+        // Utiliser la langue détectée comme source
+        const sourceLang = detectedLang;
+
+        // Déterminer la langue cible intelligemment
+        let targetLang;
+        if (sourceLang === state.selectedTargetLang) {
+          // Si on parle déjà la langue cible, inverser vers la source sélectionnée
+          targetLang = state.selectedSourceLang;
+        } else {
+          // Sinon, utiliser la langue cible sélectionnée
+          targetLang = state.selectedTargetLang;
+        }
+
+        console.log('🔍 Auto-détection:', {
           transcription,
-          sourceLang,
-          targetLang
+          selectedSource: state.selectedSourceLang,
+          selectedTarget: state.selectedTargetLang,
+          detectedLang,
+          actualSource: sourceLang,
+          actualTarget: targetLang
         });
 
         // 3. Traduction
-        const translation = await translateText(transcription, targetLang);
+        const translation = await translateText(transcription, sourceLang, targetLang);
         console.log('🌐 Traduction reçue:', {
           targetLang,
           translation,
@@ -698,14 +749,9 @@
           hasChineseChars: /[\u4e00-\u9fff]/.test(translation)
         });
 
-        // 4. Affichage
-        if (sourceLang === 'fr') {
-          addMessage('fr', transcription);
-          addMessage('zh', translation);
-        } else {
-          addMessage('zh', transcription);
-          addMessage('fr', translation);
-        }
+        // 4. Affichage dynamique basé sur les langues détectées
+        addMessage('source', transcription);
+        addMessage('target', translation);
 
         // 5. TTS (si activé)
         if (state.isTTSEnabled) {
@@ -745,7 +791,7 @@
     }
 
     // Traduction
-    async function translateText(text, targetLanguage) {
+    async function translateText(text, sourceLanguage, targetLanguage) {
       const response = await fetch(`${API_BASE_URL}/translate.php`, {
         method: 'POST',
         headers: {
@@ -753,6 +799,7 @@
         },
         body: JSON.stringify({
           text,
+          sourceLanguage,
           targetLanguage,
           provider: state.provider
         })
