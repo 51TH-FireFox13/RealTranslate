@@ -301,6 +301,77 @@
       color: #000;
     }
 
+    /* Audio Toggle Button */
+    .audio-toggle-btn {
+      position: fixed;
+      top: 80px;
+      left: 160px;
+      background: linear-gradient(90deg, #00ff9d, #00d4aa);
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 255, 157, 0.3);
+    }
+
+    .audio-toggle-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(0, 255, 157, 0.5);
+    }
+
+    .audio-toggle-btn.disabled {
+      background: linear-gradient(90deg, #888, #666);
+      color: #ccc;
+    }
+
+    /* Language Selector */
+    .language-selector {
+      position: fixed;
+      top: 140px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+      padding: 15px;
+      border-radius: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 100;
+    }
+
+    .language-selector select {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.9em;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .language-selector select:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .language-selector option {
+      background: #1a1a2e;
+      color: white;
+    }
+
+    .language-selector label {
+      font-size: 0.8em;
+      color: #00ff9d;
+      font-weight: 600;
+      margin: 0;
+    }
+
+
     /* Mobile Responsive */
     @media (max-width: 768px) {
       .container {
@@ -362,6 +433,42 @@
   <!-- Pause Button -->
   <button id="pauseBtn" class="pause-btn hidden" onclick="togglePause()">⏸️ Pause</button>
 
+  <!-- Audio Toggle Button -->
+  <button id="audioToggleBtn" class="audio-toggle-btn hidden" onclick="toggleAudio()">🔊 Audio ON</button>
+
+  <!-- Language Selector -->
+  <div id="languageSelector" class="language-selector hidden">
+    <label>Langue source</label>
+    <select id="sourceLangSelect" onchange="updateLanguages()">
+      <option value="fr" selected>🇫🇷 Français</option>
+      <option value="zh">🇨🇳 中文 (Chinois)</option>
+      <option value="en">🇺🇸 English</option>
+      <option value="es">🇪🇸 Español</option>
+      <option value="de">🇩🇪 Deutsch</option>
+      <option value="it">🇮🇹 Italiano</option>
+      <option value="pt">🇵🇹 Português</option>
+      <option value="ru">🇷🇺 Русский</option>
+      <option value="ja">🇯🇵 日本語</option>
+      <option value="ko">🇰🇷 한국어</option>
+      <option value="ar">🇸🇦 العربية</option>
+    </select>
+    <label>Langue cible</label>
+    <select id="targetLangSelect" onchange="updateLanguages()">
+      <option value="zh" selected>🇨🇳 中文 (Chinois)</option>
+      <option value="fr">🇫🇷 Français</option>
+      <option value="en">🇺🇸 English</option>
+      <option value="es">🇪🇸 Español</option>
+      <option value="de">🇩🇪 Deutsch</option>
+      <option value="it">🇮🇹 Italiano</option>
+      <option value="pt">🇵🇹 Português</option>
+      <option value="ru">🇷🇺 Русский</option>
+      <option value="ja">🇯🇵 日本語</option>
+      <option value="ko">🇰🇷 한국어</option>
+      <option value="ar">🇸🇦 العربية</option>
+    </select>
+  </div>
+
+
   <!-- Main Container -->
   <div class="container">
     <!-- French Panel -->
@@ -404,6 +511,9 @@
       isRecording: false,
       isSpeaking: false,
       isPaused: false,
+      isTTSEnabled: true,
+      selectedSourceLang: 'fr',
+      selectedTargetLang: 'zh',
       mediaRecorder: null,
       audioContext: null,
       analyser: null,
@@ -423,7 +533,11 @@
       volumeBar: document.getElementById('volumeBar'),
       providerBadge: document.getElementById('providerBadge'),
       providerName: document.getElementById('providerName'),
-      pauseBtn: document.getElementById('pauseBtn')
+      pauseBtn: document.getElementById('pauseBtn'),
+      audioToggleBtn: document.getElementById('audioToggleBtn'),
+      languageSelector: document.getElementById('languageSelector'),
+      sourceLangSelect: document.getElementById('sourceLangSelect'),
+      targetLangSelect: document.getElementById('targetLangSelect')
     };
 
     // Détection du provider
@@ -565,14 +679,12 @@
 
         console.log('📝 Transcription:', transcription);
 
-        // 2. Détection langue
-        const isChinese = /[\u4e00-\u9fff]/.test(transcription);
-        const sourceLang = isChinese ? 'zh' : 'fr';
-        const targetLang = isChinese ? 'fr' : 'zh';
+        // 2. Utiliser les langues sélectionnées
+        const sourceLang = state.selectedSourceLang;
+        const targetLang = state.selectedTargetLang;
 
-        console.log('🔍 Détection langue:', {
+        console.log('🔍 Langues sélectionnées:', {
           transcription,
-          isChinese,
           sourceLang,
           targetLang
         });
@@ -595,10 +707,15 @@
           addMessage('fr', translation);
         }
 
-        // 5. TTS
-        updateStatus('speaking', '🔊 Lecture audio...');
-        console.log(`🔊 TTS - Langue: ${targetLang}, Texte: "${translation}"`);
-        await speakText(translation, targetLang);
+        // 5. TTS (si activé)
+        if (state.isTTSEnabled) {
+          updateStatus('speaking', '🔊 Lecture audio...');
+          console.log(`🔊 TTS - Langue: ${targetLang}, Texte: "${translation}"`);
+          await speakText(translation, targetLang);
+        } else {
+          console.log('🔇 TTS désactivé');
+          updateStatus('listening', '🎧 Prêt à écouter...');
+        }
 
       } catch (error) {
         console.error('❌ Erreur:', error);
@@ -735,6 +852,8 @@
 
         elements.permissionModal.classList.add('hidden');
         elements.pauseBtn.classList.remove('hidden');
+        elements.audioToggleBtn.classList.remove('hidden');
+        elements.languageSelector.classList.remove('hidden');
         updateStatus('listening', '🎧 Prêt à écouter...');
 
         vadLoop();
@@ -751,6 +870,50 @@
     async function requestMicrophonePermission() {
       await detectProvider();
       await initializeAudio();
+    }
+
+
+    // Toggle Audio TTS
+    function toggleAudio() {
+      state.isTTSEnabled = !state.isTTSEnabled;
+
+      if (state.isTTSEnabled) {
+        elements.audioToggleBtn.textContent = '🔊 Audio ON';
+        elements.audioToggleBtn.classList.remove('disabled');
+      } else {
+        elements.audioToggleBtn.textContent = '🔇 Audio OFF';
+        elements.audioToggleBtn.classList.add('disabled');
+      }
+
+      console.log('TTS enabled:', state.isTTSEnabled);
+    }
+
+    // Mettre à jour les langues
+    function updateLanguages() {
+      state.selectedSourceLang = elements.sourceLangSelect.value;
+      state.selectedTargetLang = elements.targetLangSelect.value;
+
+      // Mettre à jour les titres des panneaux
+      const langNames = {
+        fr: { name: 'Français', flag: '🇫🇷' },
+        zh: { name: '中文', flag: '🇨🇳' },
+        en: { name: 'English', flag: '🇺🇸' },
+        es: { name: 'Español', flag: '🇪🇸' },
+        de: { name: 'Deutsch', flag: '🇩🇪' },
+        it: { name: 'Italiano', flag: '🇮🇹' },
+        pt: { name: 'Português', flag: '🇵🇹' },
+        ru: { name: 'Русский', flag: '🇷🇺' },
+        ja: { name: '日本語', flag: '🇯🇵' },
+        ko: { name: '한국어', flag: '🇰🇷' },
+        ar: { name: 'العربية', flag: '🇸🇦' }
+      };
+
+      document.querySelector('.fr-panel h2').textContent = langNames[state.selectedSourceLang].name;
+      document.querySelector('.fr-panel .flag').textContent = langNames[state.selectedSourceLang].flag;
+      document.querySelector('.zh-panel h2').textContent = langNames[state.selectedTargetLang].name;
+      document.querySelector('.zh-panel .flag').textContent = langNames[state.selectedTargetLang].flag;
+
+      console.log(`Langues: ${state.selectedSourceLang} → ${state.selectedTargetLang}`);
     }
 
     // Toggle Pause
