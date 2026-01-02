@@ -274,6 +274,33 @@
       border: 1px solid rgba(0, 255, 157, 0.3);
     }
 
+    /* Pause Button */
+    .pause-btn {
+      position: fixed;
+      top: 80px;
+      left: 20px;
+      background: linear-gradient(90deg, #ff6b6b, #ff3b3b);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(255, 59, 59, 0.3);
+    }
+
+    .pause-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(255, 59, 59, 0.5);
+    }
+
+    .pause-btn.paused {
+      background: linear-gradient(90deg, #00ff9d, #00d4aa);
+      color: #000;
+    }
+
     /* Mobile Responsive */
     @media (max-width: 768px) {
       .container {
@@ -332,6 +359,9 @@
     Provider: <span id="providerName">-</span>
   </div>
 
+  <!-- Pause Button -->
+  <button id="pauseBtn" class="pause-btn hidden" onclick="togglePause()">⏸️ Pause</button>
+
   <!-- Main Container -->
   <div class="container">
     <!-- French Panel -->
@@ -363,8 +393,9 @@
     const API_BASE_URL = './api'; // Chemin relatif vers les endpoints PHP
     const VAD_CONFIG = {
       VOLUME_THRESHOLD: 0.02,
-      SILENCE_DURATION: 1200,
-      MIN_RECORDING_DURATION: 800,
+      SILENCE_DURATION: 1200,      // Silence pour arrêter (ms)
+      MIN_RECORDING_DURATION: 800,  // Durée minimale (ms)
+      MAX_RECORDING_DURATION: 8000, // Couper toutes les 8 secondes max
       RECORDING_INTERVAL: 100
     };
 
@@ -372,6 +403,7 @@
     let state = {
       isRecording: false,
       isSpeaking: false,
+      isPaused: false,
       mediaRecorder: null,
       audioContext: null,
       analyser: null,
@@ -390,7 +422,8 @@
       zhContent: document.getElementById('zhContent'),
       volumeBar: document.getElementById('volumeBar'),
       providerBadge: document.getElementById('providerBadge'),
-      providerName: document.getElementById('providerName')
+      providerName: document.getElementById('providerName'),
+      pauseBtn: document.getElementById('pauseBtn')
     };
 
     // Détection du provider
@@ -448,7 +481,7 @@
 
     // Boucle VAD
     function vadLoop() {
-      if (state.isSpeaking) {
+      if (state.isSpeaking || state.isPaused) {
         setTimeout(vadLoop, VAD_CONFIG.RECORDING_INTERVAL);
         return;
       }
@@ -468,8 +501,15 @@
         const silenceDuration = now - state.lastSoundTime;
         const recordingDuration = now - state.recordingStartTime;
 
+        // Arrêter si silence détecté ET durée minimale atteinte
         if (silenceDuration > VAD_CONFIG.SILENCE_DURATION &&
             recordingDuration > VAD_CONFIG.MIN_RECORDING_DURATION) {
+          stopRecording();
+        }
+
+        // Arrêter aussi si durée maximale dépassée (couper toutes les 8s)
+        if (recordingDuration > VAD_CONFIG.MAX_RECORDING_DURATION) {
+          console.log('⏱️ Durée max atteinte, arrêt automatique');
           stopRecording();
         }
       }
@@ -694,6 +734,7 @@
         };
 
         elements.permissionModal.classList.add('hidden');
+        elements.pauseBtn.classList.remove('hidden');
         updateStatus('listening', '🎧 Prêt à écouter...');
 
         vadLoop();
@@ -710,6 +751,25 @@
     async function requestMicrophonePermission() {
       await detectProvider();
       await initializeAudio();
+    }
+
+    // Toggle Pause
+    function togglePause() {
+      state.isPaused = !state.isPaused;
+
+      if (state.isPaused) {
+        // Arrêter l'enregistrement en cours
+        if (state.isRecording) {
+          stopRecording();
+        }
+        elements.pauseBtn.textContent = '▶️ Reprendre';
+        elements.pauseBtn.classList.add('paused');
+        updateStatus('idle', '⏸️ En pause');
+      } else {
+        elements.pauseBtn.textContent = '⏸️ Pause';
+        elements.pauseBtn.classList.remove('paused');
+        updateStatus('listening', '🎧 Prêt à écouter...');
+      }
     }
 
     // Initialisation

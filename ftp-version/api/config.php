@@ -43,19 +43,22 @@ function setCorsHeaders() {
 
 // Fonction pour détecter la région
 function detectRegion() {
-    // Vérifier les headers de géolocalisation
+    // Log pour debug
+    error_log("Detect Region - Country: " . ($_SERVER['HTTP_CF_IPCOUNTRY'] ?? 'none'));
+    error_log("Accept-Language: " . ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'none'));
+
+    // Vérifier UNIQUEMENT les headers de géolocalisation (pas Accept-Language)
     $countryCode = $_SERVER['HTTP_CF_IPCOUNTRY'] ??
                    $_SERVER['HTTP_X_VERCEL_IP_COUNTRY'] ??
                    $_SERVER['HTTP_CLOUDFRONT_VIEWER_COUNTRY'] ?? '';
 
-    // Vérifier la langue acceptée
-    $acceptLanguage = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
-
     // Si en Chine, utiliser DeepSeek
-    if ($countryCode === 'CN' || strpos($acceptLanguage, 'zh-CN') !== false) {
+    if ($countryCode === 'CN') {
+        error_log("Provider: deepseek (Chine détectée)");
         return 'deepseek';
     }
 
+    error_log("Provider: openai (défaut)");
     return 'openai';
 }
 
