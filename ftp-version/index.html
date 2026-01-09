@@ -436,7 +436,7 @@
           <option value="ar">🇸🇦 العربية</option>
         </select>
       </div>
-      <div id="frContent" class="panel-content"></div>
+      <div id="sourceContent" class="panel-content"></div>
     </div>
 
     <!-- Target Panel -->
@@ -456,7 +456,7 @@
           <option value="ar">🇸🇦 العربية</option>
         </select>
       </div>
-      <div id="zhContent" class="panel-content"></div>
+      <div id="targetContent" class="panel-content"></div>
     </div>
   </div>
 
@@ -498,8 +498,8 @@
       permissionModal: document.getElementById('permissionModal'),
       statusBar: document.getElementById('statusBar'),
       statusText: document.getElementById('statusText'),
-      frContent: document.getElementById('frContent'),
-      zhContent: document.getElementById('zhContent'),
+      sourceContent: document.getElementById('sourceContent'),
+      targetContent: document.getElementById('targetContent'),
       volumeBar: document.getElementById('volumeBar'),
       providerBadge: document.getElementById('providerBadge'),
       providerName: document.getElementById('providerName'),
@@ -537,9 +537,9 @@
       messageDiv.className = 'message';
       messageDiv.textContent = text;
 
-      // frContent (panneau gauche) = langue source
-      // zhContent (panneau droite) = langue cible
-      const contentElement = panel === 'source' ? elements.frContent : elements.zhContent;
+      // sourceContent (panneau gauche) = langue source
+      // targetContent (panneau droite) = langue cible/traduite
+      const contentElement = panel === 'source' ? elements.sourceContent : elements.targetContent;
 
       contentElement.appendChild(messageDiv);
       contentElement.scrollTop = contentElement.scrollHeight;
@@ -786,8 +786,10 @@
     async function speakText(text, language) {
       state.isSpeaking = true;
 
-      const voice = language === 'zh' ? 'nova' : 'onyx';
-      console.log(`🎤 Voice sélectionnée: ${voice} pour langue: ${language}`);
+      // Sélection de la voix selon la langue de la TRADUCTION (pas de la source)
+      // Nova pour chinois, Alloy pour français/autres langues européennes
+      const voice = language === 'zh' ? 'nova' : 'alloy';
+      console.log(`🔊 TTS - Langue: ${language}, Voice: ${voice}, Texte: "${text.substring(0, 50)}..."`);
 
       try {
         const response = await fetch(`${API_BASE_URL}/speak.php`, {
