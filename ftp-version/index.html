@@ -706,16 +706,19 @@
           selectedTarget: state.selectedTargetLang,
           detectedLang,
           actualSource: sourceLang,
-          actualTarget: targetLang
+          actualTarget: targetLang,
+          hasChinese: /[\u4e00-\u9fff]/.test(transcription)
         });
 
         // 3. Traduction
         const translation = await translateText(transcription, sourceLang, targetLang);
+
         console.log('🌐 Traduction reçue:', {
+          sourceLang,
           targetLang,
-          translation,
-          length: translation.length,
-          hasChineseChars: /[\u4e00-\u9fff]/.test(translation)
+          transcription: transcription.substring(0, 50),
+          translation: translation.substring(0, 50),
+          translationHasChinese: /[\u4e00-\u9fff]/.test(translation)
         });
 
         // 4. Affichage dynamique basé sur les langues détectées
@@ -725,7 +728,12 @@
         // 5. TTS (si activé)
         if (state.isTTSEnabled) {
           updateStatus('speaking', '🔊 Lecture audio...');
-          console.log(`🔊 TTS - Langue: ${targetLang}, Texte: "${translation}"`);
+          console.log(`🔊 TTS AVANT APPEL:`, {
+            targetLang,
+            translation: translation.substring(0, 50),
+            hasChinese: /[\u4e00-\u9fff]/.test(translation),
+            voiceWillBe: targetLang === 'zh' ? 'nova' : 'alloy'
+          });
           await speakText(translation, targetLang);
         } else {
           console.log('🔇 TTS désactivé');

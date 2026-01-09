@@ -60,11 +60,11 @@ error_log("Original text: " . substr($text, 0, 100));
 // Préparer le payload
 $payload = [
     'model' => $model,
-    'temperature' => 0.2,  // Réduire pour plus de précision
+    'temperature' => 0.1,  // Très bas pour fidélité maximale
     'messages' => [
         [
             'role' => 'system',
-            'content' => "Tu es un traducteur professionnel $sourceLangName-$targetLangName. Traduis DIRECTEMENT et UNIQUEMENT en $targetLangName. Ne passe PAS par une langue intermédiaire. Réponds SEULEMENT avec la traduction exacte, sans aucune explication ni commentaire."
+            'content' => "Tu es un traducteur professionnel $sourceLangName-$targetLangName. Traduis FIDÈLEMENT et COMPLÈTEMENT le texte en $targetLangName, sans rien ajouter, retirer ou résumer. Conserve tous les détails, la politesse et les nuances. Réponds UNIQUEMENT avec la traduction, sans explication."
         ],
         [
             'role' => 'user',
