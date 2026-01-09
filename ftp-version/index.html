@@ -123,14 +123,6 @@
       border-bottom: 2px solid rgba(255, 255, 255, 0.1);
     }
 
-    .panel-header h2 {
-      font-size: 1.5em;
-      font-weight: 600;
-    }
-
-    .flag {
-      font-size: 2em;
-    }
 
     .panel-content {
       flex: 1;
@@ -179,11 +171,11 @@
       }
     }
 
-    .fr-panel .message {
+    .source-panel .message {
       border-left: 4px solid #00a2ff;
     }
 
-    .zh-panel .message {
+    .target-panel .message {
       border-left: 4px solid #ff6b6b;
     }
 
@@ -328,47 +320,38 @@
       color: #ccc;
     }
 
-    /* Language Selector */
-    .language-selector {
-      position: fixed;
-      top: 140px;
-      left: 20px;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(10px);
-      padding: 15px;
-      border-radius: 15px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      z-index: 100;
-    }
-
-    .language-selector select {
+    /* Language Select in Panel Header */
+    .lang-select {
       background: rgba(255, 255, 255, 0.1);
       color: white;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 0.9em;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      padding: 10px 15px;
+      border-radius: 12px;
+      font-size: 1.2em;
+      font-weight: 600;
       cursor: pointer;
       outline: none;
+      transition: all 0.3s ease;
+      text-align: center;
+      width: 100%;
+      max-width: 250px;
     }
 
-    .language-selector select:hover {
+    .lang-select:hover {
       background: rgba(255, 255, 255, 0.15);
+      border-color: #00ff9d;
+      transform: scale(1.02);
     }
 
-    .language-selector option {
+    .lang-select:focus {
+      border-color: #00ff9d;
+      box-shadow: 0 0 15px rgba(0, 255, 157, 0.3);
+    }
+
+    .lang-select option {
       background: #1a1a2e;
       color: white;
-    }
-
-    .language-selector label {
-      font-size: 0.8em;
-      color: #00ff9d;
-      font-weight: 600;
-      margin: 0;
+      padding: 10px;
     }
 
 
@@ -388,12 +371,10 @@
         font-size: 0.8em;
       }
 
-      .panel-header h2 {
-        font-size: 1.2em;
-      }
-
-      .flag {
-        font-size: 1.5em;
+      .lang-select {
+        font-size: 1em;
+        padding: 8px 12px;
+        max-width: 180px;
       }
 
       .status-bar {
@@ -416,7 +397,7 @@
   <!-- Header -->
   <header>
     <h1>RealTranslate</h1>
-    <div class="subtitle">Traduction en Temps Réel • Français ↔ 中文</div>
+    <div class="subtitle">Traduction en temps réel</div>
   </header>
 
   <!-- Status Bar -->
@@ -436,55 +417,44 @@
   <!-- Audio Toggle Button -->
   <button id="audioToggleBtn" class="audio-toggle-btn hidden" onclick="toggleAudio()">🔊 Audio ON</button>
 
-  <!-- Language Selector -->
-  <div id="languageSelector" class="language-selector hidden">
-    <label>Langue source</label>
-    <select id="sourceLangSelect" onchange="updateLanguages()">
-      <option value="fr" selected>🇫🇷 Français</option>
-      <option value="zh">🇨🇳 中文 (Chinois)</option>
-      <option value="en">🇺🇸 English</option>
-      <option value="es">🇪🇸 Español</option>
-      <option value="de">🇩🇪 Deutsch</option>
-      <option value="it">🇮🇹 Italiano</option>
-      <option value="pt">🇵🇹 Português</option>
-      <option value="ru">🇷🇺 Русский</option>
-      <option value="ja">🇯🇵 日本語</option>
-      <option value="ko">🇰🇷 한국어</option>
-      <option value="ar">🇸🇦 العربية</option>
-    </select>
-    <label>Langue cible</label>
-    <select id="targetLangSelect" onchange="updateLanguages()">
-      <option value="zh" selected>🇨🇳 中文 (Chinois)</option>
-      <option value="fr">🇫🇷 Français</option>
-      <option value="en">🇺🇸 English</option>
-      <option value="es">🇪🇸 Español</option>
-      <option value="de">🇩🇪 Deutsch</option>
-      <option value="it">🇮🇹 Italiano</option>
-      <option value="pt">🇵🇹 Português</option>
-      <option value="ru">🇷🇺 Русский</option>
-      <option value="ja">🇯🇵 日本語</option>
-      <option value="ko">🇰🇷 한국어</option>
-      <option value="ar">🇸🇦 العربية</option>
-    </select>
-  </div>
-
-
   <!-- Main Container -->
   <div class="container">
-    <!-- French Panel -->
-    <div class="panel fr-panel">
+    <!-- Source Panel -->
+    <div class="panel source-panel">
       <div class="panel-header">
-        <span class="flag">🇫🇷</span>
-        <h2>Français</h2>
+        <select id="sourceLangSelect" class="lang-select" onchange="updateLanguages()">
+          <option value="fr" selected>🇫🇷 Français</option>
+          <option value="zh">🇨🇳 中文</option>
+          <option value="en">🇺🇸 English</option>
+          <option value="es">🇪🇸 Español</option>
+          <option value="de">🇩🇪 Deutsch</option>
+          <option value="it">🇮🇹 Italiano</option>
+          <option value="pt">🇵🇹 Português</option>
+          <option value="ru">🇷🇺 Русский</option>
+          <option value="ja">🇯🇵 日本語</option>
+          <option value="ko">🇰🇷 한국어</option>
+          <option value="ar">🇸🇦 العربية</option>
+        </select>
       </div>
       <div id="frContent" class="panel-content"></div>
     </div>
 
-    <!-- Chinese Panel -->
-    <div class="panel zh-panel">
+    <!-- Target Panel -->
+    <div class="panel target-panel">
       <div class="panel-header">
-        <span class="flag">🇨🇳</span>
-        <h2>中文</h2>
+        <select id="targetLangSelect" class="lang-select" onchange="updateLanguages()">
+          <option value="zh" selected>🇨🇳 中文</option>
+          <option value="fr">🇫🇷 Français</option>
+          <option value="en">🇺🇸 English</option>
+          <option value="es">🇪🇸 Español</option>
+          <option value="de">🇩🇪 Deutsch</option>
+          <option value="it">🇮🇹 Italiano</option>
+          <option value="pt">🇵🇹 Português</option>
+          <option value="ru">🇷🇺 Русский</option>
+          <option value="ja">🇯🇵 日本語</option>
+          <option value="ko">🇰🇷 한국어</option>
+          <option value="ar">🇸🇦 العربية</option>
+        </select>
       </div>
       <div id="zhContent" class="panel-content"></div>
     </div>
@@ -535,7 +505,6 @@
       providerName: document.getElementById('providerName'),
       pauseBtn: document.getElementById('pauseBtn'),
       audioToggleBtn: document.getElementById('audioToggleBtn'),
-      languageSelector: document.getElementById('languageSelector'),
       sourceLangSelect: document.getElementById('sourceLangSelect'),
       targetLangSelect: document.getElementById('targetLangSelect')
     };
@@ -900,7 +869,6 @@
         elements.permissionModal.classList.add('hidden');
         elements.pauseBtn.classList.remove('hidden');
         elements.audioToggleBtn.classList.remove('hidden');
-        elements.languageSelector.classList.remove('hidden');
         updateStatus('listening', '🎧 Prêt à écouter...');
 
         vadLoop();
@@ -935,31 +903,10 @@
       console.log('TTS enabled:', state.isTTSEnabled);
     }
 
-    // Mettre à jour les langues
+    // Mettre à jour les langues sélectionnées
     function updateLanguages() {
       state.selectedSourceLang = elements.sourceLangSelect.value;
       state.selectedTargetLang = elements.targetLangSelect.value;
-
-      // Mettre à jour les titres des panneaux
-      const langNames = {
-        fr: { name: 'Français', flag: '🇫🇷' },
-        zh: { name: '中文', flag: '🇨🇳' },
-        en: { name: 'English', flag: '🇺🇸' },
-        es: { name: 'Español', flag: '🇪🇸' },
-        de: { name: 'Deutsch', flag: '🇩🇪' },
-        it: { name: 'Italiano', flag: '🇮🇹' },
-        pt: { name: 'Português', flag: '🇵🇹' },
-        ru: { name: 'Русский', flag: '🇷🇺' },
-        ja: { name: '日本語', flag: '🇯🇵' },
-        ko: { name: '한국어', flag: '🇰🇷' },
-        ar: { name: 'العربية', flag: '🇸🇦' }
-      };
-
-      document.querySelector('.fr-panel h2').textContent = langNames[state.selectedSourceLang].name;
-      document.querySelector('.fr-panel .flag').textContent = langNames[state.selectedSourceLang].flag;
-      document.querySelector('.zh-panel h2').textContent = langNames[state.selectedTargetLang].name;
-      document.querySelector('.zh-panel .flag').textContent = langNames[state.selectedTargetLang].flag;
-
       console.log(`Langues: ${state.selectedSourceLang} → ${state.selectedTargetLang}`);
     }
 
