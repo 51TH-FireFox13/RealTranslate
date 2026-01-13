@@ -21,6 +21,123 @@
       overflow: hidden;
     }
 
+    /* Login Screen */
+    .login-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+      z-index: 9999;
+    }
+
+    .login-box {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 40px;
+      width: 90%;
+      max-width: 400px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .login-box h2 {
+      text-align: center;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 2em;
+    }
+
+    .login-box p {
+      text-align: center;
+      color: #888;
+      margin-bottom: 30px;
+      font-size: 0.9em;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #aaa;
+      font-size: 0.9em;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px 15px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1em;
+      transition: all 0.3s ease;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: #00ff9d;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      border: none;
+      border-radius: 10px;
+      color: #000;
+      font-size: 1.1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .login-btn:active {
+      transform: translateY(0);
+    }
+
+    .login-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .error-message {
+      background: rgba(255, 107, 107, 0.2);
+      border: 1px solid rgba(255, 107, 107, 0.5);
+      color: #ff6b6b;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 0.9em;
+      text-align: center;
+    }
+
+    .success-message {
+      background: rgba(0, 255, 157, 0.2);
+      border: 1px solid rgba(0, 255, 157, 0.5);
+      color: #00ff9d;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 0.9em;
+      text-align: center;
+    }
+
     /* Header */
     header {
       background: rgba(0, 0, 0, 0.3);
@@ -28,6 +145,54 @@
       padding: 20px;
       text-align: center;
       border-bottom: 2px solid rgba(0, 255, 157, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-content {
+      flex: 1;
+      text-align: center;
+    }
+
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .user-info {
+      font-size: 0.85em;
+      color: #00ff9d;
+      padding: 8px 15px;
+      background: rgba(0, 255, 157, 0.1);
+      border-radius: 20px;
+      border: 1px solid rgba(0, 255, 157, 0.3);
+    }
+
+    .logout-btn, .admin-btn {
+      background: rgba(255, 107, 107, 0.2);
+      border: 1px solid rgba(255, 107, 107, 0.5);
+      color: #ff6b6b;
+      padding: 8px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85em;
+      transition: all 0.3s ease;
+    }
+
+    .admin-btn {
+      background: rgba(0, 162, 255, 0.2);
+      border: 1px solid rgba(0, 162, 255, 0.5);
+      color: #00a2ff;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 107, 107, 0.3);
+    }
+
+    .admin-btn:hover {
+      background: rgba(0, 162, 255, 0.3);
     }
 
     h1 {
@@ -306,8 +471,32 @@
   </style>
 </head>
 <body>
+  <!-- Login Screen -->
+  <div id="loginContainer" class="login-container">
+    <div class="login-box">
+      <h2>🔐 RealTranslate</h2>
+      <p>Connexion requise</p>
+
+      <div id="loginError" class="error-message hidden"></div>
+
+      <form id="loginForm" onsubmit="return false;">
+        <div class="input-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="admin@realtranslate.com" required autocomplete="email">
+        </div>
+
+        <div class="input-group">
+          <label for="password">Mot de passe</label>
+          <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" class="login-btn" id="loginBtn">Se connecter</button>
+      </form>
+    </div>
+  </div>
+
   <!-- Permission Modal -->
-  <div id="permissionModal" class="modal">
+  <div id="permissionModal" class="modal hidden">
     <div class="modal-content">
       <h2>🎤 Autorisation Microphone</h2>
       <p>RealTranslate a besoin d'accéder à votre microphone pour la traduction en temps réel.</p>
@@ -315,11 +504,21 @@
     </div>
   </div>
 
-  <!-- Header -->
-  <header>
-    <h1>RealTranslate</h1>
-    <div class="subtitle">Traduction en Temps Réel • Français ↔ 中文</div>
-  </header>
+  <!-- Main App (hidden until logged in) -->
+  <div id="mainApp" class="hidden">
+    <!-- Header -->
+    <header>
+      <div style="width: 100px;"></div>
+      <div class="header-content">
+        <h1>RealTranslate</h1>
+        <div class="subtitle">Traduction en Temps Réel • Français ↔ 中文</div>
+      </div>
+      <div class="user-menu">
+        <span class="user-info" id="userInfo"></span>
+        <button class="admin-btn hidden" id="adminBtn" onclick="showAdminPanel()">👤 Admin</button>
+        <button class="logout-btn" onclick="logout()">↗ Logout</button>
+      </div>
+    </header>
 
   <!-- Status Bar -->
   <div id="statusBar" class="status-bar idle">
@@ -353,9 +552,10 @@
     </div>
   </div>
 
-  <!-- Volume Indicator -->
-  <div class="volume-indicator">
-    <div id="volumeBar" class="volume-bar"></div>
+    <!-- Volume Indicator -->
+    <div class="volume-indicator">
+      <div id="volumeBar" class="volume-bar"></div>
+    </div>
   </div>
 
   <script src="app.js"></script>
