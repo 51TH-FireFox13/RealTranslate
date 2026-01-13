@@ -9,8 +9,11 @@ echo "🚀 RealTranslate - Déploiement Automatique"
 echo "==========================================="
 echo ""
 
+# Déterminer le répertoire du script
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Définir les variables
-APP_DIR="/home/user/RealTranslate"
+APP_DIR="$SCRIPT_DIR"
 BACKEND_DIR="$APP_DIR/backend"
 LOG_DIR="$APP_DIR/logs"
 BACKUP_DIR="$APP_DIR/backups"
