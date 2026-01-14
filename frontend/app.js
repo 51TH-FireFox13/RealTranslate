@@ -86,10 +86,10 @@ let state = {
   token: null,
   user: null,
   micEnabled: true,  // État du microphone
-  ttsEnabled: true,   // État de la synthèse vocale
+  ttsEnabled: true,   // État de la synthèose vocale
   lang1: null,  // Langue de l'utilisateur
   lang2: null,   // Langue de traduction
-  mode: 'realtime'  // Mode: 'realtime' ou 'push-to-talk'
+  mode: 'push-to-talk'  // Mode: 'realtime' ou 'push-to-talk' - PTT par défaut
 };
 
 // Éléments DOM
@@ -1039,6 +1039,18 @@ async function initializeAudio() {
 
     // Initialiser le bouton push-to-talk
     initPushToTalk();
+
+    // Initialiser l'interface en mode PTT (par défaut)
+    if (state.mode === 'push-to-talk') {
+      const modeSwitch = document.getElementById('modeSwitch');
+      const pushToTalkBtn = document.getElementById('pushToTalkBtn');
+      const micBtn = document.getElementById('micBtn');
+
+      modeSwitch.classList.add('push-to-talk');
+      pushToTalkBtn.classList.remove('hidden');
+      micBtn.style.opacity = '0.3';
+      micBtn.style.pointerEvents = 'none';
+    }
 
     console.log('✅ Système audio initialisé');
 
