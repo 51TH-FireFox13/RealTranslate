@@ -76,6 +76,10 @@ function showApp() {
     elements.adminBtn.classList.remove('hidden');
   }
 
+  // Initialiser le badge provider avec la valeur par défaut
+  elements.providerName.textContent = state.provider.toUpperCase();
+  elements.providerBadge.classList.remove('hidden');
+
   // Demander la permission microphone
   setTimeout(() => {
     elements.permissionModal.classList.remove('hidden');
@@ -530,13 +534,17 @@ async function processAudio(audioBlob) {
 
     console.log('📝 Transcription:', transcription);
 
-    // 2. Détection de la langue
+    // 2. Détection de la langue (bloqué sur FR ↔ CN uniquement)
     const isChinese = /[\u4e00-\u9fff]/.test(transcription);
+
+    // Si la transcription ne contient ni français ni chinois identifiable, on assume français par défaut
     const sourceLang = isChinese ? 'zh' : 'fr';
     const targetLang = isChinese ? 'fr' : 'zh';
 
-    // 3. Traduction
-    const translation = await translateText(transcription, targetLang);
+    console.log(`🔍 Langue détectée: ${sourceLang} → ${targetLang}`);
+
+    // 3. Traduction (avec instruction stricte de ne traduire qu'entre FR et CN)
+    const translation = await translateText(transcription, targetLang, sourceLang);
     console.log('🌐 Traduction:', translation);
 
     // 4. Affichage
@@ -587,7 +595,7 @@ async function transcribeAudio(audioBlob) {
 }
 
 // Traduction du texte
-async function translateText(text, targetLanguage) {
+async function translateText(text, targetLanguage, sourceLanguage = null) {
   const response = await fetch(`${API_BASE_URL}/api/translate`, {
     method: 'POST',
     headers: {
@@ -597,6 +605,7 @@ async function translateText(text, targetLanguage) {
     body: JSON.stringify({
       text,
       targetLanguage,
+      sourceLanguage,  // Ajout de la langue source
       provider: state.provider
     })
   });

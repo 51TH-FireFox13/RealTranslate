@@ -210,7 +210,7 @@ app.post('/api/transcribe', authMiddleware, requirePermission('transcribe'), upl
 // Endpoint de traduction - Nécessite authentification
 app.post('/api/translate', authMiddleware, requirePermission('translate'), async (req, res) => {
   try {
-    const { text, targetLanguage, provider } = req.body;
+    const { text, targetLanguage, sourceLanguage, provider } = req.body;
 
     if (!text || !targetLanguage) {
       return res.status(400).json({ error: 'Texte et langue cible requis' });
@@ -218,6 +218,7 @@ app.post('/api/translate', authMiddleware, requirePermission('translate'), async
 
     logger.info('Translation request', {
       userId: req.user.id,
+      sourceLanguage: sourceLanguage || 'auto',
       targetLanguage,
       textLength: text.length
     });
@@ -237,7 +238,31 @@ app.post('/api/translate', authMiddleware, requirePermission('translate'), async
       model = 'gpt-4o-mini';
     }
 
-    const targetLangName = targetLanguage === 'zh' ? '中文（简体中文）' : 'français';
+    // Mapping des noms de langues
+    const langNames = {
+      'fr': 'français',
+      'zh': '中文（简体中文）',
+      'en': 'English',
+      'de': 'Deutsch',
+      'es': 'Español',
+      'it': 'Italiano',
+      'pt': 'Português'
+    };
+
+    const targetLangName = langNames[targetLanguage] || targetLanguage;
+    const sourceLangName = sourceLanguage ? langNames[sourceLanguage] : null;
+
+    // Instruction stricte pour contraindre la traduction
+    let systemPrompt;
+    if (sourceLangName && targetLangName) {
+      systemPrompt = `Tu es un traducteur expert ${sourceLangName} ↔ ${targetLangName}.
+Tu dois UNIQUEMENT traduire le texte de ${sourceLangName} vers ${targetLangName}.
+NE traduis JAMAIS vers une autre langue.
+Si le texte n'est pas en ${sourceLangName}, indique simplement "❌ Langue non reconnue".
+Réponds UNIQUEMENT avec la traduction, sans explications.`;
+    } else {
+      systemPrompt = `Tu es un traducteur expert. Traduis le texte suivant en ${targetLangName} de manière naturelle et fluide. Réponds UNIQUEMENT avec la traduction, sans explications.`;
+    }
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -250,7 +275,7 @@ app.post('/api/translate', authMiddleware, requirePermission('translate'), async
         temperature: 0.3,
         messages: [{
           role: 'system',
-          content: `Tu es un traducteur expert. Traduis le texte suivant en ${targetLangName} de manière naturelle et fluide. Réponds UNIQUEMENT avec la traduction, sans explications.`
+          content: systemPrompt
         }, {
           role: 'user',
           content: text
