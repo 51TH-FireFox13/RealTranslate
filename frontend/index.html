@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>RealTranslate - Traduction en Temps Réel FR ↔ 中文</title>
+  <title>RealTranslate - Traduction en Temps Réel</title>
   <style>
     * {
       margin: 0;
@@ -949,16 +949,18 @@
 
     /* Provider Badge */
     .provider-badge {
-      position: fixed;
-      top: 80px;
-      right: 20px;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(10px);
+      background: rgba(0, 162, 255, 0.2);
+      border: 1px solid rgba(0, 162, 255, 0.5);
+      color: #00a2ff;
       padding: 8px 15px;
       border-radius: 20px;
-      font-size: 0.8em;
-      color: #00ff9d;
-      border: 1px solid rgba(0, 255, 157, 0.3);
+      font-size: 0.85em;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .provider-badge:hover {
+      background: rgba(0, 162, 255, 0.3);
     }
 
     /* Mobile Responsive */
@@ -1069,14 +1071,6 @@
       .volume-indicator {
         width: 150px;
         bottom: 15px;
-      }
-
-      /* Provider Badge */
-      .provider-badge {
-        top: 70px;
-        right: 15px;
-        font-size: 0.7em;
-        padding: 6px 12px;
       }
 
       /* Admin Panel */
@@ -1233,9 +1227,12 @@
       <div style="width: 100px;"></div>
       <div class="header-content">
         <h1>RealTranslate</h1>
-        <div class="subtitle">Traduction en Temps Réel • Français ↔ 中文</div>
+        <div class="subtitle" id="appSubtitle">Traduction en Temps Réel</div>
       </div>
       <div class="user-menu">
+        <div id="providerBadge" class="provider-badge hidden">
+          <span id="providerName">-</span>
+        </div>
         <span class="user-info" id="userInfo"></span>
         <button class="admin-btn hidden" id="adminBtn" onclick="showAdminPanel()">👤 Admin</button>
         <button class="logout-btn" onclick="logout()">↗ Logout</button>
@@ -1246,11 +1243,6 @@
   <div id="statusBar" class="status-bar idle">
     <div class="status-indicator"></div>
     <span id="statusText">Initialisation...</span>
-  </div>
-
-  <!-- Provider Badge -->
-  <div id="providerBadge" class="provider-badge hidden">
-    Provider: <span id="providerName">-</span>
   </div>
 
   <!-- Main Container -->

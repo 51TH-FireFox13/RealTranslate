@@ -543,6 +543,12 @@ function applyLanguageSettings() {
   const lang1 = LANGUAGES[state.lang1];
   const lang2 = LANGUAGES[state.lang2];
 
+  // Mettre à jour le sous-titre dynamique
+  const subtitle = document.getElementById('appSubtitle');
+  if (subtitle) {
+    subtitle.textContent = `Traduction en Temps Réel • ${lang1.nativeName} ↔ ${lang2.nativeName}`;
+  }
+
   // Mettre à jour les en-têtes des panneaux
   const panel1Header = document.querySelector('.panel:first-child h2');
   const panel2Header = document.querySelector('.panel:last-child h2');
