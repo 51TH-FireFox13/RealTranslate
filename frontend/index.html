@@ -496,29 +496,39 @@
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      font-size: 0.7em;
+      font-size: 0.6em;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
       transition: all 0.3s ease;
+      pointer-events: none;
+      white-space: nowrap;
     }
 
     .mode-switch-text.left {
-      left: 50px;
+      left: 5px;
       color: #888;
+      opacity: 0;
+      visibility: hidden;
     }
 
     .mode-switch-text.right {
-      right: 10px;
+      right: 5px;
       color: #00ff9d;
+      opacity: 1;
+      visibility: visible;
     }
 
     .mode-switch.push-to-talk .mode-switch-text.left {
       color: #ff6b6b;
+      opacity: 1;
+      visibility: visible;
     }
 
     .mode-switch.push-to-talk .mode-switch-text.right {
       color: #888;
+      opacity: 0;
+      visibility: hidden;
     }
 
     /* Push to Talk Button */
@@ -588,8 +598,28 @@
       padding: 40px;
       width: 90%;
       max-width: 700px;
+      max-height: 90vh;
+      overflow-y: auto;
       border: 1px solid rgba(255, 255, 255, 0.1);
       text-align: center;
+    }
+
+    .lang-box::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .lang-box::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+
+    .lang-box::-webkit-scrollbar-thumb {
+      background: rgba(0, 255, 157, 0.3);
+      border-radius: 10px;
+    }
+
+    .lang-box::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 255, 157, 0.5);
     }
 
     .lang-box h2 {

@@ -18,6 +18,59 @@ const LANGUAGES = {
   pt: { name: 'Português', flag: '🇵🇹', nativeName: 'Português', code: 'pt', voice: 'shimmer' }
 };
 
+// Traductions de l'interface de sélection
+const UI_TRANSLATIONS = {
+  fr: {
+    title: 'RealTranslate',
+    subtitle: 'Choisissez vos langues de traduction',
+    yourLanguage: '📱 Votre langue',
+    targetLanguage: '🗣️ Langue à traduire',
+    startButton: 'Commencer la traduction'
+  },
+  en: {
+    title: 'RealTranslate',
+    subtitle: 'Choose your translation languages',
+    yourLanguage: '📱 Your language',
+    targetLanguage: '🗣️ Language to translate',
+    startButton: 'Start translation'
+  },
+  zh: {
+    title: 'RealTranslate',
+    subtitle: '选择您的翻译语言',
+    yourLanguage: '📱 您的语言',
+    targetLanguage: '🗣️ 翻译语言',
+    startButton: '开始翻译'
+  },
+  de: {
+    title: 'RealTranslate',
+    subtitle: 'Wählen Sie Ihre Übersetzungssprachen',
+    yourLanguage: '📱 Ihre Sprache',
+    targetLanguage: '🗣️ Sprache zum Übersetzen',
+    startButton: 'Übersetzung starten'
+  },
+  es: {
+    title: 'RealTranslate',
+    subtitle: 'Elija sus idiomas de traducción',
+    yourLanguage: '📱 Su idioma',
+    targetLanguage: '🗣️ Idioma a traducir',
+    startButton: 'Comenzar traducción'
+  },
+  it: {
+    title: 'RealTranslate',
+    subtitle: 'Scegli le tue lingue di traduzione',
+    yourLanguage: '📱 La tua lingua',
+    targetLanguage: '🗣️ Lingua da tradurre',
+    startButton: 'Inizia traduzione'
+  },
+  pt: {
+    title: 'RealTranslate',
+    subtitle: 'Escolha seus idiomas de tradução',
+    yourLanguage: '📱 Seu idioma',
+    targetLanguage: '🗣️ Idioma para traduzir',
+    startButton: 'Começar tradução'
+  }
+};
+
 // État global
 let state = {
   isRecording: false,
@@ -382,11 +435,29 @@ function initLanguageSelection() {
     return;
   }
 
+  // Détecter la langue du navigateur
+  const detectedLang = detectBrowserLanguage();
+
+  // Traduire l'interface de sélection
+  const translations = UI_TRANSLATIONS[detectedLang] || UI_TRANSLATIONS['fr'];
+
+  // Mettre à jour les textes de l'interface
+  const langSelectionTitle = document.querySelector('#languageSelection .lang-box h2');
+  const langSelectionSubtitle = document.querySelector('#languageSelection .lang-box > p');
+  const yourLangTitle = document.querySelector('#languageSelection .lang-step:first-of-type h3');
+  const targetLangTitle = document.querySelector('#lang2Section h3');
+  const startButton = document.getElementById('langContinueBtn');
+
+  if (langSelectionTitle) langSelectionTitle.textContent = `🌍 ${translations.title}`;
+  if (langSelectionSubtitle) langSelectionSubtitle.textContent = translations.subtitle;
+  if (yourLangTitle) yourLangTitle.textContent = translations.yourLanguage;
+  if (targetLangTitle) targetLangTitle.textContent = translations.targetLanguage;
+  if (startButton) startButton.textContent = translations.startButton;
+
   // Afficher l'écran de sélection
   document.getElementById('languageSelection').classList.remove('hidden');
 
   // Pré-sélectionner la langue du navigateur
-  const detectedLang = detectBrowserLanguage();
   const detectedFlag = document.querySelector(`#lang1Grid .lang-flag[data-lang="${detectedLang}"]`);
   if (detectedFlag) {
     detectedFlag.classList.add('suggested');
@@ -651,13 +722,14 @@ function analyzeVolume() {
 
 // Détection automatique de la voix (VAD Loop)
 function vadLoop() {
+  const volume = analyzeVolume();
+
   // Ne pas enregistrer si le micro est désactivé OU en mode push-to-talk
   if (!state.micEnabled || state.isSpeaking || state.mode === 'push-to-talk') {
     setTimeout(vadLoop, VAD_CONFIG.RECORDING_INTERVAL);
     return;
   }
 
-  const volume = analyzeVolume();
   const now = Date.now();
 
   // Détection de voix
