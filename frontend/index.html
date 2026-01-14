@@ -392,6 +392,54 @@
       to { transform: rotate(360deg); }
     }
 
+    /* Control Buttons */
+    .control-buttons {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 15px;
+      z-index: 100;
+    }
+
+    .control-btn {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 0.9em;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .control-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .control-btn.active {
+      background: linear-gradient(90deg, #00ff9d, #00d4aa);
+      border-color: #00ff9d;
+      color: #000;
+    }
+
+    .control-btn.muted {
+      background: rgba(255, 107, 107, 0.2);
+      border-color: rgba(255, 107, 107, 0.5);
+      color: #ff6b6b;
+    }
+
+    .control-btn.muted:hover {
+      background: rgba(255, 107, 107, 0.3);
+    }
+
     h1 {
       font-size: 1.8em;
       font-weight: 700;
@@ -752,6 +800,18 @@
     <!-- Volume Indicator -->
     <div class="volume-indicator">
       <div id="volumeBar" class="volume-bar"></div>
+    </div>
+
+    <!-- Control Buttons -->
+    <div class="control-buttons">
+      <button class="control-btn active" id="micBtn" onclick="toggleMicrophone()">
+        <span id="micIcon">🎤</span>
+        <span id="micText">Micro ON</span>
+      </button>
+      <button class="control-btn active" id="ttsBtn" onclick="toggleTTS()">
+        <span id="ttsIcon">🔊</span>
+        <span id="ttsText">Audio ON</span>
+      </button>
     </div>
   </div>
 

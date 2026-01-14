@@ -1,10 +1,10 @@
 // Configuration
 const API_BASE_URL = window.location.origin;
 const VAD_CONFIG = {
-  VOLUME_THRESHOLD: 0.02,      // Seuil de détection de voix
-  SILENCE_DURATION: 1200,      // Durée de silence pour arrêter (ms)
-  MIN_RECORDING_DURATION: 800, // Durée minimale d'enregistrement (ms)
-  RECORDING_INTERVAL: 100      // Intervalle d'analyse (ms)
+  VOLUME_THRESHOLD: 0.015,     // Seuil de détection de voix (plus sensible)
+  SILENCE_DURATION: 1000,      // Durée de silence pour arrêter (ms) - plus rapide
+  MIN_RECORDING_DURATION: 600, // Durée minimale d'enregistrement (ms) - plus rapide
+  RECORDING_INTERVAL: 80       // Intervalle d'analyse (ms) - plus réactif
 };
 
 // État global
@@ -20,7 +20,9 @@ let state = {
   provider: 'openai',
   audioQueue: [], // Queue pour gérer les lectures TTS
   token: null,
-  user: null
+  user: null,
+  micEnabled: true,  // État du microphone
+  ttsEnabled: true   // État de la synthèse vocale
 };
 
 // Éléments DOM
@@ -333,13 +335,66 @@ elements.loginForm.addEventListener('submit', (e) => {
   login(elements.email.value, elements.password.value);
 });
 
+// ===================================
+// CONTRÔLES MICRO & TTS
+// ===================================
+
+// Activer/désactiver le microphone
+function toggleMicrophone() {
+  state.micEnabled = !state.micEnabled;
+
+  const micBtn = document.getElementById('micBtn');
+  const micIcon = document.getElementById('micIcon');
+  const micText = document.getElementById('micText');
+
+  if (state.micEnabled) {
+    micBtn.classList.add('active');
+    micBtn.classList.remove('muted');
+    micIcon.textContent = '🎤';
+    micText.textContent = 'Micro ON';
+    updateStatus('listening', '🎧 Prêt à écouter...');
+  } else {
+    micBtn.classList.remove('active');
+    micBtn.classList.add('muted');
+    micIcon.textContent = '🎤';
+    micText.textContent = 'Micro OFF';
+    updateStatus('idle', '🔇 Microphone désactivé');
+
+    // Arrêter l'enregistrement en cours si nécessaire
+    if (state.isRecording) {
+      stopRecording();
+    }
+  }
+}
+
+// Activer/désactiver le TTS
+function toggleTTS() {
+  state.ttsEnabled = !state.ttsEnabled;
+
+  const ttsBtn = document.getElementById('ttsBtn');
+  const ttsIcon = document.getElementById('ttsIcon');
+  const ttsText = document.getElementById('ttsText');
+
+  if (state.ttsEnabled) {
+    ttsBtn.classList.add('active');
+    ttsBtn.classList.remove('muted');
+    ttsIcon.textContent = '🔊';
+    ttsText.textContent = 'Audio ON';
+  } else {
+    ttsBtn.classList.remove('active');
+    ttsBtn.classList.add('muted');
+    ttsIcon.textContent = '🔇';
+    ttsText.textContent = 'Audio OFF';
+  }
+}
+
 // Détection du provider (OpenAI ou DeepSeek)
 async function detectProvider() {
   try {
     const response = await fetch(`${API_BASE_URL}/api/detect-region`);
     const data = await response.json();
-    state.provider = data.provider;
-    elements.providerName.textContent = data.provider.toUpperCase();
+    state.provider = data.provider || 'openai'; // Fallback sur openai
+    elements.providerName.textContent = state.provider.toUpperCase();
     elements.providerBadge.classList.remove('hidden');
     console.log('Provider détecté:', state.provider);
   } catch (error) {
@@ -390,8 +445,8 @@ function analyzeVolume() {
 
 // Détection automatique de la voix (VAD Loop)
 function vadLoop() {
-  if (state.isSpeaking) {
-    // Ne pas enregistrer pendant la lecture audio
+  // Ne pas enregistrer si le micro est désactivé
+  if (!state.micEnabled || state.isSpeaking) {
     setTimeout(vadLoop, VAD_CONFIG.RECORDING_INTERVAL);
     return;
   }
@@ -427,7 +482,7 @@ function vadLoop() {
 
 // Démarrer l'enregistrement
 function startRecording() {
-  if (state.isRecording || state.isSpeaking) return;
+  if (state.isRecording || state.isSpeaking || !state.micEnabled) return;
 
   console.log('🎤 Début enregistrement');
   state.isRecording = true;
@@ -493,9 +548,13 @@ async function processAudio(audioBlob) {
       addMessage('fr', translation);
     }
 
-    // 5. Text-to-Speech de la traduction
-    updateStatus('speaking', '🔊 Lecture audio...');
-    await speakText(translation, targetLang);
+    // 5. Text-to-Speech de la traduction (si activé)
+    if (state.ttsEnabled) {
+      updateStatus('speaking', '🔊 Lecture audio...');
+      await speakText(translation, targetLang);
+    } else {
+      updateStatus('listening', '🎧 Prêt à écouter...');
+    }
 
   } catch (error) {
     console.error('❌ Erreur traitement:', error);
