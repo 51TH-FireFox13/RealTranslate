@@ -7,6 +7,17 @@ const VAD_CONFIG = {
   RECORDING_INTERVAL: 80       // Intervalle d'analyse (ms) - plus réactif
 };
 
+// Configuration des langues
+const LANGUAGES = {
+  fr: { name: 'Français', flag: '🇫🇷', nativeName: 'Français', code: 'fr', voice: 'onyx' },
+  en: { name: 'English', flag: '🇬🇧', nativeName: 'English', code: 'en', voice: 'alloy' },
+  zh: { name: '中文', flag: '🇨🇳', nativeName: '中文', code: 'zh', voice: 'nova' },
+  de: { name: 'Deutsch', flag: '🇩🇪', nativeName: 'Deutsch', code: 'de', voice: 'onyx' },
+  es: { name: 'Español', flag: '🇪🇸', nativeName: 'Español', code: 'es', voice: 'onyx' },
+  it: { name: 'Italiano', flag: '🇮🇹', nativeName: 'Italiano', code: 'it', voice: 'alloy' },
+  pt: { name: 'Português', flag: '🇵🇹', nativeName: 'Português', code: 'pt', voice: 'shimmer' }
+};
+
 // État global
 let state = {
   isRecording: false,
@@ -22,7 +33,9 @@ let state = {
   token: null,
   user: null,
   micEnabled: true,  // État du microphone
-  ttsEnabled: true   // État de la synthèse vocale
+  ttsEnabled: true,   // État de la synthèse vocale
+  lang1: null,  // Langue de l'utilisateur
+  lang2: null   // Langue de traduction
 };
 
 // Éléments DOM
@@ -80,10 +93,8 @@ function showApp() {
   elements.providerName.textContent = state.provider.toUpperCase();
   elements.providerBadge.classList.remove('hidden');
 
-  // Demander la permission microphone
-  setTimeout(() => {
-    elements.permissionModal.classList.remove('hidden');
-  }, 500);
+  // Initialiser la sélection de langues
+  initLanguageSelection();
 }
 
 // Connexion
@@ -340,6 +351,151 @@ elements.loginForm.addEventListener('submit', (e) => {
 });
 
 // ===================================
+// SÉLECTION DE LANGUES
+// ===================================
+
+// Détecter la langue du navigateur
+function detectBrowserLanguage() {
+  const browserLang = navigator.language || navigator.userLanguage;
+  const langCode = browserLang.split('-')[0].toLowerCase();
+
+  // Vérifier si la langue est supportée
+  if (LANGUAGES[langCode]) {
+    return langCode;
+  }
+
+  // Par défaut: français
+  return 'fr';
+}
+
+// Initialiser l'écran de sélection de langues
+function initLanguageSelection() {
+  // Vérifier si les langues sont déjà sélectionnées (localStorage)
+  const savedLang1 = localStorage.getItem('lang1');
+  const savedLang2 = localStorage.getItem('lang2');
+
+  if (savedLang1 && savedLang2 && LANGUAGES[savedLang1] && LANGUAGES[savedLang2]) {
+    state.lang1 = savedLang1;
+    state.lang2 = savedLang2;
+    applyLanguageSettings();
+    return;
+  }
+
+  // Afficher l'écran de sélection
+  document.getElementById('languageSelection').classList.remove('hidden');
+
+  // Pré-sélectionner la langue du navigateur
+  const detectedLang = detectBrowserLanguage();
+  const detectedFlag = document.querySelector(`#lang1Grid .lang-flag[data-lang="${detectedLang}"]`);
+  if (detectedFlag) {
+    detectedFlag.classList.add('suggested');
+  }
+}
+
+// Sélectionner la première langue (langue de l'utilisateur)
+function selectLang1(langCode) {
+  if (!LANGUAGES[langCode]) return;
+
+  state.lang1 = langCode;
+
+  // Mettre à jour l'interface
+  document.querySelectorAll('#lang1Grid .lang-flag').forEach(el => {
+    el.classList.remove('selected', 'suggested');
+  });
+  document.querySelector(`#lang1Grid .lang-flag[data-lang="${langCode}"]`).classList.add('selected');
+
+  // Afficher la deuxième étape
+  document.getElementById('lang2Section').style.display = 'block';
+
+  // Peupler la grille de la langue 2 (exclure la langue 1)
+  const lang2Grid = document.getElementById('lang2Grid');
+  lang2Grid.innerHTML = '';
+
+  Object.keys(LANGUAGES).forEach(code => {
+    if (code !== langCode) {
+      const lang = LANGUAGES[code];
+      const div = document.createElement('div');
+      div.className = 'lang-flag';
+      div.setAttribute('data-lang', code);
+      div.onclick = () => selectLang2(code);
+      div.innerHTML = `
+        <div class="flag-emoji">${lang.flag}</div>
+        <div class="flag-name">${lang.nativeName}</div>
+      `;
+      lang2Grid.appendChild(div);
+    }
+  });
+
+  // Scroll vers la section 2
+  document.getElementById('lang2Section').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Sélectionner la deuxième langue (langue de traduction)
+function selectLang2(langCode) {
+  if (!LANGUAGES[langCode]) return;
+
+  state.lang2 = langCode;
+
+  // Mettre à jour l'interface
+  document.querySelectorAll('#lang2Grid .lang-flag').forEach(el => {
+    el.classList.remove('selected');
+  });
+  document.querySelector(`#lang2Grid .lang-flag[data-lang="${langCode}"]`).classList.add('selected');
+
+  // Activer le bouton continuer
+  document.getElementById('langContinueBtn').disabled = false;
+}
+
+// Démarrer la traduction avec les langues sélectionnées
+function startTranslation() {
+  if (!state.lang1 || !state.lang2) return;
+
+  // Sauvegarder les langues dans localStorage
+  localStorage.setItem('lang1', state.lang1);
+  localStorage.setItem('lang2', state.lang2);
+
+  // Masquer l'écran de sélection
+  document.getElementById('languageSelection').classList.add('hidden');
+
+  // Appliquer les paramètres de langue
+  applyLanguageSettings();
+
+  // Demander la permission microphone
+  setTimeout(() => {
+    elements.permissionModal.classList.remove('hidden');
+  }, 500);
+}
+
+// Appliquer les paramètres de langue à l'interface
+function applyLanguageSettings() {
+  const lang1 = LANGUAGES[state.lang1];
+  const lang2 = LANGUAGES[state.lang2];
+
+  // Mettre à jour les en-têtes des panneaux
+  const panel1Header = document.querySelector('.panel:first-child h2');
+  const panel2Header = document.querySelector('.panel:last-child h2');
+
+  if (panel1Header) {
+    panel1Header.textContent = `${lang1.flag} ${lang1.nativeName}`;
+  }
+
+  if (panel2Header) {
+    panel2Header.textContent = `${lang2.flag} ${lang2.nativeName}`;
+  }
+
+  console.log(`🌐 Langues configurées: ${state.lang1} ↔ ${state.lang2}`);
+}
+
+// Réinitialiser la sélection de langues
+function resetLanguageSelection() {
+  localStorage.removeItem('lang1');
+  localStorage.removeItem('lang2');
+  state.lang1 = null;
+  state.lang2 = null;
+  window.location.reload();
+}
+
+// ===================================
 // CONTRÔLES MICRO & TTS
 // ===================================
 
@@ -419,9 +575,18 @@ function addMessage(panel, text) {
   messageDiv.className = 'message';
   messageDiv.textContent = text;
 
-  const contentElement = panel === 'fr' ? elements.frContent : elements.zhContent;
-  contentElement.appendChild(messageDiv);
-  contentElement.scrollTop = contentElement.scrollHeight;
+  // Déterminer le panneau approprié
+  let contentElement;
+  if (panel === 'lang1' || panel === state.lang1 || panel === 'fr') {
+    contentElement = elements.frContent;
+  } else if (panel === 'lang2' || panel === state.lang2 || panel === 'zh') {
+    contentElement = elements.zhContent;
+  }
+
+  if (contentElement) {
+    contentElement.appendChild(messageDiv);
+    contentElement.scrollTop = contentElement.scrollHeight;
+  }
 }
 
 // Analyse du volume audio (VAD)
@@ -534,26 +699,41 @@ async function processAudio(audioBlob) {
 
     console.log('📝 Transcription:', transcription);
 
-    // 2. Détection de la langue (bloqué sur FR ↔ CN uniquement)
-    const isChinese = /[\u4e00-\u9fff]/.test(transcription);
+    // 2. Détection de la langue source basée sur les langues sélectionnées
+    let sourceLang = state.lang1;
+    let targetLang = state.lang2;
 
-    // Si la transcription ne contient ni français ni chinois identifiable, on assume français par défaut
-    const sourceLang = isChinese ? 'zh' : 'fr';
-    const targetLang = isChinese ? 'fr' : 'zh';
+    // Détection intelligente: vérifier si c'est la langue 1 ou 2 qui a été parlée
+    const hasChineseChars = /[\u4e00-\u9fff]/.test(transcription);
+
+    // Si une des langues est le chinois, utiliser la détection des caractères chinois
+    if (state.lang1 === 'zh' || state.lang2 === 'zh') {
+      if (hasChineseChars) {
+        sourceLang = 'zh';
+        targetLang = sourceLang === state.lang1 ? state.lang2 : state.lang1;
+      } else {
+        sourceLang = state.lang1 === 'zh' ? state.lang2 : state.lang1;
+        targetLang = sourceLang === state.lang1 ? state.lang2 : state.lang1;
+      }
+    } else {
+      // Pour les autres langues, on assume que c'est lang1 qui parle
+      sourceLang = state.lang1;
+      targetLang = state.lang2;
+    }
 
     console.log(`🔍 Langue détectée: ${sourceLang} → ${targetLang}`);
 
-    // 3. Traduction (avec instruction stricte de ne traduire qu'entre FR et CN)
+    // 3. Traduction (avec instruction stricte de ne traduire qu'entre les 2 langues)
     const translation = await translateText(transcription, targetLang, sourceLang);
     console.log('🌐 Traduction:', translation);
 
-    // 4. Affichage
-    if (sourceLang === 'fr') {
-      addMessage('fr', transcription);
-      addMessage('zh', translation);
+    // 4. Affichage dans les panneaux appropriés
+    if (sourceLang === state.lang1) {
+      addMessage('lang1', transcription);
+      addMessage('lang2', translation);
     } else {
-      addMessage('zh', transcription);
-      addMessage('fr', translation);
+      addMessage('lang2', transcription);
+      addMessage('lang1', translation);
     }
 
     // 5. Text-to-Speech de la traduction (si activé)
@@ -622,8 +802,8 @@ async function translateText(text, targetLanguage, sourceLanguage = null) {
 async function speakText(text, language) {
   state.isSpeaking = true;
 
-  // Choisir la voix selon la langue
-  const voice = language === 'zh' ? 'nova' : 'onyx';
+  // Choisir la voix selon la langue depuis la configuration
+  const voice = LANGUAGES[language]?.voice || 'alloy';
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/speak`, {

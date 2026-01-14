@@ -521,6 +521,11 @@
       border-color: #00ff9d;
     }
 
+    .lang-flag.suggested {
+      border-color: rgba(0, 255, 157, 0.5);
+      box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
+    }
+
     .lang-flag .flag-emoji {
       font-size: 3em;
     }
@@ -865,6 +870,59 @@
 
   <!-- Main App (hidden until logged in) -->
   <div id="mainApp" class="hidden">
+    <!-- Language Selection Screen -->
+    <div id="languageSelection" class="language-selection">
+      <div class="lang-box">
+        <h2>🌍 RealTranslate</h2>
+        <p>Choisissez vos langues de traduction</p>
+
+        <div class="lang-step">
+          <h3>📱 Votre langue</h3>
+          <div class="lang-grid" id="lang1Grid">
+            <div class="lang-flag" data-lang="fr" onclick="selectLang1('fr')">
+              <div class="flag-emoji">🇫🇷</div>
+              <div class="flag-name">Français</div>
+            </div>
+            <div class="lang-flag" data-lang="en" onclick="selectLang1('en')">
+              <div class="flag-emoji">🇬🇧</div>
+              <div class="flag-name">English</div>
+            </div>
+            <div class="lang-flag" data-lang="zh" onclick="selectLang1('zh')">
+              <div class="flag-emoji">🇨🇳</div>
+              <div class="flag-name">中文</div>
+            </div>
+            <div class="lang-flag" data-lang="de" onclick="selectLang1('de')">
+              <div class="flag-emoji">🇩🇪</div>
+              <div class="flag-name">Deutsch</div>
+            </div>
+            <div class="lang-flag" data-lang="es" onclick="selectLang1('es')">
+              <div class="flag-emoji">🇪🇸</div>
+              <div class="flag-name">Español</div>
+            </div>
+            <div class="lang-flag" data-lang="it" onclick="selectLang1('it')">
+              <div class="flag-emoji">🇮🇹</div>
+              <div class="flag-name">Italiano</div>
+            </div>
+            <div class="lang-flag" data-lang="pt" onclick="selectLang1('pt')">
+              <div class="flag-emoji">🇵🇹</div>
+              <div class="flag-name">Português</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lang-step" id="lang2Section" style="display: none;">
+          <h3>🗣️ Langue à traduire</h3>
+          <div class="lang-grid" id="lang2Grid">
+            <!-- Langues disponibles seront ajoutées dynamiquement -->
+          </div>
+        </div>
+
+        <button class="lang-continue-btn" id="langContinueBtn" onclick="startTranslation()" disabled>
+          Commencer la traduction
+        </button>
+      </div>
+    </div>
+
     <!-- Header -->
     <header>
       <div style="width: 100px;"></div>
