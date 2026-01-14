@@ -195,6 +195,203 @@
       background: rgba(0, 162, 255, 0.3);
     }
 
+    /* Admin Panel */
+    .admin-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .admin-content {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 30px;
+      width: 100%;
+      max-width: 900px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .admin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .admin-header h2 {
+      font-size: 1.8em;
+      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .close-admin-btn {
+      background: rgba(255, 107, 107, 0.2);
+      border: 1px solid rgba(255, 107, 107, 0.5);
+      color: #ff6b6b;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .close-admin-btn:hover {
+      background: rgba(255, 107, 107, 0.3);
+    }
+
+    .admin-section {
+      margin-bottom: 30px;
+    }
+
+    .admin-section h3 {
+      color: #00ff9d;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+    }
+
+    .users-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    .users-table th {
+      background: rgba(0, 255, 157, 0.1);
+      padding: 12px;
+      text-align: left;
+      border-bottom: 2px solid rgba(0, 255, 157, 0.3);
+      color: #00ff9d;
+      font-weight: 600;
+    }
+
+    .users-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .users-table tr:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .role-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+
+    .role-badge.admin {
+      background: rgba(255, 107, 107, 0.2);
+      border: 1px solid rgba(255, 107, 107, 0.5);
+      color: #ff6b6b;
+    }
+
+    .role-badge.user {
+      background: rgba(0, 162, 255, 0.2);
+      border: 1px solid rgba(0, 162, 255, 0.5);
+      color: #00a2ff;
+    }
+
+    .role-badge.guest {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #aaa;
+    }
+
+    .delete-user-btn {
+      background: rgba(255, 107, 107, 0.2);
+      border: 1px solid rgba(255, 107, 107, 0.5);
+      color: #ff6b6b;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85em;
+      transition: all 0.3s ease;
+    }
+
+    .delete-user-btn:hover {
+      background: rgba(255, 107, 107, 0.3);
+    }
+
+    .delete-user-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .create-user-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .create-user-form select {
+      width: 100%;
+      padding: 12px 15px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1em;
+      cursor: pointer;
+    }
+
+    .create-user-form select:focus {
+      outline: none;
+      border-color: #00ff9d;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .create-user-btn {
+      padding: 12px 24px;
+      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      border: none;
+      border-radius: 10px;
+      color: #000;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .create-user-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .create-user-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #00ff9d;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     h1 {
       font-size: 1.8em;
       font-weight: 700;
@@ -555,6 +752,49 @@
     <!-- Volume Indicator -->
     <div class="volume-indicator">
       <div id="volumeBar" class="volume-bar"></div>
+    </div>
+  </div>
+
+  <!-- Admin Panel -->
+  <div id="adminPanel" class="admin-panel hidden">
+    <div class="admin-content">
+      <div class="admin-header">
+        <h2>👤 Panneau Administrateur</h2>
+        <button class="close-admin-btn" onclick="closeAdminPanel()">✕ Fermer</button>
+      </div>
+
+      <!-- Create User Section -->
+      <div class="admin-section">
+        <h3>➕ Créer un utilisateur</h3>
+        <div id="adminMessage" class="hidden" style="margin-bottom: 15px;"></div>
+        <form class="create-user-form" onsubmit="return false;">
+          <div class="input-group" style="margin-bottom: 0;">
+            <input type="email" id="newUserEmail" placeholder="Email" required>
+          </div>
+          <div class="input-group" style="margin-bottom: 0;">
+            <input type="password" id="newUserPassword" placeholder="Mot de passe" required>
+          </div>
+          <div class="input-group" style="margin-bottom: 0;">
+            <select id="newUserRole">
+              <option value="user">Utilisateur</option>
+              <option value="admin">Admin</option>
+              <option value="guest">Invité</option>
+            </select>
+          </div>
+          <button class="create-user-btn" id="createUserBtn" onclick="createUser()">Créer</button>
+        </form>
+      </div>
+
+      <!-- Users List Section -->
+      <div class="admin-section">
+        <h3>👥 Utilisateurs</h3>
+        <div id="usersTableContainer">
+          <div style="text-align: center; padding: 20px; color: #888;">
+            <div class="loading-spinner" style="margin: 0 auto 10px;"></div>
+            <p>Chargement...</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

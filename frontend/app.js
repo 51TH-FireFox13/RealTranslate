@@ -144,13 +144,187 @@ async function logout() {
   window.location.reload();
 }
 
-// Afficher le panneau admin (placeholder)
-function showAdminPanel() {
-  alert('Panneau admin à venir ! Pour l\'instant, utilisez les API directement :\n\n' +
-    'GET /api/auth/users - Liste des utilisateurs\n' +
-    'POST /api/auth/users - Créer un utilisateur\n' +
-    'DELETE /api/auth/users/:email - Supprimer un utilisateur\n\n' +
-    'Voir DEPLOY.md pour plus d\'infos');
+// ===================================
+// PANNEAU ADMIN
+// ===================================
+
+// Afficher le panneau admin
+async function showAdminPanel() {
+  const adminPanel = document.getElementById('adminPanel');
+  adminPanel.classList.remove('hidden');
+  await loadUsers();
+}
+
+// Fermer le panneau admin
+function closeAdminPanel() {
+  const adminPanel = document.getElementById('adminPanel');
+  adminPanel.classList.add('hidden');
+}
+
+// Charger la liste des utilisateurs
+async function loadUsers() {
+  const container = document.getElementById('usersTableContainer');
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/users`, {
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors du chargement des utilisateurs');
+    }
+
+    const data = await response.json();
+    const users = data.users;
+
+    // Créer le tableau HTML
+    let html = `
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Rôle</th>
+            <th>Créé le</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    users.forEach(user => {
+      const createdDate = new Date(user.createdAt).toLocaleDateString('fr-FR');
+      const isCurrentUser = user.email === state.user.email;
+
+      html += `
+        <tr>
+          <td>${user.email} ${isCurrentUser ? '<span style="color: #00ff9d;">(vous)</span>' : ''}</td>
+          <td><span class="role-badge ${user.role}">${user.role}</span></td>
+          <td>${createdDate}</td>
+          <td>
+            <button
+              class="delete-user-btn"
+              onclick="deleteUser('${user.email}')"
+              ${isCurrentUser ? 'disabled title="Vous ne pouvez pas vous supprimer"' : ''}>
+              🗑️ Supprimer
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `
+        </tbody>
+      </table>
+    `;
+
+    container.innerHTML = html;
+
+  } catch (error) {
+    console.error('Erreur chargement users:', error);
+    container.innerHTML = `
+      <div style="text-align: center; padding: 20px; color: #ff6b6b;">
+        <p>❌ Erreur lors du chargement des utilisateurs</p>
+      </div>
+    `;
+  }
+}
+
+// Créer un utilisateur
+async function createUser() {
+  const emailInput = document.getElementById('newUserEmail');
+  const passwordInput = document.getElementById('newUserPassword');
+  const roleSelect = document.getElementById('newUserRole');
+  const createBtn = document.getElementById('createUserBtn');
+  const messageDiv = document.getElementById('adminMessage');
+
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+  const role = roleSelect.value;
+
+  if (!email || !password) {
+    showAdminMessage('Veuillez remplir tous les champs', 'error');
+    return;
+  }
+
+  try {
+    createBtn.disabled = true;
+    createBtn.textContent = 'Création...';
+
+    const response = await fetch(`${API_BASE_URL}/api/auth/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({ email, password, role })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Erreur lors de la création');
+    }
+
+    // Succès
+    showAdminMessage(`✅ Utilisateur ${email} créé avec succès !`, 'success');
+    emailInput.value = '';
+    passwordInput.value = '';
+    roleSelect.value = 'user';
+
+    // Recharger la liste
+    await loadUsers();
+
+  } catch (error) {
+    console.error('Erreur création user:', error);
+    showAdminMessage(`❌ ${error.message}`, 'error');
+  } finally {
+    createBtn.disabled = false;
+    createBtn.textContent = 'Créer';
+  }
+}
+
+// Supprimer un utilisateur
+async function deleteUser(email) {
+  if (!confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur ${email} ?\n\nCette action est irréversible.`)) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/users/${encodeURIComponent(email)}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Erreur lors de la suppression');
+    }
+
+    showAdminMessage(`✅ Utilisateur ${email} supprimé`, 'success');
+    await loadUsers();
+
+  } catch (error) {
+    console.error('Erreur suppression user:', error);
+    showAdminMessage(`❌ ${error.message}`, 'error');
+  }
+}
+
+// Afficher un message dans le panneau admin
+function showAdminMessage(message, type) {
+  const messageDiv = document.getElementById('adminMessage');
+  messageDiv.className = type === 'success' ? 'success-message' : 'error-message';
+  messageDiv.textContent = message;
+  messageDiv.classList.remove('hidden');
+
+  // Masquer après 5 secondes
+  setTimeout(() => {
+    messageDiv.classList.add('hidden');
+  }, 5000);
 }
 
 // Gestionnaire de formulaire de connexion
