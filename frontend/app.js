@@ -35,7 +35,8 @@ let state = {
   micEnabled: true,  // État du microphone
   ttsEnabled: true,   // État de la synthèse vocale
   lang1: null,  // Langue de l'utilisateur
-  lang2: null   // Langue de traduction
+  lang2: null,   // Langue de traduction
+  mode: 'realtime'  // Mode: 'realtime' ou 'push-to-talk'
 };
 
 // Éléments DOM
@@ -548,6 +549,42 @@ function toggleTTS() {
   }
 }
 
+// Basculer entre mode temps réel et push-to-talk
+function toggleMode() {
+  const modeSwitch = document.getElementById('modeSwitch');
+  const pushToTalkBtn = document.getElementById('pushToTalkBtn');
+  const micBtn = document.getElementById('micBtn');
+
+  if (state.mode === 'realtime') {
+    // Passer en mode push-to-talk
+    state.mode = 'push-to-talk';
+    modeSwitch.classList.add('push-to-talk');
+    pushToTalkBtn.classList.remove('hidden');
+
+    // Désactiver le micro automatique
+    if (state.isRecording) {
+      stopRecording();
+    }
+
+    // Masquer le bouton micro
+    micBtn.style.opacity = '0.3';
+    micBtn.style.pointerEvents = 'none';
+
+    console.log('🔴 Mode Push-to-Talk activé');
+  } else {
+    // Passer en mode temps réel
+    state.mode = 'realtime';
+    modeSwitch.classList.remove('push-to-talk');
+    pushToTalkBtn.classList.add('hidden');
+
+    // Réactiver le bouton micro
+    micBtn.style.opacity = '1';
+    micBtn.style.pointerEvents = 'auto';
+
+    console.log('🟢 Mode Temps Réel activé');
+  }
+}
+
 // Détection du provider (OpenAI ou DeepSeek)
 async function detectProvider() {
   try {
@@ -614,8 +651,8 @@ function analyzeVolume() {
 
 // Détection automatique de la voix (VAD Loop)
 function vadLoop() {
-  // Ne pas enregistrer si le micro est désactivé
-  if (!state.micEnabled || state.isSpeaking) {
+  // Ne pas enregistrer si le micro est désactivé OU en mode push-to-talk
+  if (!state.micEnabled || state.isSpeaking || state.mode === 'push-to-talk') {
     setTimeout(vadLoop, VAD_CONFIG.RECORDING_INTERVAL);
     return;
   }
@@ -798,7 +835,11 @@ async function translateText(text, targetLanguage, sourceLanguage = null) {
   return data.translatedText;
 }
 
-// Text-to-Speech
+// Créer un élément audio réutilisable pour iOS
+const audioElement = new Audio();
+audioElement.preload = 'auto';
+
+// Text-to-Speech (compatible iOS)
 async function speakText(text, language) {
   state.isSpeaking = true;
 
@@ -821,23 +862,48 @@ async function speakText(text, language) {
 
     const audioBlob = await response.blob();
     const audioUrl = URL.createObjectURL(audioBlob);
-    const audio = new Audio(audioUrl);
 
     return new Promise((resolve, reject) => {
-      audio.onended = () => {
+      const cleanup = () => {
+        URL.revokeObjectURL(audioUrl);
+        audioElement.removeEventListener('ended', onEnded);
+        audioElement.removeEventListener('error', onError);
+      };
+
+      const onEnded = () => {
         state.isSpeaking = false;
         updateStatus('listening', '🎧 Prêt à écouter...');
-        URL.revokeObjectURL(audioUrl);
+        cleanup();
         resolve();
       };
 
-      audio.onerror = (error) => {
+      const onError = (error) => {
         state.isSpeaking = false;
         updateStatus('listening', '🎧 Prêt à écouter...');
+        cleanup();
         reject(error);
       };
 
-      audio.play();
+      audioElement.addEventListener('ended', onEnded);
+      audioElement.addEventListener('error', onError);
+
+      // iOS fix: définir la source et jouer immédiatement
+      audioElement.src = audioUrl;
+      audioElement.load();
+
+      // Tenter de jouer avec gestion des promesses (iOS nécessite ça)
+      const playPromise = audioElement.play();
+
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          console.error('Erreur playback audio:', error);
+          // Sur iOS, si autoplay échoue, on continue quand même
+          state.isSpeaking = false;
+          updateStatus('listening', '🎧 Prêt à écouter...');
+          cleanup();
+          reject(error);
+        });
+      }
     });
 
   } catch (error) {
@@ -893,6 +959,9 @@ async function initializeAudio() {
     // Démarrer la boucle VAD
     vadLoop();
 
+    // Initialiser le bouton push-to-talk
+    initPushToTalk();
+
     console.log('✅ Système audio initialisé');
 
   } catch (error) {
@@ -901,9 +970,62 @@ async function initializeAudio() {
   }
 }
 
+// Initialiser les événements push-to-talk
+function initPushToTalk() {
+  const pushToTalkBtn = document.getElementById('pushToTalkBtn');
+
+  // Fonction de début d'enregistrement
+  const startPTT = (e) => {
+    e.preventDefault();
+    if (state.mode !== 'push-to-talk' || state.isRecording || state.isSpeaking) return;
+
+    pushToTalkBtn.classList.add('recording');
+    startRecording();
+    updateStatus('listening', '🎤 Enregistrement...');
+  };
+
+  // Fonction de fin d'enregistrement
+  const stopPTT = (e) => {
+    e.preventDefault();
+    if (state.mode !== 'push-to-talk' || !state.isRecording) return;
+
+    pushToTalkBtn.classList.remove('recording');
+    stopRecording();
+  };
+
+  // Desktop events
+  pushToTalkBtn.addEventListener('mousedown', startPTT);
+  pushToTalkBtn.addEventListener('mouseup', stopPTT);
+  pushToTalkBtn.addEventListener('mouseleave', stopPTT);
+
+  // Mobile touch events
+  pushToTalkBtn.addEventListener('touchstart', startPTT);
+  pushToTalkBtn.addEventListener('touchend', stopPTT);
+  pushToTalkBtn.addEventListener('touchcancel', stopPTT);
+
+  console.log('✅ Push-to-Talk initialisé');
+}
+
 // Demande de permission microphone
 async function requestMicrophonePermission() {
   await detectProvider();
+
+  // iOS Audio Context unlock - nécessaire pour iOS
+  if (state.audioContext && state.audioContext.state === 'suspended') {
+    await state.audioContext.resume();
+  }
+
+  // iOS Audio Element unlock - jouer un son silencieux pour débloquer l'audio
+  try {
+    audioElement.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+    await audioElement.play();
+    audioElement.pause();
+    audioElement.currentTime = 0;
+    console.log('✅ iOS audio débloqué');
+  } catch (e) {
+    console.log('⚠️ Impossible de débloquer audio iOS:', e);
+  }
+
   await initializeAudio();
 }
 
@@ -918,9 +1040,17 @@ window.addEventListener('load', () => {
   }
 });
 
-// Gestion du réveil de l'application (mobile)
-document.addEventListener('visibilitychange', () => {
+// Gestion du réveil de l'application (mobile/iOS)
+document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible' && state.audioContext) {
-    state.audioContext.resume();
+    await state.audioContext.resume();
+    console.log('🔊 Audio Context resumed');
   }
 });
+
+// iOS: reprendre le contexte audio sur tout click/touch
+document.addEventListener('touchstart', async () => {
+  if (state.audioContext && state.audioContext.state === 'suspended') {
+    await state.audioContext.resume();
+  }
+}, { once: true });

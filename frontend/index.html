@@ -16,8 +16,14 @@
       background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
       color: #ffffff;
       height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Main App Container */
+    #mainApp {
       display: flex;
       flex-direction: column;
+      height: 100vh;
       overflow: hidden;
     }
 
@@ -400,6 +406,7 @@
       transform: translateX(-50%);
       display: flex;
       gap: 15px;
+      align-items: center;
       z-index: 100;
     }
 
@@ -438,6 +445,125 @@
 
     .control-btn.muted:hover {
       background: rgba(255, 107, 107, 0.3);
+    }
+
+    /* Mode Switch */
+    .mode-switch-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .mode-switch-label {
+      font-size: 0.75em;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .mode-switch {
+      position: relative;
+      width: 120px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .mode-switch::before {
+      content: '';
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #00ff9d, #00a2ff);
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 10px rgba(0, 255, 157, 0.5);
+    }
+
+    .mode-switch.push-to-talk::before {
+      left: 75px;
+      background: linear-gradient(135deg, #ff6b6b, #ff9d00);
+      box-shadow: 0 2px 10px rgba(255, 107, 107, 0.5);
+    }
+
+    .mode-switch-text {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.7em;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+    }
+
+    .mode-switch-text.left {
+      left: 50px;
+      color: #888;
+    }
+
+    .mode-switch-text.right {
+      right: 10px;
+      color: #00ff9d;
+    }
+
+    .mode-switch.push-to-talk .mode-switch-text.left {
+      color: #ff6b6b;
+    }
+
+    .mode-switch.push-to-talk .mode-switch-text.right {
+      color: #888;
+    }
+
+    /* Push to Talk Button */
+    .push-to-talk-btn {
+      position: fixed;
+      bottom: 150px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.3), rgba(255, 157, 0, 0.3));
+      border: 3px solid #ff6b6b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      z-index: 99;
+      transition: all 0.2s ease;
+      box-shadow: 0 10px 40px rgba(255, 107, 107, 0.3);
+    }
+
+    .push-to-talk-btn:hover {
+      transform: translateX(-50%) scale(1.05);
+      box-shadow: 0 15px 50px rgba(255, 107, 107, 0.5);
+    }
+
+    .push-to-talk-btn:active, .push-to-talk-btn.recording {
+      transform: translateX(-50%) scale(0.95);
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.5), rgba(255, 157, 0, 0.5));
+      box-shadow: 0 5px 30px rgba(255, 107, 107, 0.7);
+    }
+
+    .push-to-talk-btn .icon {
+      font-size: 4em;
+      margin-bottom: 10px;
+    }
+
+    .push-to-talk-btn .text {
+      font-size: 0.9em;
+      font-weight: 600;
+      color: #fff;
+      text-align: center;
     }
 
     /* Language Selection Screen */
@@ -628,6 +754,7 @@
       gap: 20px;
       padding: 20px;
       overflow: hidden;
+      min-height: 0;
     }
 
     /* Panels */
@@ -640,6 +767,7 @@
       flex-direction: column;
       border: 1px solid rgba(255, 255, 255, 0.1);
       overflow: hidden;
+      min-height: 0;
     }
 
     .panel-header {
@@ -805,31 +933,178 @@
 
     /* Mobile Responsive */
     @media (max-width: 768px) {
+      /* Layout */
       .container {
         grid-template-columns: 1fr;
         gap: 15px;
         padding: 15px;
       }
 
+      /* Header */
+      header {
+        padding: 15px;
+        flex-wrap: wrap;
+      }
+
       h1 {
-        font-size: 1.3em;
+        font-size: 1.5em;
       }
 
       .subtitle {
+        font-size: 0.9em;
+      }
+
+      .user-menu {
+        font-size: 0.9em;
+        gap: 10px;
+      }
+
+      /* Panels */
+      .panel {
+        padding: 15px;
+        min-height: 250px;
+      }
+
+      .panel-header h2 {
+        font-size: 1.4em;
+      }
+
+      .flag {
+        font-size: 2em;
+      }
+
+      /* Messages - TEXTE PLUS GROS pour mobile */
+      .message {
+        font-size: 1.3em;
+        padding: 18px;
+        margin-bottom: 18px;
+        line-height: 1.7;
+      }
+
+      /* Status Bar */
+      .status-bar {
+        font-size: 1.1em;
+        padding: 15px;
+      }
+
+      /* Control Buttons */
+      .control-buttons {
+        bottom: 70px;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .control-btn {
+        padding: 12px 20px;
+        font-size: 0.9em;
+        min-width: 110px;
+      }
+
+      /* Mode Switch */
+      .mode-switch {
+        width: 100px;
+        height: 45px;
+      }
+
+      .mode-switch::before {
+        width: 33px;
+        height: 33px;
+      }
+
+      .mode-switch.push-to-talk::before {
+        left: 62px;
+      }
+
+      .mode-switch-text {
+        font-size: 0.65em;
+      }
+
+      /* Push to Talk Button - Plus petit sur mobile */
+      .push-to-talk-btn {
+        width: 160px;
+        height: 160px;
+        bottom: 130px;
+      }
+
+      .push-to-talk-btn .icon {
+        font-size: 3em;
+      }
+
+      .push-to-talk-btn .text {
         font-size: 0.8em;
+      }
+
+      /* Volume Indicator */
+      .volume-indicator {
+        width: 150px;
+        bottom: 15px;
+      }
+
+      /* Provider Badge */
+      .provider-badge {
+        top: 70px;
+        right: 15px;
+        font-size: 0.7em;
+        padding: 6px 12px;
+      }
+
+      /* Admin Panel */
+      .admin-content {
+        padding: 20px;
+        max-height: 85vh;
+      }
+
+      /* Language Selection */
+      .lang-box {
+        padding: 30px 20px;
+      }
+
+      .lang-grid {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 12px;
+      }
+
+      .lang-flag .flag-emoji {
+        font-size: 2.5em;
+      }
+
+      .lang-flag .flag-name {
+        font-size: 0.85em;
+      }
+
+      /* Login */
+      .login-box {
+        padding: 35px 25px;
+        max-width: 90%;
+      }
+    }
+
+    /* Très petit mobile */
+    @media (max-width: 480px) {
+      .message {
+        font-size: 1.2em;
+        padding: 15px;
       }
 
       .panel-header h2 {
         font-size: 1.2em;
       }
 
-      .flag {
-        font-size: 1.5em;
+      .control-buttons {
+        bottom: 60px;
+        gap: 8px;
       }
 
-      .status-bar {
-        font-size: 1em;
-        padding: 12px;
+      .control-btn {
+        min-width: 95px;
+        padding: 10px 15px;
+      }
+
+      .push-to-talk-btn {
+        width: 140px;
+        height: 140px;
+        bottom: 120px;
       }
     }
   </style>
@@ -980,10 +1255,25 @@
         <span id="micIcon">🎤</span>
         <span id="micText">Micro ON</span>
       </button>
+
+      <div class="mode-switch-container">
+        <div class="mode-switch-label">Mode</div>
+        <div class="mode-switch" id="modeSwitch" onclick="toggleMode()">
+          <span class="mode-switch-text right">Temps Réel</span>
+          <span class="mode-switch-text left">PTT</span>
+        </div>
+      </div>
+
       <button class="control-btn active" id="ttsBtn" onclick="toggleTTS()">
         <span id="ttsIcon">🔊</span>
         <span id="ttsText">Audio ON</span>
       </button>
+    </div>
+
+    <!-- Push to Talk Button (hidden by default) -->
+    <div class="push-to-talk-btn hidden" id="pushToTalkBtn">
+      <div class="icon">🎤</div>
+      <div class="text">Maintenir<br>pour parler</div>
     </div>
   </div>
 
