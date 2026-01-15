@@ -543,6 +543,110 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// ===================================
+// WEBHOOKS PAIEMENT
+// ===================================
+
+// Webhook PayPal
+app.post('/api/webhook/paypal', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    // TODO: Vérifier la signature PayPal IPN
+    const event = JSON.parse(req.body.toString());
+
+    logger.info('PayPal webhook received', event);
+
+    if (event.event_type === 'PAYMENT.SALE.COMPLETED') {
+      const email = event.resource.custom; // Email passé en custom field
+      const amount = parseFloat(event.resource.amount.total);
+
+      // Déterminer le tier en fonction du montant
+      let tier = 'free';
+      if (amount >= 49.99) tier = 'enterprise';
+      else if (amount >= 9.99) tier = 'premium';
+
+      // Activer l'abonnement pour 30 jours
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      const result = authManager.updateSubscription(email, tier, expiresAt);
+
+      if (result.success) {
+        logger.info('Subscription activated via PayPal', { email, tier, amount });
+      } else {
+        logger.error('Failed to activate subscription', { email, error: result.message });
+      }
+    }
+
+    res.status(200).send('OK');
+  } catch (error) {
+    logger.error('PayPal webhook error', error);
+    res.status(500).json({ error: 'Webhook processing failed' });
+  }
+});
+
+// Webhook WeChat Pay
+app.post('/api/webhook/wechat', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    // TODO: Vérifier la signature WeChat Pay
+    const event = JSON.parse(req.body.toString());
+
+    logger.info('WeChat Pay webhook received', event);
+
+    if (event.event_type === 'TRANSACTION.SUCCESS') {
+      const email = event.out_trade_no; // Email passé dans out_trade_no
+      const amount = parseFloat(event.amount.total) / 100; // WeChat en centimes
+
+      // Déterminer le tier en fonction du montant
+      let tier = 'free';
+      if (amount >= 49.99) tier = 'enterprise';
+      else if (amount >= 9.99) tier = 'premium';
+
+      // Activer l'abonnement pour 30 jours
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      const result = authManager.updateSubscription(email, tier, expiresAt);
+
+      if (result.success) {
+        logger.info('Subscription activated via WeChat Pay', { email, tier, amount });
+      } else {
+        logger.error('Failed to activate subscription', { email, error: result.message });
+      }
+    }
+
+    res.status(200).send('OK');
+  } catch (error) {
+    logger.error('WeChat Pay webhook error', error);
+    res.status(500).json({ error: 'Webhook processing failed' });
+  }
+});
+
+// ===================================
+// GESTION AUTOMATIQUE DES ABONNEMENTS EXPIRÉS
+// ===================================
+
+function checkExpiredSubscriptions() {
+  const users = authManager.listUsers();
+  const now = new Date();
+
+  users.forEach(user => {
+    const subscription = user.subscription;
+
+    if (subscription && subscription.expiresAt && subscription.status === 'active') {
+      const expiresAt = new Date(subscription.expiresAt);
+
+      if (expiresAt < now) {
+        // L'abonnement a expiré, réinitialiser vers gratuit
+        logger.info('Subscription expired, downgrading to free', { email: user.email, tier: subscription.tier });
+
+        authManager.updateSubscription(user.email, 'free', null);
+      }
+    }
+  });
+}
+
+// Vérifier toutes les heures
+setInterval(checkExpiredSubscriptions, 60 * 60 * 1000);
+
+// Vérifier au démarrage
+checkExpiredSubscriptions();
+
 // Servir le frontend
 app.get('*', (req, res) => {
   res.sendFile(join(__dirname, '../frontend/index.html'));
@@ -553,7 +657,9 @@ app.listen(PORT, () => {
   logger.info('API endpoints disponibles');
   logger.info('Auth: POST /api/auth/login, /api/auth/logout, /api/auth/me');
   logger.info('Admin: POST /api/auth/users, GET /api/auth/users, DELETE /api/auth/users/:email');
+  logger.info('Subscriptions: POST /api/webhook/paypal, /api/webhook/wechat');
   logger.info('API: POST /api/transcribe, /api/translate, /api/speak');
   logger.info('Public: GET /api/detect-region, /api/health');
   logger.info(`Auth ${process.env.DISABLE_AUTH === 'true' ? 'DISABLED' : 'ENABLED'}`);
+  logger.info('✅ Subscription expiration check enabled (every hour)');
 });

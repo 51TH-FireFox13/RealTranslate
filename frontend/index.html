@@ -1238,59 +1238,171 @@
           </div>
         </div>
 
-        <!-- Pricing Info Section -->
-        <div style="margin: 30px 0; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-          <h3 style="margin: 0 0 15px 0; color: #fff; font-size: 1.1em; text-align: center;">💎 Paliers d'Abonnement</h3>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-            <!-- Gratuit -->
-            <div style="padding: 15px; background: rgba(136,136,136,0.1); border-radius: 10px; border: 2px solid #888;">
-              <div style="text-align: center; margin-bottom: 10px;">
-                <div style="font-size: 2em;">🆓</div>
-                <div style="font-weight: bold; color: #888; font-size: 1.1em; margin-top: 5px;">GRATUIT</div>
-              </div>
-              <div style="color: #ccc; font-size: 0.9em; line-height: 1.6;">
-                <div style="margin-bottom: 5px;">✓ 10 transcriptions/jour</div>
-                <div style="margin-bottom: 5px;">✓ 50 traductions/jour</div>
-                <div>✓ 10 synthèses vocales/jour</div>
-              </div>
-            </div>
-
-            <!-- Premium -->
-            <div style="padding: 15px; background: rgba(255,212,59,0.1); border-radius: 10px; border: 2px solid #ffd43b;">
-              <div style="text-align: center; margin-bottom: 10px;">
-                <div style="font-size: 2em;">⭐</div>
-                <div style="font-weight: bold; color: #ffd43b; font-size: 1.1em; margin-top: 5px;">PREMIUM</div>
-                <div style="color: #ffd43b; font-size: 0.9em; margin-top: 3px;">9.99€/mois</div>
-              </div>
-              <div style="color: #ccc; font-size: 0.9em; line-height: 1.6;">
-                <div style="margin-bottom: 5px;">✓ 500 transcriptions/jour</div>
-                <div style="margin-bottom: 5px;">✓ 2000 traductions/jour</div>
-                <div>✓ 500 synthèses vocales/jour</div>
-              </div>
-            </div>
-
-            <!-- Enterprise -->
-            <div style="padding: 15px; background: rgba(0,255,157,0.1); border-radius: 10px; border: 2px solid #00ff9d;">
-              <div style="text-align: center; margin-bottom: 10px;">
-                <div style="font-size: 2em;">💎</div>
-                <div style="font-weight: bold; color: #00ff9d; font-size: 1.1em; margin-top: 5px;">ENTERPRISE</div>
-                <div style="color: #00ff9d; font-size: 0.9em; margin-top: 3px;">49.99€/mois</div>
-              </div>
-              <div style="color: #ccc; font-size: 0.9em; line-height: 1.6;">
-                <div style="margin-bottom: 5px;">✓ Transcriptions illimitées</div>
-                <div style="margin-bottom: 5px;">✓ Traductions illimitées</div>
-                <div>✓ Synthèses vocales illimitées</div>
-              </div>
-            </div>
-          </div>
-          <p style="text-align: center; margin: 15px 0 0 0; color: #888; font-size: 0.85em;">
-            💡 Contactez l'administrateur pour mettre à niveau votre abonnement
-          </p>
+        <!-- Pricing Button -->
+        <div style="text-align: center; margin: 20px 0;">
+          <button onclick="showPricingPage()" style="padding: 12px 30px; background: linear-gradient(135deg, #ffd43b, #ff9800); color: #000; border: none; border-radius: 10px; cursor: pointer; font-size: 1em; font-weight: bold; box-shadow: 0 4px 15px rgba(255, 212, 59, 0.3); transition: transform 0.2s;">
+            💎 Voir les tarifs et fonctionnalités
+          </button>
         </div>
 
         <button class="lang-continue-btn" id="langContinueBtn" onclick="startTranslation()" disabled>
           Commencer la traduction
         </button>
+      </div>
+    </div>
+
+    <!-- Pricing Page -->
+    <div id="pricingPage" class="language-selection hidden">
+      <div class="lang-box" style="max-width: 1000px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2>💎 Tarifs & Fonctionnalités</h2>
+          <button onclick="hidePricingPage()" style="padding: 8px 20px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer;">
+            ← Retour
+          </button>
+        </div>
+        <p style="color: #ccc; text-align: center; margin-bottom: 30px;" id="pricingSubtitle">Choisissez le plan adapté à vos besoins</p>
+
+        <!-- Pricing Cards Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-bottom: 40px;">
+          <!-- FREE -->
+          <div style="padding: 30px 25px; background: linear-gradient(135deg, rgba(136,136,136,0.1), rgba(100,100,100,0.1)); border-radius: 15px; border: 2px solid #888; position: relative; overflow: hidden;">
+            <div style="text-align: center; margin-bottom: 25px;">
+              <div style="font-size: 3.5em; margin-bottom: 10px;">🆓</div>
+              <div style="font-weight: bold; color: #fff; font-size: 1.4em; margin-bottom: 5px;" data-i18n="pricing-free-title">GRATUIT</div>
+              <div style="font-size: 2em; color: #888; font-weight: bold;">0€</div>
+              <div style="color: #888; font-size: 0.9em;" data-i18n="pricing-per-month">/mois</div>
+            </div>
+            <div style="color: #ccc; font-size: 0.95em; line-height: 2;">
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span><strong>10</strong> <span data-i18n="pricing-transcriptions">transcriptions</span>/jour</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span><strong>50</strong> <span data-i18n="pricing-translations">traductions</span>/jour</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span><strong>10</strong> <span data-i18n="pricing-tts">synthèses vocales</span>/jour</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-7-languages">7 langues disponibles</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PREMIUM -->
+          <div style="padding: 30px 25px; background: linear-gradient(135deg, rgba(255,212,59,0.15), rgba(255,152,0,0.15)); border-radius: 15px; border: 3px solid #ffd43b; position: relative; transform: scale(1.05); box-shadow: 0 8px 30px rgba(255,212,59,0.3);">
+            <div style="position: absolute; top: -12px; right: 20px; background: #ffd43b; color: #000; padding: 5px 15px; border-radius: 15px; font-size: 0.8em; font-weight: bold;" data-i18n="pricing-popular">POPULAIRE</div>
+            <div style="text-align: center; margin-bottom: 25px;">
+              <div style="font-size: 3.5em; margin-bottom: 10px;">⭐</div>
+              <div style="font-weight: bold; color: #fff; font-size: 1.4em; margin-bottom: 5px;" data-i18n="pricing-premium-title">PREMIUM</div>
+              <div style="font-size: 2em; color: #ffd43b; font-weight: bold;">9.99€</div>
+              <div style="color: #ffd43b; font-size: 0.9em;" data-i18n="pricing-per-month">/mois</div>
+            </div>
+            <div style="color: #ccc; font-size: 0.95em; line-height: 2;">
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #ffd43b; margin-right: 10px;">✓</span>
+                <span><strong>500</strong> <span data-i18n="pricing-transcriptions">transcriptions</span>/jour</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #ffd43b; margin-right: 10px;">✓</span>
+                <span><strong>2000</strong> <span data-i18n="pricing-translations">traductions</span>/jour</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #ffd43b; margin-right: 10px;">✓</span>
+                <span><strong>500</strong> <span data-i18n="pricing-tts">synthèses vocales</span>/jour</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #ffd43b; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-7-languages">7 langues disponibles</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #ffd43b; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-priority-support">Support prioritaire</span>
+              </div>
+            </div>
+            <button onclick="subscribePlan('premium')" style="width: 100%; margin-top: 20px; padding: 15px; background: #ffd43b; color: #000; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1em; cursor: pointer;" data-i18n="pricing-subscribe">
+              S'abonner
+            </button>
+          </div>
+
+          <!-- ENTERPRISE -->
+          <div style="padding: 30px 25px; background: linear-gradient(135deg, rgba(0,255,157,0.15), rgba(0,200,120,0.15)); border-radius: 15px; border: 2px solid #00ff9d; position: relative;">
+            <div style="text-align: center; margin-bottom: 25px;">
+              <div style="font-size: 3.5em; margin-bottom: 10px;">💎</div>
+              <div style="font-weight: bold; color: #fff; font-size: 1.4em; margin-bottom: 5px;" data-i18n="pricing-enterprise-title">ENTERPRISE</div>
+              <div style="font-size: 2em; color: #00ff9d; font-weight: bold;">49.99€</div>
+              <div style="color: #00ff9d; font-size: 0.9em;" data-i18n="pricing-per-month">/mois</div>
+            </div>
+            <div style="color: #ccc; font-size: 0.95em; line-height: 2;">
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-unlimited-transcriptions"><strong>Illimité</strong> transcriptions</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-unlimited-translations"><strong>Illimité</strong> traductions</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-unlimited-tts"><strong>Illimité</strong> synthèses vocales</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-7-languages">7 langues disponibles</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-dedicated-support">Support dédié 24/7</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-api-access">Accès API</span>
+              </div>
+            </div>
+            <button onclick="subscribePlan('enterprise')" style="width: 100%; margin-top: 20px; padding: 15px; background: #00ff9d; color: #000; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1em; cursor: pointer;" data-i18n="pricing-subscribe">
+              S'abonner
+            </button>
+          </div>
+        </div>
+
+        <!-- Payment Methods -->
+        <div style="background: rgba(255,255,255,0.05); border-radius: 15px; padding: 25px; margin-bottom: 30px;">
+          <h3 style="text-align: center; color: #fff; margin-bottom: 20px;" data-i18n="pricing-payment-methods">Modes de paiement acceptés</h3>
+          <div style="display: flex; justify-content: center; align-items: center; gap: 40px; flex-wrap: wrap;">
+            <div style="text-align: center;">
+              <div style="font-size: 3em; margin-bottom: 8px;">💳</div>
+              <div style="color: #ccc; font-weight: bold;">PayPal</div>
+              <div style="color: #888; font-size: 0.85em;" data-i18n="pricing-europe-region">Europe & International</div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 3em; margin-bottom: 8px;">💚</div>
+              <div style="color: #ccc; font-weight: bold;">WeChat Pay</div>
+              <div style="color: #888; font-size: 0.85em;" data-i18n="pricing-asia-region">Chine & Asie du Sud-Est</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FAQ Section -->
+        <div style="background: rgba(255,255,255,0.03); border-radius: 15px; padding: 25px;">
+          <h3 style="text-align: center; color: #fff; margin-bottom: 20px;" data-i18n="pricing-faq">Questions fréquentes</h3>
+          <div style="color: #ccc; line-height: 1.8;">
+            <div style="margin-bottom: 15px;">
+              <strong style="color: #00ff9d;" data-i18n="pricing-faq-q1">🔹 Comment fonctionne l'abonnement ?</strong>
+              <p style="margin: 5px 0 0 20px;" data-i18n="pricing-faq-a1">Votre abonnement est actif immédiatement après paiement et se renouvelle automatiquement chaque mois.</p>
+            </div>
+            <div style="margin-bottom: 15px;">
+              <strong style="color: #00ff9d;" data-i18n="pricing-faq-q2">🔹 Puis-je annuler à tout moment ?</strong>
+              <p style="margin: 5px 0 0 20px;" data-i18n="pricing-faq-a2">Oui, vous pouvez annuler votre abonnement à tout moment. Vous conserverez l'accès jusqu'à la fin de la période payée.</p>
+            </div>
+            <div style="margin-bottom: 15px;">
+              <strong style="color: #00ff9d;" data-i18n="pricing-faq-q3">🔹 Les quotas se reportent-ils ?</strong>
+              <p style="margin: 5px 0 0 20px;" data-i18n="pricing-faq-a3">Non, les quotas sont journaliers et se réinitialisent à minuit (heure UTC).</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

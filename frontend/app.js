@@ -18,56 +18,252 @@ const LANGUAGES = {
   pt: { name: 'Português', flag: '🇵🇹', nativeName: 'Português', code: 'pt', voice: 'shimmer' }
 };
 
-// Traductions de l'interface de sélection
+// Traductions de l'interface de sélection et pricing
 const UI_TRANSLATIONS = {
   fr: {
     title: 'RealTranslate',
     subtitle: 'Choisissez vos langues de traduction',
     yourLanguage: '📱 Votre langue',
     targetLanguage: '🗣️ Langue à traduire',
-    startButton: 'Commencer la traduction'
+    startButton: 'Commencer la traduction',
+    // Pricing
+    'pricing-subtitle': 'Choisissez le plan adapté à vos besoins',
+    'pricing-free-title': 'GRATUIT',
+    'pricing-premium-title': 'PREMIUM',
+    'pricing-enterprise-title': 'ENTERPRISE',
+    'pricing-per-month': '/mois',
+    'pricing-popular': 'POPULAIRE',
+    'pricing-transcriptions': 'transcriptions',
+    'pricing-translations': 'traductions',
+    'pricing-tts': 'synthèses vocales',
+    'pricing-7-languages': '7 langues disponibles',
+    'pricing-priority-support': 'Support prioritaire',
+    'pricing-dedicated-support': 'Support dédié 24/7',
+    'pricing-api-access': 'Accès API',
+    'pricing-unlimited-transcriptions': 'Illimité transcriptions',
+    'pricing-unlimited-translations': 'Illimité traductions',
+    'pricing-unlimited-tts': 'Illimité synthèses vocales',
+    'pricing-subscribe': 'S\'abonner',
+    'pricing-payment-methods': 'Modes de paiement acceptés',
+    'pricing-europe-region': 'Europe & International',
+    'pricing-asia-region': 'Chine & Asie du Sud-Est',
+    'pricing-faq': 'Questions fréquentes',
+    'pricing-faq-q1': '🔹 Comment fonctionne l\'abonnement ?',
+    'pricing-faq-a1': 'Votre abonnement est actif immédiatement après paiement et se renouvelle automatiquement chaque mois.',
+    'pricing-faq-q2': '🔹 Puis-je annuler à tout moment ?',
+    'pricing-faq-a2': 'Oui, vous pouvez annuler votre abonnement à tout moment. Vous conserverez l\'accès jusqu\'à la fin de la période payée.',
+    'pricing-faq-q3': '🔹 Les quotas se reportent-ils ?',
+    'pricing-faq-a3': 'Non, les quotas sont journaliers et se réinitialisent à minuit (heure UTC).'
   },
   en: {
     title: 'RealTranslate',
     subtitle: 'Choose your translation languages',
     yourLanguage: '📱 Your language',
     targetLanguage: '🗣️ Language to translate',
-    startButton: 'Start translation'
+    startButton: 'Start translation',
+    // Pricing
+    'pricing-subtitle': 'Choose the plan that fits your needs',
+    'pricing-free-title': 'FREE',
+    'pricing-premium-title': 'PREMIUM',
+    'pricing-enterprise-title': 'ENTERPRISE',
+    'pricing-per-month': '/month',
+    'pricing-popular': 'POPULAR',
+    'pricing-transcriptions': 'transcriptions',
+    'pricing-translations': 'translations',
+    'pricing-tts': 'text-to-speech',
+    'pricing-7-languages': '7 languages available',
+    'pricing-priority-support': 'Priority support',
+    'pricing-dedicated-support': 'Dedicated 24/7 support',
+    'pricing-api-access': 'API access',
+    'pricing-unlimited-transcriptions': 'Unlimited transcriptions',
+    'pricing-unlimited-translations': 'Unlimited translations',
+    'pricing-unlimited-tts': 'Unlimited text-to-speech',
+    'pricing-subscribe': 'Subscribe',
+    'pricing-payment-methods': 'Accepted payment methods',
+    'pricing-europe-region': 'Europe & International',
+    'pricing-asia-region': 'China & Southeast Asia',
+    'pricing-faq': 'Frequently asked questions',
+    'pricing-faq-q1': '🔹 How does the subscription work?',
+    'pricing-faq-a1': 'Your subscription is active immediately after payment and renews automatically every month.',
+    'pricing-faq-q2': '🔹 Can I cancel anytime?',
+    'pricing-faq-a2': 'Yes, you can cancel your subscription anytime. You\'ll keep access until the end of the paid period.',
+    'pricing-faq-q3': '🔹 Do quotas carry over?',
+    'pricing-faq-a3': 'No, quotas are daily and reset at midnight (UTC time).'
   },
   zh: {
     title: 'RealTranslate',
     subtitle: '选择您的翻译语言',
     yourLanguage: '📱 您的语言',
     targetLanguage: '🗣️ 翻译语言',
-    startButton: '开始翻译'
+    startButton: '开始翻译',
+    // Pricing
+    'pricing-subtitle': '选择适合您需求的套餐',
+    'pricing-free-title': '免费',
+    'pricing-premium-title': '高级',
+    'pricing-enterprise-title': '企业',
+    'pricing-per-month': '/月',
+    'pricing-popular': '热门',
+    'pricing-transcriptions': '次转录',
+    'pricing-translations': '次翻译',
+    'pricing-tts': '次语音合成',
+    'pricing-7-languages': '7种语言可用',
+    'pricing-priority-support': '优先支持',
+    'pricing-dedicated-support': '专属24/7支持',
+    'pricing-api-access': 'API访问',
+    'pricing-unlimited-transcriptions': '无限转录',
+    'pricing-unlimited-translations': '无限翻译',
+    'pricing-unlimited-tts': '无限语音合成',
+    'pricing-subscribe': '订阅',
+    'pricing-payment-methods': '接受的支付方式',
+    'pricing-europe-region': '欧洲和国际',
+    'pricing-asia-region': '中国和东南亚',
+    'pricing-faq': '常见问题',
+    'pricing-faq-q1': '🔹 订阅如何运作？',
+    'pricing-faq-a1': '付款后立即激活订阅，每月自动续订。',
+    'pricing-faq-q2': '🔹 我可以随时取消吗？',
+    'pricing-faq-a2': '是的，您可以随时取消订阅。您将保留访问权限直到付费期结束。',
+    'pricing-faq-q3': '🔹 配额会结转吗？',
+    'pricing-faq-a3': '不会，配额是每日的，在午夜（UTC时间）重置。'
   },
   de: {
     title: 'RealTranslate',
     subtitle: 'Wählen Sie Ihre Übersetzungssprachen',
     yourLanguage: '📱 Ihre Sprache',
     targetLanguage: '🗣️ Sprache zum Übersetzen',
-    startButton: 'Übersetzung starten'
+    startButton: 'Übersetzung starten',
+    // Pricing
+    'pricing-subtitle': 'Wählen Sie den Plan, der Ihren Bedürfnissen entspricht',
+    'pricing-free-title': 'KOSTENLOS',
+    'pricing-premium-title': 'PREMIUM',
+    'pricing-enterprise-title': 'ENTERPRISE',
+    'pricing-per-month': '/Monat',
+    'pricing-popular': 'BELIEBT',
+    'pricing-transcriptions': 'Transkriptionen',
+    'pricing-translations': 'Übersetzungen',
+    'pricing-tts': 'Sprachsynthesen',
+    'pricing-7-languages': '7 Sprachen verfügbar',
+    'pricing-priority-support': 'Prioritäts-Support',
+    'pricing-dedicated-support': 'Dedizierter 24/7-Support',
+    'pricing-api-access': 'API-Zugang',
+    'pricing-unlimited-transcriptions': 'Unbegrenzte Transkriptionen',
+    'pricing-unlimited-translations': 'Unbegrenzte Übersetzungen',
+    'pricing-unlimited-tts': 'Unbegrenzte Sprachsynthesen',
+    'pricing-subscribe': 'Abonnieren',
+    'pricing-payment-methods': 'Akzeptierte Zahlungsmethoden',
+    'pricing-europe-region': 'Europa & International',
+    'pricing-asia-region': 'China & Südostasien',
+    'pricing-faq': 'Häufig gestellte Fragen',
+    'pricing-faq-q1': '🔹 Wie funktioniert das Abonnement?',
+    'pricing-faq-a1': 'Ihr Abonnement ist sofort nach der Zahlung aktiv und verlängert sich automatisch jeden Monat.',
+    'pricing-faq-q2': '🔹 Kann ich jederzeit kündigen?',
+    'pricing-faq-a2': 'Ja, Sie können Ihr Abonnement jederzeit kündigen. Sie behalten den Zugriff bis zum Ende des bezahlten Zeitraums.',
+    'pricing-faq-q3': '🔹 Werden Kontingente übertragen?',
+    'pricing-faq-a3': 'Nein, Kontingente sind täglich und werden um Mitternacht (UTC-Zeit) zurückgesetzt.'
   },
   es: {
     title: 'RealTranslate',
     subtitle: 'Elija sus idiomas de traducción',
     yourLanguage: '📱 Su idioma',
     targetLanguage: '🗣️ Idioma a traducir',
-    startButton: 'Comenzar traducción'
+    startButton: 'Comenzar traducción',
+    // Pricing
+    'pricing-subtitle': 'Elija el plan que se adapte a sus necesidades',
+    'pricing-free-title': 'GRATIS',
+    'pricing-premium-title': 'PREMIUM',
+    'pricing-enterprise-title': 'ENTERPRISE',
+    'pricing-per-month': '/mes',
+    'pricing-popular': 'POPULAR',
+    'pricing-transcriptions': 'transcripciones',
+    'pricing-translations': 'traducciones',
+    'pricing-tts': 'síntesis de voz',
+    'pricing-7-languages': '7 idiomas disponibles',
+    'pricing-priority-support': 'Soporte prioritario',
+    'pricing-dedicated-support': 'Soporte dedicado 24/7',
+    'pricing-api-access': 'Acceso API',
+    'pricing-unlimited-transcriptions': 'Transcripciones ilimitadas',
+    'pricing-unlimited-translations': 'Traducciones ilimitadas',
+    'pricing-unlimited-tts': 'Síntesis de voz ilimitada',
+    'pricing-subscribe': 'Suscribirse',
+    'pricing-payment-methods': 'Métodos de pago aceptados',
+    'pricing-europe-region': 'Europa e Internacional',
+    'pricing-asia-region': 'China y Sudeste Asiático',
+    'pricing-faq': 'Preguntas frecuentes',
+    'pricing-faq-q1': '🔹 ¿Cómo funciona la suscripción?',
+    'pricing-faq-a1': 'Su suscripción está activa inmediatamente después del pago y se renueva automáticamente cada mes.',
+    'pricing-faq-q2': '🔹 ¿Puedo cancelar en cualquier momento?',
+    'pricing-faq-a2': 'Sí, puede cancelar su suscripción en cualquier momento. Mantendrá el acceso hasta el final del período pagado.',
+    'pricing-faq-q3': '🔹 ¿Se acumulan las cuotas?',
+    'pricing-faq-a3': 'No, las cuotas son diarias y se reinician a medianoche (hora UTC).'
   },
   it: {
     title: 'RealTranslate',
     subtitle: 'Scegli le tue lingue di traduzione',
     yourLanguage: '📱 La tua lingua',
     targetLanguage: '🗣️ Lingua da tradurre',
-    startButton: 'Inizia traduzione'
+    startButton: 'Inizia traduzione',
+    // Pricing
+    'pricing-subtitle': 'Scegli il piano più adatto alle tue esigenze',
+    'pricing-free-title': 'GRATUITO',
+    'pricing-premium-title': 'PREMIUM',
+    'pricing-enterprise-title': 'ENTERPRISE',
+    'pricing-per-month': '/mese',
+    'pricing-popular': 'POPOLARE',
+    'pricing-transcriptions': 'trascrizioni',
+    'pricing-translations': 'traduzioni',
+    'pricing-tts': 'sintesi vocali',
+    'pricing-7-languages': '7 lingue disponibili',
+    'pricing-priority-support': 'Supporto prioritario',
+    'pricing-dedicated-support': 'Supporto dedicato 24/7',
+    'pricing-api-access': 'Accesso API',
+    'pricing-unlimited-transcriptions': 'Trascrizioni illimitate',
+    'pricing-unlimited-translations': 'Traduzioni illimitate',
+    'pricing-unlimited-tts': 'Sintesi vocali illimitate',
+    'pricing-subscribe': 'Iscriviti',
+    'pricing-payment-methods': 'Metodi di pagamento accettati',
+    'pricing-europe-region': 'Europa e Internazionale',
+    'pricing-asia-region': 'Cina e Sud-est asiatico',
+    'pricing-faq': 'Domande frequenti',
+    'pricing-faq-q1': '🔹 Come funziona l\'abbonamento?',
+    'pricing-faq-a1': 'Il tuo abbonamento è attivo immediatamente dopo il pagamento e si rinnova automaticamente ogni mese.',
+    'pricing-faq-q2': '🔹 Posso annullare in qualsiasi momento?',
+    'pricing-faq-a2': 'Sì, puoi annullare il tuo abbonamento in qualsiasi momento. Manterrai l\'accesso fino alla fine del periodo pagato.',
+    'pricing-faq-q3': '🔹 I contingenti si accumulano?',
+    'pricing-faq-a3': 'No, i contingenti sono giornalieri e si ripristinano a mezzanotte (ora UTC).'
   },
   pt: {
     title: 'RealTranslate',
     subtitle: 'Escolha seus idiomas de tradução',
     yourLanguage: '📱 Seu idioma',
     targetLanguage: '🗣️ Idioma para traduzir',
-    startButton: 'Começar tradução'
+    startButton: 'Começar tradução',
+    // Pricing
+    'pricing-subtitle': 'Escolha o plano que se adapta às suas necessidades',
+    'pricing-free-title': 'GRATUITO',
+    'pricing-premium-title': 'PREMIUM',
+    'pricing-enterprise-title': 'ENTERPRISE',
+    'pricing-per-month': '/mês',
+    'pricing-popular': 'POPULAR',
+    'pricing-transcriptions': 'transcrições',
+    'pricing-translations': 'traduções',
+    'pricing-tts': 'sínteses de voz',
+    'pricing-7-languages': '7 idiomas disponíveis',
+    'pricing-priority-support': 'Suporte prioritário',
+    'pricing-dedicated-support': 'Suporte dedicado 24/7',
+    'pricing-api-access': 'Acesso API',
+    'pricing-unlimited-transcriptions': 'Transcrições ilimitadas',
+    'pricing-unlimited-translations': 'Traduções ilimitadas',
+    'pricing-unlimited-tts': 'Sínteses de voz ilimitadas',
+    'pricing-subscribe': 'Assinar',
+    'pricing-payment-methods': 'Métodos de pagamento aceitos',
+    'pricing-europe-region': 'Europa e Internacional',
+    'pricing-asia-region': 'China e Sudeste Asiático',
+    'pricing-faq': 'Perguntas frequentes',
+    'pricing-faq-q1': '🔹 Como funciona a assinatura?',
+    'pricing-faq-a1': 'Sua assinatura é ativada imediatamente após o pagamento e renova automaticamente todo mês.',
+    'pricing-faq-q2': '🔹 Posso cancelar a qualquer momento?',
+    'pricing-faq-a2': 'Sim, você pode cancelar sua assinatura a qualquer momento. Você manterá o acesso até o final do período pago.',
+    'pricing-faq-q3': '🔹 As cotas são acumuladas?',
+    'pricing-faq-a3': 'Não, as cotas são diárias e resetam à meia-noite (horário UTC).'
   }
 };
 
@@ -1023,10 +1219,162 @@ function startTranslation() {
   // Appliquer les paramètres de langue
   applyLanguageSettings();
 
+  // Charger les quotas utilisateur
+  loadUserQuotas();
+
   // Demander la permission microphone
   setTimeout(() => {
     elements.permissionModal.classList.remove('hidden');
   }, 500);
+}
+
+// ===================================
+// GESTION PAGE PRICING
+// ===================================
+
+function showPricingPage() {
+  document.getElementById('languageSelection').classList.add('hidden');
+  document.getElementById('pricingPage').classList.remove('hidden');
+
+  // Traduire la page selon la langue du navigateur
+  const browserLang = navigator.language.slice(0, 2);
+  const lang = UI_TRANSLATIONS[browserLang] ? browserLang : 'en';
+
+  // Appliquer les traductions
+  document.querySelectorAll('[data-i18n]').forEach(element => {
+    const key = element.getAttribute('data-i18n');
+    const translation = UI_TRANSLATIONS[lang][key];
+    if (translation) {
+      if (element.tagName === 'BUTTON' || element.tagName === 'INPUT') {
+        element.textContent = translation;
+      } else {
+        element.innerHTML = translation;
+      }
+    }
+  });
+}
+
+function hidePricingPage() {
+  document.getElementById('pricingPage').classList.add('hidden');
+  document.getElementById('languageSelection').classList.remove('hidden');
+}
+
+function subscribePlan(tier) {
+  // Rediriger vers la page de paiement appropriée
+  const region = detectUserRegion();
+
+  if (region === 'asia') {
+    alert('WeChat Pay: Fonctionnalité en cours d\'implémentation.\nVeuillez contacter l\'administrateur.');
+  } else {
+    alert('PayPal: Fonctionnalité en cours d\'implémentation.\nVeuillez contacter l\'administrateur.');
+  }
+}
+
+function detectUserRegion() {
+  // Détecter la région par la langue/timezone
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (timezone.includes('Asia') || timezone.includes('China') || timezone.includes('Hong_Kong')) {
+    return 'asia';
+  }
+  return 'europe';
+}
+
+// ===================================
+// COMPTEUR DE QUOTAS
+// ===================================
+
+let userQuotas = null;
+
+async function loadUserQuotas() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/subscription/info`, {
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      userQuotas = data.subscription.quotas;
+      updateQuotasDisplay();
+    }
+  } catch (error) {
+    console.error('Erreur chargement quotas:', error);
+  }
+}
+
+function updateQuotasDisplay() {
+  if (!userQuotas) return;
+
+  // Créer ou mettre à jour le compteur de quotas
+  let quotasDiv = document.getElementById('quotasCounter');
+
+  if (!quotasDiv) {
+    // Créer le compteur
+    quotasDiv = document.createElement('div');
+    quotasDiv.id = 'quotasCounter';
+    quotasDiv.style.cssText = `
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      color: #fff;
+      padding: 10px 15px;
+      border-radius: 10px;
+      font-size: 0.85em;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      z-index: 999;
+      max-width: 200px;
+    `;
+    document.body.appendChild(quotasDiv);
+  }
+
+  // Calculer les pourcentages
+  const transcribePercent = userQuotas.transcribe.limit === -1 ? 100 :
+    ((userQuotas.transcribe.limit - userQuotas.transcribe.used) / userQuotas.transcribe.limit) * 100;
+  const translatePercent = userQuotas.translate.limit === -1 ? 100 :
+    ((userQuotas.translate.limit - userQuotas.translate.used) / userQuotas.translate.limit) * 100;
+  const speakPercent = userQuotas.speak.limit === -1 ? 100 :
+    ((userQuotas.speak.limit - userQuotas.speak.used) / userQuotas.speak.limit) * 100;
+
+  // Déterminer les couleurs
+  const getColor = (percent) => {
+    if (percent > 50) return '#00ff9d';
+    if (percent > 20) return '#ffd43b';
+    return '#ff6b6b';
+  };
+
+  // Afficher les quotas
+  const transcribeDisplay = userQuotas.transcribe.limit === -1 ? '∞' :
+    `${userQuotas.transcribe.limit - userQuotas.transcribe.used}/${userQuotas.transcribe.limit}`;
+  const translateDisplay = userQuotas.translate.limit === -1 ? '∞' :
+    `${userQuotas.translate.limit - userQuotas.translate.used}/${userQuotas.translate.limit}`;
+  const speakDisplay = userQuotas.speak.limit === -1 ? '∞' :
+    `${userQuotas.speak.limit - userQuotas.speak.used}/${userQuotas.speak.limit}`;
+
+  quotasDiv.innerHTML = `
+    <div style="font-weight: bold; margin-bottom: 8px; text-align: center; font-size: 0.9em;">📊 Quotas restants</div>
+    <div style="margin-bottom: 5px;">
+      <span style="color: ${getColor(transcribePercent)};">🎤</span> ${transcribeDisplay}
+    </div>
+    <div style="margin-bottom: 5px;">
+      <span style="color: ${getColor(translatePercent)};">🔄</span> ${translateDisplay}
+    </div>
+    <div>
+      <span style="color: ${getColor(speakPercent)};">🔊</span> ${speakDisplay}
+    </div>
+  `;
+}
+
+// Fonction pour décrémenter un quota localement (mise à jour optimiste)
+function decrementQuota(action) {
+  if (userQuotas && userQuotas[action]) {
+    if (userQuotas[action].limit !== -1) {
+      userQuotas[action].used++;
+    }
+    updateQuotasDisplay();
+  }
 }
 
 // Appliquer les paramètres de langue à l'interface
@@ -1334,6 +1682,7 @@ async function processAudio(audioBlob) {
   try {
     // 1. Transcription avec Whisper
     const transcription = await transcribeAudio(audioBlob);
+    decrementQuota('transcribe'); // Décrémenter le quota transcription
 
     if (!transcription || transcription.length < 2) {
       console.log('⚠️ Transcription vide ou trop courte');
@@ -1369,6 +1718,7 @@ async function processAudio(audioBlob) {
 
     // 3. Traduction (avec instruction stricte de ne traduire qu'entre les 2 langues)
     const translation = await translateText(transcription, targetLang, sourceLang);
+    decrementQuota('translate'); // Décrémenter le quota traduction
     console.log('🌐 Traduction:', translation);
 
     // 4. Affichage dans les panneaux appropriés
@@ -1384,6 +1734,7 @@ async function processAudio(audioBlob) {
     if (state.ttsEnabled) {
       updateStatus('speaking', '🔊 Lecture audio...');
       await speakText(translation, targetLang);
+      decrementQuota('speak'); // Décrémenter le quota TTS
     } else {
       updateStatus('listening', '🎧 Prêt à écouter...');
     }
