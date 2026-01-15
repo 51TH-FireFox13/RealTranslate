@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RealTranslate - Traduction en Temps Réel</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+      color: #ffffff;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Main App Container */
+    #mainApp {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Login Screen */
+    .login-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+      z-index: 9999;
+    }
+
+    .login-box {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 40px;
+      width: 90%;
+      max-width: 400px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .login-box h2 {
+      text-align: center;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 2em;
+    }
+
+    .login-box p {
+      text-align: center;
+      color: #888;
+      margin-bottom: 30px;
+      font-size: 0.9em;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #aaa;
+      font-size: 0.9em;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px 15px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1em;
+      transition: all 0.3s ease;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: #00ff9d;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      border: none;
+      border-radius: 10px;
+      color: #000;
+      font-size: 1.1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .login-btn:active {
+      transform: translateY(0);
+    }
+
+    .login-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .error-message {
+      background: rgba(255, 107, 107, 0.2);
+      border: 1px solid rgba(255, 107, 107, 0.5);
+      color: #ff6b6b;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 0.9em;
+      text-align: center;
+    }
+
+    .success-message {
+      background: rgba(0, 255, 157, 0.2);
+      border: 1px solid rgba(0, 255, 157, 0.5);
+      color: #00ff9d;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 0.9em;
+      text-align: center;
+    }
+
+    /* Header */
+    header {
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      text-align: center;
+      border-bottom: 2px solid rgba(0, 255, 157, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-content {
+      flex: 1;
+      text-align: center;
+    }
+
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .user-info {
+      font-size: 0.85em;
+      color: #00ff9d;
+      padding: 8px 15px;
+      background: rgba(0, 255, 157, 0.1);
+      border-radius: 20px;
+      border: 1px solid rgba(0, 255, 157, 0.3);
+    }
+
+    .logout-btn, .admin-btn {
+      background: rgba(255, 107, 107, 0.2);
+      border: 1px solid rgba(255, 107, 107, 0.5);
+      color: #ff6b6b;
+      padding: 8px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85em;
+      transition: all 0.3s ease;
+    }
+
+    .admin-btn {
+      background: rgba(0, 162, 255, 0.2);
+      border: 1px solid rgba(0, 162, 255, 0.5);
+      color: #00a2ff;
+    }
+
+    .profile-btn {
+      background: rgba(0, 255, 157, 0.2);
+      border: 1px solid rgba(0, 255, 157, 0.5);
+      color: #00ff9d;
+      padding: 8px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85em;
+      transition: all 0.3s ease;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 107, 107, 0.3);
+    }
+
+    .admin-btn:hover {
+      background: rgba(0, 162, 255, 0.3);
+    }
+
+    .profile-btn:hover {
+      background: rgba(0, 255, 157, 0.3);
+    }
+
+    /* Admin Panel */
+    .admin-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .admin-content {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 30px;
+      width: 100%;
+      max-width: 900px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .admin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .admin-header h2 {
+      font-size: 1.8em;
+      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .close-admin-btn {
+      background: rgba(255, 107, 107, 0.2);
+      border: 1px solid rgba(255, 107, 107, 0.5);
+      color: #ff6b6b;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .close-admin-btn:hover {
+      background: rgba(255, 107, 107, 0.3);
+    }
+
+    .admin-section {
+      margin-bottom: 30px;
+    }
+
+    .admin-section h3 {
+      color: #00ff9d;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+    }
+
+    .users-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    .users-table th {
+      background: rgba(0, 255, 157, 0.1);
+      padding: 12px;
+      text-align: left;
+      border-bottom: 2px solid rgba(0, 255, 157, 0.3);
+      color: #00ff9d;
+      font-weight: 600;
+    }
+
+    .users-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .users-table tr:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .role-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+
+    .role-badge.admin {
+      background: rgba(255, 107, 107, 0.2);
+      border: 1px solid rgba(255, 107, 107, 0.5);
+      color: #ff6b6b;
+    }
+
+    .role-badge.user {
+      background: rgba(0, 162, 255, 0.2);
+      border: 1px solid rgba(0, 162, 255, 0.5);
+      color: #00a2ff;
+    }
+
+    .role-badge.guest {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #aaa;
+    }
+
+    .delete-user-btn {
+      background: rgba(255, 107, 107, 0.2);
+      border: 1px solid rgba(255, 107, 107, 0.5);
+      color: #ff6b6b;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85em;
+      transition: all 0.3s ease;
+    }
+
+    .delete-user-btn:hover {
+      background: rgba(255, 107, 107, 0.3);
+    }
+
+    .delete-user-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .create-user-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .create-user-form select {
+      width: 100%;
+      padding: 12px 15px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1em;
+      cursor: pointer;
+    }
+
+    .create-user-form select:focus {
+      outline: none;
+      border-color: #00ff9d;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .create-user-btn {
+      padding: 12px 24px;
+      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      border: none;
+      border-radius: 10px;
+      color: #000;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .create-user-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .create-user-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #00ff9d;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Control Buttons */
+    .control-buttons {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .control-btn {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 0.9em;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .control-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .control-btn.active {
+      background: linear-gradient(90deg, #00ff9d, #00d4aa);
+      border-color: #00ff9d;
+      color: #000;
+    }
+
+    .control-btn.muted {
+      background: rgba(255, 107, 107, 0.2);
+      border-color: rgba(255, 107, 107, 0.5);
+      color: #ff6b6b;
+    }
+
+    .control-btn.muted:hover {
+      background: rgba(255, 107, 107, 0.3);
+    }
+
+    /* Mode Switch */
+    .mode-switch-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .mode-switch-label {
+      font-size: 0.75em;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .mode-switch {
+      position: relative;
+      width: 120px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .mode-switch::before {
+      content: '';
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #00ff9d, #00a2ff);
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 10px rgba(0, 255, 157, 0.5);
+    }
+
+    .mode-switch.push-to-talk::before {
+      left: 75px;
+      background: linear-gradient(135deg, #ff6b6b, #ff9d00);
+      box-shadow: 0 2px 10px rgba(255, 107, 107, 0.5);
+    }
+
+    .mode-switch-text {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.6em;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .mode-switch-text.left {
+      left: 5px;
+      color: #888;
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .mode-switch-text.right {
+      right: 5px;
+      color: #00ff9d;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .mode-switch.push-to-talk .mode-switch-text.left {
+      color: #ff6b6b;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .mode-switch.push-to-talk .mode-switch-text.right {
+      color: #888;
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    /* Push to Talk Button */
+    .push-to-talk-btn {
+      position: fixed;
+      bottom: 150px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.3), rgba(255, 157, 0, 0.3));
+      border: 3px solid #ff6b6b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      z-index: 99;
+      transition: all 0.2s ease;
+      box-shadow: 0 10px 40px rgba(255, 107, 107, 0.3);
+    }
+
+    .push-to-talk-btn:hover {
+      transform: translateX(-50%) scale(1.05);
+      box-shadow: 0 15px 50px rgba(255, 107, 107, 0.5);
+    }
+
+    .push-to-talk-btn:active, .push-to-talk-btn.recording {
+      transform: translateX(-50%) scale(0.95);
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.5), rgba(255, 157, 0, 0.5));
+      box-shadow: 0 5px 30px rgba(255, 107, 107, 0.7);
+    }
+
+    .push-to-talk-btn .icon {
+      font-size: 4em;
+      margin-bottom: 10px;
+    }
+
+    .push-to-talk-btn .text {
+      font-size: 0.9em;
+      font-weight: 600;
+      color: #fff;
+      text-align: center;
+    }
+
+    /* Language Selection Screen */
+    .language-selection {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .lang-box {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 40px;
+      width: 90%;
+      max-width: 700px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      text-align: center;
+    }
+
+    .lang-box::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .lang-box::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+
+    .lang-box::-webkit-scrollbar-thumb {
+      background: rgba(0, 255, 157, 0.3);
+      border-radius: 10px;
+    }
+
+    .lang-box::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 255, 157, 0.5);
+    }
+
+    .lang-box h2 {
+      font-size: 2em;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .lang-box p {
+      color: #888;
+      margin-bottom: 30px;
+      font-size: 1em;
+    }
+
+    .lang-step {
+      margin-bottom: 40px;
+    }
+
+    .lang-step h3 {
+      color: #00ff9d;
+      margin-bottom: 20px;
+      font-size: 1.3em;
+    }
+
+    .lang-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .lang-flag {
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .lang-flag:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-5px);
+    }
+
+    .lang-flag.selected {
+      background: linear-gradient(135deg, rgba(0, 255, 157, 0.2), rgba(0, 162, 255, 0.2));
+      border-color: #00ff9d;
+    }
+
+    .lang-flag.suggested {
+      border-color: rgba(0, 255, 157, 0.5);
+      box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
+    }
+
+    .lang-flag .flag-emoji {
+      font-size: 3em;
+    }
+
+    .lang-flag .flag-name {
+      font-size: 0.9em;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .lang-continue-btn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      border: none;
+      border-radius: 10px;
+      color: #000;
+      font-size: 1.1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      margin-top: 20px;
+    }
+
+    .lang-continue-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .lang-continue-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    h1 {
+      font-size: 1.8em;
+      font-weight: 700;
+      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      font-size: 0.9em;
+      color: #888;
+      margin-top: 5px;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      padding: 15px;
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .status-bar.listening {
+      background: linear-gradient(90deg, #00ff9d, #00d4aa);
+      color: #000;
+    }
+
+    .status-bar.translating {
+      background: linear-gradient(90deg, #ffa500, #ff6b6b);
+      color: #fff;
+    }
+
+    .status-bar.speaking {
+      background: linear-gradient(90deg, #00a2ff, #0077ff);
+      color: #fff;
+    }
+
+    .status-bar.idle {
+      background: rgba(255, 255, 255, 0.1);
+      color: #aaa;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
+    /* Main Container */
+    .container {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding: 20px;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* Panels */
+    .panel {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .panel-header h2 {
+      font-size: 1.5em;
+      font-weight: 600;
+    }
+
+    .flag {
+      font-size: 2em;
+    }
+
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      scroll-behavior: smooth;
+    }
+
+    .panel-content::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .panel-content::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+
+    .panel-content::-webkit-scrollbar-thumb {
+      background: rgba(0, 255, 157, 0.3);
+      border-radius: 10px;
+    }
+
+    .panel-content::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 255, 157, 0.5);
+    }
+
+    .message {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      line-height: 1.6;
+      font-size: 1.05em;
+      animation: slideIn 0.3s ease;
+      word-wrap: break-word;
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .message-text {
+      flex: 1;
+      user-select: text;
+      cursor: text;
+    }
+
+    .copy-btn {
+      background: rgba(0, 255, 157, 0.2);
+      border: 1px solid rgba(0, 255, 157, 0.4);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: #00ff9d;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      min-width: 35px;
+      text-align: center;
+    }
+
+    .copy-btn:hover {
+      background: rgba(0, 255, 157, 0.3);
+      border-color: #00ff9d;
+      transform: scale(1.05);
+    }
+
+    .copy-btn:active {
+      transform: scale(0.95);
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fr-panel .message {
+      border-left: 4px solid #00a2ff;
+    }
+
+    .zh-panel .message {
+      border-left: 4px solid #ff6b6b;
+    }
+
+    /* Volume Indicator */
+    .volume-indicator {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .volume-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      width: 0%;
+      transition: width 0.1s ease;
+      border-radius: 10px;
+    }
+
+    /* Permission Modal */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: #1a1a2e;
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      max-width: 400px;
+    }
+
+    .modal-content h2 {
+      margin-bottom: 20px;
+      color: #00ff9d;
+    }
+
+    .modal-content button {
+      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      color: #000;
+      border: none;
+      padding: 15px 40px;
+      border-radius: 30px;
+      font-size: 1.1em;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: transform 0.2s ease;
+    }
+
+    .modal-content button:hover {
+      transform: scale(1.05);
+    }
+
+    .modal-content button:active {
+      transform: scale(0.95);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* Provider Badge */
+    .provider-badge {
+      background: rgba(0, 162, 255, 0.2);
+      border: 1px solid rgba(0, 162, 255, 0.5);
+      color: #00a2ff;
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .provider-badge:hover {
+      background: rgba(0, 162, 255, 0.3);
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      /* Layout */
+      .container {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 15px;
+      }
+
+      /* Header */
+      header {
+        padding: 15px;
+        flex-wrap: wrap;
+      }
+
+      h1 {
+        font-size: 1.5em;
+      }
+
+      .subtitle {
+        font-size: 0.9em;
+      }
+
+      .user-menu {
+        font-size: 0.9em;
+        gap: 10px;
+      }
+
+      /* Panels */
+      .panel {
+        padding: 15px;
+        min-height: 250px;
+      }
+
+      .panel-header h2 {
+        font-size: 1.4em;
+      }
+
+      .flag {
+        font-size: 2em;
+      }
+
+      /* Messages - TEXTE PLUS GROS pour mobile */
+      .message {
+        font-size: 1.3em;
+        padding: 18px;
+        margin-bottom: 18px;
+        line-height: 1.7;
+      }
+
+      /* Status Bar */
+      .status-bar {
+        font-size: 1.1em;
+        padding: 15px;
+      }
+
+      /* Control Buttons */
+      .control-buttons {
+        bottom: 70px;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .control-btn {
+        padding: 12px 20px;
+        font-size: 0.9em;
+        min-width: 110px;
+      }
+
+      /* Mode Switch */
+      .mode-switch {
+        width: 100px;
+        height: 45px;
+      }
+
+      .mode-switch::before {
+        width: 33px;
+        height: 33px;
+      }
+
+      .mode-switch.push-to-talk::before {
+        left: 62px;
+      }
+
+      .mode-switch-text {
+        font-size: 0.65em;
+      }
+
+      /* Push to Talk Button - Plus petit sur mobile */
+      .push-to-talk-btn {
+        width: 160px;
+        height: 160px;
+        bottom: 130px;
+      }
+
+      .push-to-talk-btn .icon {
+        font-size: 3em;
+      }
+
+      .push-to-talk-btn .text {
+        font-size: 0.8em;
+      }
+
+      /* Volume Indicator */
+      .volume-indicator {
+        width: 150px;
+        bottom: 15px;
+      }
+
+      /* Admin Panel */
+      .admin-content {
+        padding: 20px;
+        max-height: 85vh;
+      }
+
+      /* Language Selection */
+      .lang-box {
+        padding: 30px 20px;
+      }
+
+      .lang-grid {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 12px;
+      }
+
+      .lang-flag .flag-emoji {
+        font-size: 2.5em;
+      }
+
+      .lang-flag .flag-name {
+        font-size: 0.85em;
+      }
+
+      /* Login */
+      .login-box {
+        padding: 35px 25px;
+        max-width: 90%;
+      }
+    }
+
+    /* Très petit mobile */
+    @media (max-width: 480px) {
+      .message {
+        font-size: 1.2em;
+        padding: 15px;
+      }
+
+      .panel-header h2 {
+        font-size: 1.2em;
+      }
+
+      .control-buttons {
+        bottom: 60px;
+        gap: 8px;
+      }
+
+      .control-btn {
+        min-width: 95px;
+        padding: 10px 15px;
+      }
+
+      .push-to-talk-btn {
+        width: 140px;
+        height: 140px;
+        bottom: 120px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="loginContainer" class="login-container">
+    <div class="login-box">
+      <h2>🔐 RealTranslate</h2>
+      <p>Connexion requise</p>
+
+      <div id="loginError" class="error-message hidden"></div>
+
+      <!-- Tabs de connexion -->
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button id="emailLoginTab" onclick="switchLoginMode('email')" style="flex: 1; padding: 10px; background: #00ff9d; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
+          📧 Email / Mot de passe
+        </button>
+        <button id="tokenLoginTab" onclick="switchLoginMode('token')" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer;">
+          🎫 Jeton d'accès
+        </button>
+      </div>
+
+      <form id="loginForm" onsubmit="return false;">
+        <!-- Email/Password Login -->
+        <div id="emailLoginFields">
+          <div class="input-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="admin@realtranslate.com" autocomplete="email">
+          </div>
+
+          <div class="input-group">
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+          </div>
+        </div>
+
+        <!-- Access Token Login -->
+        <div id="tokenLoginFields" style="display: none;">
+          <div class="input-group">
+            <label for="accessTokenInput">Jeton d'accès</label>
+            <input type="text" id="accessTokenInput" placeholder="AT-xxxxxxxxxxxxxxxxxx">
+            <p style="color: #888; font-size: 0.85em; margin-top: 5px;">Collez votre jeton d'accès fourni par l'administrateur</p>
+          </div>
+        </div>
+
+        <button type="submit" class="login-btn" id="loginBtn">Se connecter</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Permission Modal -->
+  <div id="permissionModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>🎤 Autorisation Microphone</h2>
+      <p>RealTranslate a besoin d'accéder à votre microphone pour la traduction en temps réel.</p>
+      <button onclick="requestMicrophonePermission()">Activer le Microphone</button>
+    </div>
+  </div>
+
+  <!-- Main App (hidden until logged in) -->
+  <div id="mainApp" class="hidden">
+    <!-- Language Selection Screen -->
+    <div id="languageSelection" class="language-selection">
+      <div class="lang-box">
+        <h2>🌍 RealTranslate</h2>
+        <p>Choisissez vos langues de traduction</p>
+
+        <div class="lang-step">
+          <h3>📱 Votre langue</h3>
+          <div class="lang-grid" id="lang1Grid">
+            <div class="lang-flag" data-lang="fr" onclick="selectLang1('fr')">
+              <div class="flag-emoji">🇫🇷</div>
+              <div class="flag-name">Français</div>
+            </div>
+            <div class="lang-flag" data-lang="en" onclick="selectLang1('en')">
+              <div class="flag-emoji">🇬🇧</div>
+              <div class="flag-name">English</div>
+            </div>
+            <div class="lang-flag" data-lang="zh" onclick="selectLang1('zh')">
+              <div class="flag-emoji">🇨🇳</div>
+              <div class="flag-name">中文</div>
+            </div>
+            <div class="lang-flag" data-lang="de" onclick="selectLang1('de')">
+              <div class="flag-emoji">🇩🇪</div>
+              <div class="flag-name">Deutsch</div>
+            </div>
+            <div class="lang-flag" data-lang="es" onclick="selectLang1('es')">
+              <div class="flag-emoji">🇪🇸</div>
+              <div class="flag-name">Español</div>
+            </div>
+            <div class="lang-flag" data-lang="it" onclick="selectLang1('it')">
+              <div class="flag-emoji">🇮🇹</div>
+              <div class="flag-name">Italiano</div>
+            </div>
+            <div class="lang-flag" data-lang="pt" onclick="selectLang1('pt')">
+              <div class="flag-emoji">🇵🇹</div>
+              <div class="flag-name">Português</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lang-step" id="lang2Section" style="display: none;">
+          <h3>🗣️ Langue à traduire</h3>
+          <div class="lang-grid" id="lang2Grid">
+            <!-- Langues disponibles seront ajoutées dynamiquement -->
+          </div>
+        </div>
+
+        <!-- Pricing Button -->
+        <div style="text-align: center; margin: 20px 0;">
+          <button onclick="showPricingPage()" style="padding: 12px 30px; background: linear-gradient(135deg, #ffd43b, #ff9800); color: #000; border: none; border-radius: 10px; cursor: pointer; font-size: 1em; font-weight: bold; box-shadow: 0 4px 15px rgba(255, 212, 59, 0.3); transition: transform 0.2s;">
+            💎 Voir les tarifs et fonctionnalités
+          </button>
+        </div>
+
+        <button class="lang-continue-btn" id="langContinueBtn" onclick="startTranslation()" disabled>
+          Commencer la traduction
+        </button>
+      </div>
+    </div>
+
+    <!-- Pricing Page -->
+    <div id="pricingPage" class="language-selection hidden">
+      <div class="lang-box" style="max-width: 1000px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2>💎 Tarifs & Fonctionnalités</h2>
+          <button onclick="hidePricingPage()" style="padding: 8px 20px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer;">
+            ← Retour
+          </button>
+        </div>
+        <p style="color: #ccc; text-align: center; margin-bottom: 30px;" id="pricingSubtitle">Choisissez le plan adapté à vos besoins</p>
+
+        <!-- Pricing Cards Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-bottom: 40px;">
+          <!-- FREE -->
+          <div style="padding: 30px 25px; background: linear-gradient(135deg, rgba(136,136,136,0.1), rgba(100,100,100,0.1)); border-radius: 15px; border: 2px solid #888; position: relative; overflow: hidden;">
+            <div style="text-align: center; margin-bottom: 25px;">
+              <div style="font-size: 3.5em; margin-bottom: 10px;">🆓</div>
+              <div style="font-weight: bold; color: #fff; font-size: 1.4em; margin-bottom: 5px;" data-i18n="pricing-free-title">GRATUIT</div>
+              <div style="font-size: 2em; color: #888; font-weight: bold;">0€</div>
+              <div style="color: #888; font-size: 0.9em;" data-i18n="pricing-per-month">/mois</div>
+            </div>
+            <div style="color: #ccc; font-size: 0.95em; line-height: 2;">
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span><strong>10</strong> <span data-i18n="pricing-transcriptions">transcriptions</span>/jour</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span><strong>50</strong> <span data-i18n="pricing-translations">traductions</span>/jour</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span><strong>10</strong> <span data-i18n="pricing-tts">synthèses vocales</span>/jour</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-7-languages">7 langues disponibles</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PREMIUM -->
+          <div style="padding: 30px 25px; background: linear-gradient(135deg, rgba(255,212,59,0.15), rgba(255,152,0,0.15)); border-radius: 15px; border: 3px solid #ffd43b; position: relative; transform: scale(1.05); box-shadow: 0 8px 30px rgba(255,212,59,0.3);">
+            <div style="position: absolute; top: -12px; right: 20px; background: #ffd43b; color: #000; padding: 5px 15px; border-radius: 15px; font-size: 0.8em; font-weight: bold;" data-i18n="pricing-popular">POPULAIRE</div>
+            <div style="text-align: center; margin-bottom: 25px;">
+              <div style="font-size: 3.5em; margin-bottom: 10px;">⭐</div>
+              <div style="font-weight: bold; color: #fff; font-size: 1.4em; margin-bottom: 5px;" data-i18n="pricing-premium-title">PREMIUM</div>
+              <div style="font-size: 2em; color: #ffd43b; font-weight: bold;">9.99€</div>
+              <div style="color: #ffd43b; font-size: 0.9em;" data-i18n="pricing-per-month">/mois</div>
+            </div>
+            <div style="color: #ccc; font-size: 0.95em; line-height: 2;">
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #ffd43b; margin-right: 10px;">✓</span>
+                <span><strong>500</strong> <span data-i18n="pricing-transcriptions">transcriptions</span>/jour</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #ffd43b; margin-right: 10px;">✓</span>
+                <span><strong>2000</strong> <span data-i18n="pricing-translations">traductions</span>/jour</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #ffd43b; margin-right: 10px;">✓</span>
+                <span><strong>500</strong> <span data-i18n="pricing-tts">synthèses vocales</span>/jour</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #ffd43b; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-7-languages">7 langues disponibles</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #ffd43b; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-priority-support">Support prioritaire</span>
+              </div>
+            </div>
+            <button onclick="subscribePlan('premium')" style="width: 100%; margin-top: 20px; padding: 15px; background: #ffd43b; color: #000; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1em; cursor: pointer;" data-i18n="pricing-subscribe">
+              S'abonner
+            </button>
+          </div>
+
+          <!-- ENTERPRISE -->
+          <div style="padding: 30px 25px; background: linear-gradient(135deg, rgba(0,255,157,0.15), rgba(0,200,120,0.15)); border-radius: 15px; border: 2px solid #00ff9d; position: relative;">
+            <div style="text-align: center; margin-bottom: 25px;">
+              <div style="font-size: 3.5em; margin-bottom: 10px;">💎</div>
+              <div style="font-weight: bold; color: #fff; font-size: 1.4em; margin-bottom: 5px;" data-i18n="pricing-enterprise-title">ENTERPRISE</div>
+              <div style="font-size: 2em; color: #00ff9d; font-weight: bold;">49.99€</div>
+              <div style="color: #00ff9d; font-size: 0.9em;" data-i18n="pricing-per-month">/mois</div>
+            </div>
+            <div style="color: #ccc; font-size: 0.95em; line-height: 2;">
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-unlimited-transcriptions"><strong>Illimité</strong> transcriptions</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-unlimited-translations"><strong>Illimité</strong> traductions</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-unlimited-tts"><strong>Illimité</strong> synthèses vocales</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-7-languages">7 langues disponibles</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-dedicated-support">Support dédié 24/7</span>
+              </div>
+              <div style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #00ff9d; margin-right: 10px;">✓</span>
+                <span data-i18n="pricing-api-access">Accès API</span>
+              </div>
+            </div>
+            <button onclick="subscribePlan('enterprise')" style="width: 100%; margin-top: 20px; padding: 15px; background: #00ff9d; color: #000; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1em; cursor: pointer;" data-i18n="pricing-subscribe">
+              S'abonner
+            </button>
+          </div>
+        </div>
+
+        <!-- Payment Methods -->
+        <div style="background: rgba(255,255,255,0.05); border-radius: 15px; padding: 25px; margin-bottom: 30px;">
+          <h3 style="text-align: center; color: #fff; margin-bottom: 20px;" data-i18n="pricing-payment-methods">Modes de paiement acceptés</h3>
+          <div style="display: flex; justify-content: center; align-items: center; gap: 40px; flex-wrap: wrap;">
+            <div style="text-align: center;">
+              <div style="font-size: 3em; margin-bottom: 8px;">💳</div>
+              <div style="color: #ccc; font-weight: bold;">PayPal</div>
+              <div style="color: #888; font-size: 0.85em;" data-i18n="pricing-europe-region">Europe & International</div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 3em; margin-bottom: 8px;">💚</div>
+              <div style="color: #ccc; font-weight: bold;">WeChat Pay</div>
+              <div style="color: #888; font-size: 0.85em;" data-i18n="pricing-asia-region">Chine & Asie du Sud-Est</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FAQ Section -->
+        <div style="background: rgba(255,255,255,0.03); border-radius: 15px; padding: 25px;">
+          <h3 style="text-align: center; color: #fff; margin-bottom: 20px;" data-i18n="pricing-faq">Questions fréquentes</h3>
+          <div style="color: #ccc; line-height: 1.8;">
+            <div style="margin-bottom: 15px;">
+              <strong style="color: #00ff9d;" data-i18n="pricing-faq-q1">🔹 Comment fonctionne l'abonnement ?</strong>
+              <p style="margin: 5px 0 0 20px;" data-i18n="pricing-faq-a1">Votre abonnement est actif immédiatement après paiement et se renouvelle automatiquement chaque mois.</p>
+            </div>
+            <div style="margin-bottom: 15px;">
+              <strong style="color: #00ff9d;" data-i18n="pricing-faq-q2">🔹 Puis-je annuler à tout moment ?</strong>
+              <p style="margin: 5px 0 0 20px;" data-i18n="pricing-faq-a2">Oui, vous pouvez annuler votre abonnement à tout moment. Vous conserverez l'accès jusqu'à la fin de la période payée.</p>
+            </div>
+            <div style="margin-bottom: 15px;">
+              <strong style="color: #00ff9d;" data-i18n="pricing-faq-q3">🔹 Les quotas se reportent-ils ?</strong>
+              <p style="margin: 5px 0 0 20px;" data-i18n="pricing-faq-a3">Non, les quotas sont journaliers et se réinitialisent à minuit (heure UTC).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <header>
+      <div style="width: 100px;"></div>
+      <div class="header-content">
+        <h1>RealTranslate</h1>
+        <div class="subtitle" id="appSubtitle">Traduction en Temps Réel</div>
+      </div>
+      <div class="user-menu">
+        <div id="providerBadge" class="provider-badge hidden">
+          <span id="providerName">-</span>
+        </div>
+        <span class="user-info" id="userInfo"></span>
+        <button class="admin-btn hidden" id="adminBtn" onclick="showAdminPanel()">👤 Admin</button>
+        <button class="profile-btn" id="profileBtn" onclick="showProfilePanel()">⚙️ Profil</button>
+        <button class="logout-btn" onclick="logout()">↗ Logout</button>
+      </div>
+    </header>
+
+  <!-- Status Bar -->
+  <div id="statusBar" class="status-bar idle">
+    <div class="status-indicator"></div>
+    <span id="statusText">Initialisation...</span>
+  </div>
+
+  <!-- Main Container -->
+  <div class="container">
+    <!-- French Panel -->
+    <div class="panel fr-panel">
+      <div class="panel-header">
+        <span class="flag">🇫🇷</span>
+        <h2>Français</h2>
+      </div>
+      <div id="frContent" class="panel-content"></div>
+    </div>
+
+    <!-- Chinese Panel -->
+    <div class="panel zh-panel">
+      <div class="panel-header">
+        <span class="flag">🇨🇳</span>
+        <h2>中文</h2>
+      </div>
+      <div id="zhContent" class="panel-content"></div>
+    </div>
+  </div>
+
+    <!-- Volume Indicator -->
+    <div class="volume-indicator">
+      <div id="volumeBar" class="volume-bar"></div>
+    </div>
+
+    <!-- Control Buttons -->
+    <div class="control-buttons">
+      <button class="control-btn active" id="micBtn" onclick="toggleMicrophone()">
+        <span id="micIcon">🎤</span>
+        <span id="micText">Micro ON</span>
+      </button>
+
+      <div class="mode-switch-container">
+        <div class="mode-switch-label">Mode</div>
+        <div class="mode-switch" id="modeSwitch" onclick="toggleMode()">
+          <span class="mode-switch-text right">Temps Réel</span>
+          <span class="mode-switch-text left">PTT</span>
+        </div>
+      </div>
+
+      <button class="control-btn active" id="ttsBtn" onclick="toggleTTS()">
+        <span id="ttsIcon">🔊</span>
+        <span id="ttsText">Audio ON</span>
+      </button>
+    </div>
+
+    <!-- Push to Talk Button (hidden by default) -->
+    <div class="push-to-talk-btn hidden" id="pushToTalkBtn">
+      <div class="icon">🎤</div>
+      <div class="text">Maintenir<br>pour parler</div>
+    </div>
+  </div>
+
+  <!-- Admin Panel -->
+  <div id="adminPanel" class="admin-panel hidden">
+    <div class="admin-content">
+      <div class="admin-header">
+        <h2>👤 Panneau Administrateur</h2>
+        <button class="close-admin-btn" onclick="closeAdminPanel()">✕ Fermer</button>
+      </div>
+
+      <!-- Admin Tabs -->
+      <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        <button id="tabUsers" onclick="switchAdminTab('users')" style="flex: 1; padding: 12px 20px; background: #00ff9d; color: #000; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-weight: bold; font-size: 1em;">
+          👥 Utilisateurs
+        </button>
+        <button id="tabSubscriptions" onclick="switchAdminTab('subscriptions')" style="flex: 1; padding: 12px 20px; background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 1em;">
+          💳 Abonnements & Jetons
+        </button>
+        <button id="tabLogs" onclick="switchAdminTab('logs')" style="flex: 1; padding: 12px 20px; background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 1em;">
+          📋 Logs
+        </button>
+      </div>
+
+      <!-- TAB 1: UTILISATEURS -->
+      <div id="adminTabUsers" style="display: block;">
+        <!-- Create User Section -->
+      <div class="admin-section">
+        <h3>➕ Créer un utilisateur</h3>
+        <div id="adminMessage" class="hidden" style="margin-bottom: 15px;"></div>
+        <form class="create-user-form" onsubmit="return false;">
+          <div class="input-group" style="margin-bottom: 0;">
+            <input type="email" id="newUserEmail" placeholder="Email" required>
+          </div>
+          <div class="input-group" style="margin-bottom: 0;">
+            <input type="password" id="newUserPassword" placeholder="Mot de passe" required>
+          </div>
+          <div class="input-group" style="margin-bottom: 0;">
+            <select id="newUserRole">
+              <option value="user">Utilisateur</option>
+              <option value="admin">Admin</option>
+              <option value="guest">Invité</option>
+            </select>
+          </div>
+          <button class="create-user-btn" id="createUserBtn" onclick="createUser()">Créer</button>
+        </form>
+      </div>
+
+        <!-- Users List Section -->
+        <div class="admin-section">
+          <h3>👥 Liste des Utilisateurs</h3>
+          <div id="usersTableContainer">
+            <div style="text-align: center; padding: 20px; color: #888;">
+              <div class="loading-spinner" style="margin: 0 auto 10px;"></div>
+              <p>Chargement...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: ABONNEMENTS & JETONS -->
+      <div id="adminTabSubscriptions" style="display: none;">
+        <!-- Access Token Management Section -->
+      <div class="admin-section">
+        <h3>🎫 Gestion des Jetons d'Accès</h3>
+        <div style="margin-bottom: 15px;">
+          <p style="color: #888; font-size: 0.9em; margin-bottom: 10px;">Générer un jeton d'accès à usage unique</p>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+            <select id="tokenTier" style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+              <option value="free">🆓 Gratuit</option>
+              <option value="premium">⭐ Premium</option>
+              <option value="enterprise">💎 Enterprise</option>
+            </select>
+            <div style="flex: 1; min-width: 150px;">
+              <label style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Max utilisations</label>
+              <input type="number" id="tokenMaxUses" value="1" min="1" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+            </div>
+            <div style="flex: 1; min-width: 150px;">
+              <label style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Validité (jours)</label>
+              <input type="number" id="tokenExpiryDays" value="30" min="1" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+            </div>
+            <input type="text" id="tokenDescription" placeholder="Description (optionnelle)" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+            <button class="create-user-btn" onclick="generateAccessToken()" style="margin: 0; align-self: flex-end;">🎫 Générer</button>
+          </div>
+        </div>
+        <div id="tokenResult" style="margin-bottom: 15px;"></div>
+
+        <!-- Liste des jetons -->
+        <div style="margin-top: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h4 style="margin: 0; color: #fff;">Jetons actifs</h4>
+            <button class="create-user-btn" onclick="loadAccessTokens()" style="margin: 0; padding: 8px 15px; font-size: 0.9em;">🔄 Actualiser</button>
+          </div>
+          <div id="tokensListContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 300px; overflow-y: auto;">
+            <div style="text-align: center; padding: 20px; color: #888;">
+              <p>Cliquez sur Actualiser pour afficher les jetons</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+        <!-- Subscription Management Section -->
+        <div class="admin-section">
+          <h3>💳 Gestion des Abonnements</h3>
+          <div style="margin-bottom: 15px;">
+            <p style="color: #888; font-size: 0.9em; margin-bottom: 10px;">Mettre à jour l'abonnement d'un utilisateur</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <input type="email" id="subscriptionEmail" placeholder="Email de l'utilisateur" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+              <select id="subscriptionTier" style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+                <option value="free">🆓 Gratuit (10/50/10)</option>
+                <option value="premium">⭐ Premium (500/2000/500) - 9.99€</option>
+                <option value="enterprise">💎 Enterprise (Illimité) - 49.99€</option>
+              </select>
+              <button class="create-user-btn" onclick="updateUserSubscription()" style="margin: 0;">✅ Mettre à jour</button>
+              <button class="create-user-btn" onclick="deleteUserSubscription()" style="margin: 0; background: #ff6b6b;">🗑️ Supprimer</button>
+            </div>
+          </div>
+          <div id="subscriptionResult" style="margin-top: 10px;"></div>
+        </div>
+      </div>
+
+      <!-- TAB 3: LOGS -->
+      <div id="adminTabLogs" style="display: none;">
+          <!-- Logs Viewer Section -->
+        <div class="admin-section">
+          <h3>📋 Visualisation des Logs</h3>
+          <div style="margin-bottom: 15px;">
+            <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 10px;">
+              <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Type de log</label>
+                <select id="logType" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+                  <option value="app">Application (app.log)</option>
+                  <option value="error">Erreurs (error.log)</option>
+                  <option value="access">Accès (access.log)</option>
+                  <option value="auth">Authentification (auth.log)</option>
+                  <option value="api">API (api.log)</option>
+                </select>
+              </div>
+              <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Filtrer par date/heure (optionnel)</label>
+                <input type="datetime-local" id="logDateFilter" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+              </div>
+              <button class="create-user-btn" onclick="loadLogs()" style="margin: 0;">🔄 Actualiser</button>
+              <button class="create-user-btn" onclick="exportLogs()" style="margin: 0; background: #ffd43b; color: #000;">📥 Exporter</button>
+            </div>
+          </div>
+          <div id="logsContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 400px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.85em; line-height: 1.6;">
+            <div style="text-align: center; padding: 20px; color: #888;">
+              <p>Sélectionnez un type de log et cliquez sur Actualiser</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Panel -->
+  <div id="profilePanel" class="admin-panel hidden">
+    <div class="admin-content">
+      <div class="admin-header">
+        <h2>⚙️ Mon Profil</h2>
+        <button class="close-admin-btn" onclick="closeProfilePanel()">✕ Fermer</button>
+      </div>
+
+      <!-- Profile Info -->
+      <div class="admin-section">
+        <h3>👤 Informations du compte</h3>
+        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+          <div style="display: grid; gap: 10px;">
+            <div>
+              <span style="color: #888;">Email:</span>
+              <span id="profileEmail" style="color: #fff; margin-left: 10px; font-weight: bold;">-</span>
+            </div>
+            <div>
+              <span style="color: #888;">Abonnement:</span>
+              <span id="profileTier" style="color: #00ff9d; margin-left: 10px; font-weight: bold;">-</span>
+            </div>
+            <div id="profileQuotas" style="color: #888; font-size: 0.9em; margin-top: 5px;">
+              Chargement des quotas...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Change Password -->
+      <div class="admin-section">
+        <h3>🔐 Changer le mot de passe</h3>
+        <div id="changePasswordMessage" class="hidden" style="margin-bottom: 15px;"></div>
+        <form class="create-user-form" onsubmit="return false;">
+          <div class="input-group" style="margin-bottom: 0;">
+            <input type="password" id="currentPassword" placeholder="Mot de passe actuel" required>
+          </div>
+          <div class="input-group" style="margin-bottom: 0;">
+            <input type="password" id="newPassword" placeholder="Nouveau mot de passe" required>
+          </div>
+          <div class="input-group" style="margin-bottom: 0;">
+            <input type="password" id="confirmNewPassword" placeholder="Confirmer le nouveau mot de passe" required>
+          </div>
+          <button class="create-user-btn" onclick="changePassword()">Changer le mot de passe</button>
+        </form>
+      </div>
+
+      <!-- History Management -->
+      <div class="admin-section">
+        <h3>📜 Historique des traductions</h3>
+        <div style="margin-bottom: 15px;">
+          <p style="color: #888; font-size: 0.9em;">Votre historique est crypté et stocké de manière sécurisée.</p>
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="create-user-btn" onclick="viewHistory()" style="margin: 0; flex: 1;">📖 Voir l'historique</button>
+            <button class="create-user-btn" onclick="deleteHistory()" style="margin: 0; flex: 1; background: #ff6b6b; color: #fff;">🗑️ Supprimer l'historique</button>
+          </div>
+        </div>
+        <div id="historyContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 300px; overflow-y: auto; display: none;">
+          <div id="historyContent"></div>
+        </div>
+      </div>
+
+      <!-- Delete Account -->
+      <div class="admin-section" style="border: 2px solid #ff6b6b; border-radius: 10px; padding: 20px;">
+        <h3 style="color: #ff6b6b;">⚠️ Zone dangereuse</h3>
+        <p style="color: #888; font-size: 0.9em; margin-bottom: 15px;">La suppression de votre compte est irréversible. Toutes vos données seront définitivement supprimées.</p>
+        <div id="deleteAccountMessage" class="hidden" style="margin-bottom: 15px;"></div>
+        <form class="create-user-form" onsubmit="return false;">
+          <div class="input-group" style="margin-bottom: 0;">
+            <input type="password" id="deleteAccountPassword" placeholder="Confirmer avec votre mot de passe" required>
+          </div>
+          <button class="create-user-btn" onclick="deleteAccount()" style="background: #ff6b6b; color: #fff;">🗑️ Supprimer mon compte</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

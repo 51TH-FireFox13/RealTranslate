@@ -1,0 +1,5 @@
+# Ignorer le fichier de clés API
+keys.php
+
+# Ignorer les fichiers de test
+test.php
