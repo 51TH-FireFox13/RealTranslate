@@ -462,15 +462,61 @@ function showAdminMessage(message, type) {
   }, 5000);
 }
 
+// ===================================
+// GESTION DES ONGLETS ADMIN
+// ===================================
+
+function switchAdminTab(tab) {
+  // Masquer tous les onglets
+  document.getElementById('adminTabUsers').style.display = 'none';
+  document.getElementById('adminTabSubscriptions').style.display = 'none';
+  document.getElementById('adminTabLogs').style.display = 'none';
+
+  // Réinitialiser les styles des boutons
+  const buttons = ['tabUsers', 'tabSubscriptions', 'tabLogs'];
+  buttons.forEach(btnId => {
+    const btn = document.getElementById(btnId);
+    btn.style.background = 'rgba(255,255,255,0.1)';
+    btn.style.color = '#fff';
+    btn.style.fontWeight = 'normal';
+  });
+
+  // Afficher l'onglet sélectionné et mettre en surbrillance le bouton
+  if (tab === 'users') {
+    document.getElementById('adminTabUsers').style.display = 'block';
+    document.getElementById('tabUsers').style.background = '#00ff9d';
+    document.getElementById('tabUsers').style.color = '#000';
+    document.getElementById('tabUsers').style.fontWeight = 'bold';
+  } else if (tab === 'subscriptions') {
+    document.getElementById('adminTabSubscriptions').style.display = 'block';
+    document.getElementById('tabSubscriptions').style.background = '#00ff9d';
+    document.getElementById('tabSubscriptions').style.color = '#000';
+    document.getElementById('tabSubscriptions').style.fontWeight = 'bold';
+  } else if (tab === 'logs') {
+    document.getElementById('adminTabLogs').style.display = 'block';
+    document.getElementById('tabLogs').style.background = '#00ff9d';
+    document.getElementById('tabLogs').style.color = '#000';
+    document.getElementById('tabLogs').style.fontWeight = 'bold';
+  }
+}
+
+// ===================================
+// VISUALISATION DES LOGS
+// ===================================
+
+// Variable globale pour stocker les logs actuels (pour export)
+let currentLogs = [];
+
 // Charger et afficher les logs
 async function loadLogs() {
   const logType = document.getElementById('logType').value;
+  const dateFilter = document.getElementById('logDateFilter').value;
   const container = document.getElementById('logsContainer');
 
   try {
     container.innerHTML = '<div style="text-align: center; padding: 20px; color: #888;"><p>Chargement...</p></div>';
 
-    const response = await fetch(`${API_BASE_URL}/api/auth/logs?type=${logType}&lines=200`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/logs?type=${logType}&lines=500`, {
       headers: {
         'Authorization': `Bearer ${state.token}`
       }
@@ -481,14 +527,32 @@ async function loadLogs() {
     }
 
     const data = await response.json();
+    let filteredLines = data.lines;
 
-    if (data.lines.length === 0) {
+    // Filtrer par date si spécifié
+    if (dateFilter) {
+      const filterDate = new Date(dateFilter);
+      filteredLines = data.lines.filter(line => {
+        // Essayer d'extraire la date du log (format ISO ou autre)
+        const dateMatch = line.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+        if (dateMatch) {
+          const logDate = new Date(dateMatch[0]);
+          return logDate >= filterDate;
+        }
+        return true; // Garder les lignes sans date reconnaissable
+      });
+    }
+
+    // Stocker pour export
+    currentLogs = filteredLines;
+
+    if (filteredLines.length === 0) {
       container.innerHTML = '<div style="text-align: center; padding: 20px; color: #888;"><p>Aucun log disponible</p></div>';
       return;
     }
 
     // Afficher les logs avec coloration
-    const logsHTML = data.lines.map(line => {
+    const logsHTML = filteredLines.map(line => {
       let color = '#fff';
       if (line.includes('[ERROR]')) color = '#ff6b6b';
       else if (line.includes('[WARN]')) color = '#ffd43b';
@@ -497,9 +561,10 @@ async function loadLogs() {
       return `<div style="color: ${color}; margin-bottom: 5px; word-wrap: break-word;">${escapeHtml(line)}</div>`;
     }).join('');
 
+    const filterInfo = dateFilter ? ` | Filtrés depuis ${new Date(dateFilter).toLocaleString('fr-FR')}` : '';
     container.innerHTML = `
       <div style="margin-bottom: 10px; color: #888; text-align: right;">
-        Total: ${data.total} lignes | Affichage: ${data.lines.length} dernières
+        Total: ${data.total} lignes | Affichage: ${filteredLines.length}${filterInfo}
       </div>
       ${logsHTML}
     `;
@@ -513,12 +578,44 @@ async function loadLogs() {
   }
 }
 
+// Exporter les logs actuels
+function exportLogs() {
+  if (currentLogs.length === 0) {
+    alert('Aucun log à exporter. Veuillez d\'abord charger les logs.');
+    return;
+  }
+
+  const logType = document.getElementById('logType').value;
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+  const filename = `realtranslate-${logType}-${timestamp}.log`;
+
+  // Créer le contenu du fichier
+  const content = currentLogs.join('\n');
+
+  // Créer un blob et télécharger
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  console.log(`✅ Export de ${currentLogs.length} lignes vers ${filename}`);
+}
+
 // Fonction utilitaire pour échapper le HTML
 function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
 }
+
+// ===================================
+// GESTION DES ABONNEMENTS
+// ===================================
 
 // Mettre à jour l'abonnement d'un utilisateur
 async function updateUserSubscription() {
@@ -565,6 +662,58 @@ async function updateUserSubscription() {
 
   } catch (error) {
     console.error('Erreur mise à jour abonnement:', error);
+    resultDiv.innerHTML = `<p style="color: #ff6b6b;">❌ ${error.message}</p>`;
+  }
+}
+
+// Supprimer l'abonnement d'un utilisateur (réinitialisation vers gratuit)
+async function deleteUserSubscription() {
+  const email = document.getElementById('subscriptionEmail').value.trim();
+  const resultDiv = document.getElementById('subscriptionResult');
+
+  if (!email) {
+    resultDiv.innerHTML = '<p style="color: #ff6b6b;">⚠️ Veuillez entrer un email</p>';
+    return;
+  }
+
+  if (!confirm(`Êtes-vous sûr de vouloir réinitialiser l'abonnement de ${email} vers le palier gratuit ?`)) {
+    return;
+  }
+
+  try {
+    resultDiv.innerHTML = '<p style="color: #888;">⏳ Réinitialisation en cours...</p>';
+
+    const response = await fetch(`${API_BASE_URL}/api/auth/subscription`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, tier: 'free' })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Erreur lors de la réinitialisation');
+    }
+
+    const data = await response.json();
+    resultDiv.innerHTML = '<p style="color: #00ff9d;">✅ Abonnement réinitialisé vers Gratuit</p>';
+
+    // Réinitialiser les champs
+    document.getElementById('subscriptionEmail').value = '';
+    document.getElementById('subscriptionTier').value = 'free';
+
+    // Recharger la liste des utilisateurs
+    loadUsers();
+
+    // Effacer le message après 3 secondes
+    setTimeout(() => {
+      resultDiv.innerHTML = '';
+    }, 3000);
+
+  } catch (error) {
+    console.error('Erreur réinitialisation abonnement:', error);
     resultDiv.innerHTML = `<p style="color: #ff6b6b;">❌ ${error.message}</p>`;
   }
 }

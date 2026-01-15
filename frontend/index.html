@@ -1238,6 +1238,56 @@
           </div>
         </div>
 
+        <!-- Pricing Info Section -->
+        <div style="margin: 30px 0; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+          <h3 style="margin: 0 0 15px 0; color: #fff; font-size: 1.1em; text-align: center;">💎 Paliers d'Abonnement</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <!-- Gratuit -->
+            <div style="padding: 15px; background: rgba(136,136,136,0.1); border-radius: 10px; border: 2px solid #888;">
+              <div style="text-align: center; margin-bottom: 10px;">
+                <div style="font-size: 2em;">🆓</div>
+                <div style="font-weight: bold; color: #888; font-size: 1.1em; margin-top: 5px;">GRATUIT</div>
+              </div>
+              <div style="color: #ccc; font-size: 0.9em; line-height: 1.6;">
+                <div style="margin-bottom: 5px;">✓ 10 transcriptions/jour</div>
+                <div style="margin-bottom: 5px;">✓ 50 traductions/jour</div>
+                <div>✓ 10 synthèses vocales/jour</div>
+              </div>
+            </div>
+
+            <!-- Premium -->
+            <div style="padding: 15px; background: rgba(255,212,59,0.1); border-radius: 10px; border: 2px solid #ffd43b;">
+              <div style="text-align: center; margin-bottom: 10px;">
+                <div style="font-size: 2em;">⭐</div>
+                <div style="font-weight: bold; color: #ffd43b; font-size: 1.1em; margin-top: 5px;">PREMIUM</div>
+                <div style="color: #ffd43b; font-size: 0.9em; margin-top: 3px;">9.99€/mois</div>
+              </div>
+              <div style="color: #ccc; font-size: 0.9em; line-height: 1.6;">
+                <div style="margin-bottom: 5px;">✓ 500 transcriptions/jour</div>
+                <div style="margin-bottom: 5px;">✓ 2000 traductions/jour</div>
+                <div>✓ 500 synthèses vocales/jour</div>
+              </div>
+            </div>
+
+            <!-- Enterprise -->
+            <div style="padding: 15px; background: rgba(0,255,157,0.1); border-radius: 10px; border: 2px solid #00ff9d;">
+              <div style="text-align: center; margin-bottom: 10px;">
+                <div style="font-size: 2em;">💎</div>
+                <div style="font-weight: bold; color: #00ff9d; font-size: 1.1em; margin-top: 5px;">ENTERPRISE</div>
+                <div style="color: #00ff9d; font-size: 0.9em; margin-top: 3px;">49.99€/mois</div>
+              </div>
+              <div style="color: #ccc; font-size: 0.9em; line-height: 1.6;">
+                <div style="margin-bottom: 5px;">✓ Transcriptions illimitées</div>
+                <div style="margin-bottom: 5px;">✓ Traductions illimitées</div>
+                <div>✓ Synthèses vocales illimitées</div>
+              </div>
+            </div>
+          </div>
+          <p style="text-align: center; margin: 15px 0 0 0; color: #888; font-size: 0.85em;">
+            💡 Contactez l'administrateur pour mettre à niveau votre abonnement
+          </p>
+        </div>
+
         <button class="lang-continue-btn" id="langContinueBtn" onclick="startTranslation()" disabled>
           Commencer la traduction
         </button>
@@ -1329,7 +1379,22 @@
         <button class="close-admin-btn" onclick="closeAdminPanel()">✕ Fermer</button>
       </div>
 
-      <!-- Create User Section -->
+      <!-- Admin Tabs -->
+      <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        <button id="tabUsers" onclick="switchAdminTab('users')" style="flex: 1; padding: 12px 20px; background: #00ff9d; color: #000; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-weight: bold; font-size: 1em;">
+          👥 Utilisateurs
+        </button>
+        <button id="tabSubscriptions" onclick="switchAdminTab('subscriptions')" style="flex: 1; padding: 12px 20px; background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 1em;">
+          💳 Abonnements & Jetons
+        </button>
+        <button id="tabLogs" onclick="switchAdminTab('logs')" style="flex: 1; padding: 12px 20px; background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 1em;">
+          📋 Logs
+        </button>
+      </div>
+
+      <!-- TAB 1: UTILISATEURS -->
+      <div id="adminTabUsers" style="display: block;">
+        <!-- Create User Section -->
       <div class="admin-section">
         <h3>➕ Créer un utilisateur</h3>
         <div id="adminMessage" class="hidden" style="margin-bottom: 15px;"></div>
@@ -1351,32 +1416,41 @@
         </form>
       </div>
 
-      <!-- Users List Section -->
-      <div class="admin-section">
-        <h3>👥 Utilisateurs</h3>
-        <div id="usersTableContainer">
-          <div style="text-align: center; padding: 20px; color: #888;">
-            <div class="loading-spinner" style="margin: 0 auto 10px;"></div>
-            <p>Chargement...</p>
+        <!-- Users List Section -->
+        <div class="admin-section">
+          <h3>👥 Liste des Utilisateurs</h3>
+          <div id="usersTableContainer">
+            <div style="text-align: center; padding: 20px; color: #888;">
+              <div class="loading-spinner" style="margin: 0 auto 10px;"></div>
+              <p>Chargement...</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Access Token Management Section -->
+      <!-- TAB 2: ABONNEMENTS & JETONS -->
+      <div id="adminTabSubscriptions" style="display: none;">
+        <!-- Access Token Management Section -->
       <div class="admin-section">
         <h3>🎫 Gestion des Jetons d'Accès</h3>
         <div style="margin-bottom: 15px;">
           <p style="color: #888; font-size: 0.9em; margin-bottom: 10px;">Générer un jeton d'accès à usage unique</p>
           <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
             <select id="tokenTier" style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
-              <option value="free">Gratuit</option>
-              <option value="premium">Premium</option>
-              <option value="enterprise">Enterprise</option>
+              <option value="free">🆓 Gratuit</option>
+              <option value="premium">⭐ Premium</option>
+              <option value="enterprise">💎 Enterprise</option>
             </select>
-            <input type="number" id="tokenMaxUses" value="1" min="1" placeholder="Max utilisations" style="width: 150px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
-            <input type="number" id="tokenExpiryDays" value="30" min="1" placeholder="Jours validité" style="width: 150px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+            <div style="flex: 1; min-width: 150px;">
+              <label style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Max utilisations</label>
+              <input type="number" id="tokenMaxUses" value="1" min="1" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+            </div>
+            <div style="flex: 1; min-width: 150px;">
+              <label style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Validité (jours)</label>
+              <input type="number" id="tokenExpiryDays" value="30" min="1" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+            </div>
             <input type="text" id="tokenDescription" placeholder="Description (optionnelle)" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
-            <button class="create-user-btn" onclick="generateAccessToken()" style="margin: 0;">🎫 Générer</button>
+            <button class="create-user-btn" onclick="generateAccessToken()" style="margin: 0; align-self: flex-end;">🎫 Générer</button>
           </div>
         </div>
         <div id="tokenResult" style="margin-bottom: 15px;"></div>
@@ -1395,40 +1469,55 @@
         </div>
       </div>
 
-      <!-- Subscription Management Section -->
-      <div class="admin-section">
-        <h3>💳 Gestion des Abonnements</h3>
-        <div style="margin-bottom: 15px;">
-          <p style="color: #888; font-size: 0.9em; margin-bottom: 10px;">Mettre à jour l'abonnement d'un utilisateur</p>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <input type="email" id="subscriptionEmail" placeholder="Email de l'utilisateur" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
-            <select id="subscriptionTier" style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
-              <option value="free">Gratuit (10/50/10)</option>
-              <option value="premium">Premium (500/2000/500) - 9.99€</option>
-              <option value="enterprise">Enterprise (Illimité) - 49.99€</option>
-            </select>
-            <button class="create-user-btn" onclick="updateUserSubscription()" style="margin: 0;">✅ Mettre à jour</button>
+        <!-- Subscription Management Section -->
+        <div class="admin-section">
+          <h3>💳 Gestion des Abonnements</h3>
+          <div style="margin-bottom: 15px;">
+            <p style="color: #888; font-size: 0.9em; margin-bottom: 10px;">Mettre à jour l'abonnement d'un utilisateur</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <input type="email" id="subscriptionEmail" placeholder="Email de l'utilisateur" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+              <select id="subscriptionTier" style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+                <option value="free">🆓 Gratuit (10/50/10)</option>
+                <option value="premium">⭐ Premium (500/2000/500) - 9.99€</option>
+                <option value="enterprise">💎 Enterprise (Illimité) - 49.99€</option>
+              </select>
+              <button class="create-user-btn" onclick="updateUserSubscription()" style="margin: 0;">✅ Mettre à jour</button>
+              <button class="create-user-btn" onclick="deleteUserSubscription()" style="margin: 0; background: #ff6b6b;">🗑️ Supprimer</button>
+            </div>
           </div>
+          <div id="subscriptionResult" style="margin-top: 10px;"></div>
         </div>
-        <div id="subscriptionResult" style="margin-top: 10px;"></div>
       </div>
 
-      <!-- Logs Viewer Section -->
-      <div class="admin-section">
-        <h3>📋 Visualisation des Logs</h3>
-        <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
-          <select id="logType" style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; flex: 1;">
-            <option value="app">Application (app.log)</option>
-            <option value="error">Erreurs (error.log)</option>
-            <option value="access">Accès (access.log)</option>
-            <option value="auth">Authentification (auth.log)</option>
-            <option value="api">API (api.log)</option>
-          </select>
-          <button class="create-user-btn" onclick="loadLogs()" style="margin: 0;">🔄 Actualiser</button>
-        </div>
-        <div id="logsContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 400px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.85em; line-height: 1.6;">
-          <div style="text-align: center; padding: 20px; color: #888;">
-            <p>Sélectionnez un type de log et cliquez sur Actualiser</p>
+      <!-- TAB 3: LOGS -->
+      <div id="adminTabLogs" style="display: none;">
+          <!-- Logs Viewer Section -->
+        <div class="admin-section">
+          <h3>📋 Visualisation des Logs</h3>
+          <div style="margin-bottom: 15px;">
+            <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 10px;">
+              <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Type de log</label>
+                <select id="logType" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+                  <option value="app">Application (app.log)</option>
+                  <option value="error">Erreurs (error.log)</option>
+                  <option value="access">Accès (access.log)</option>
+                  <option value="auth">Authentification (auth.log)</option>
+                  <option value="api">API (api.log)</option>
+                </select>
+              </div>
+              <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Filtrer par date/heure (optionnel)</label>
+                <input type="datetime-local" id="logDateFilter" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+              </div>
+              <button class="create-user-btn" onclick="loadLogs()" style="margin: 0;">🔄 Actualiser</button>
+              <button class="create-user-btn" onclick="exportLogs()" style="margin: 0; background: #ffd43b; color: #000;">📥 Exporter</button>
+            </div>
+          </div>
+          <div id="logsContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 400px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.85em; line-height: 1.6;">
+            <div style="text-align: center; padding: 20px; color: #888;">
+              <p>Sélectionnez un type de log et cliquez sur Actualiser</p>
+            </div>
           </div>
         </div>
       </div>
