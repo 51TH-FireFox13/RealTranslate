@@ -1142,15 +1142,37 @@
 
       <div id="loginError" class="error-message hidden"></div>
 
+      <!-- Tabs de connexion -->
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button id="emailLoginTab" onclick="switchLoginMode('email')" style="flex: 1; padding: 10px; background: #00ff9d; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
+          📧 Email / Mot de passe
+        </button>
+        <button id="tokenLoginTab" onclick="switchLoginMode('token')" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer;">
+          🎫 Jeton d'accès
+        </button>
+      </div>
+
       <form id="loginForm" onsubmit="return false;">
-        <div class="input-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" placeholder="admin@realtranslate.com" required autocomplete="email">
+        <!-- Email/Password Login -->
+        <div id="emailLoginFields">
+          <div class="input-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="admin@realtranslate.com" autocomplete="email">
+          </div>
+
+          <div class="input-group">
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+          </div>
         </div>
 
-        <div class="input-group">
-          <label for="password">Mot de passe</label>
-          <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+        <!-- Access Token Login -->
+        <div id="tokenLoginFields" style="display: none;">
+          <div class="input-group">
+            <label for="accessTokenInput">Jeton d'accès</label>
+            <input type="text" id="accessTokenInput" placeholder="AT-xxxxxxxxxxxxxxxxxx">
+            <p style="color: #888; font-size: 0.85em; margin-top: 5px;">Collez votre jeton d'accès fourni par l'administrateur</p>
+          </div>
         </div>
 
         <button type="submit" class="login-btn" id="loginBtn">Se connecter</button>
@@ -1336,6 +1358,77 @@
           <div style="text-align: center; padding: 20px; color: #888;">
             <div class="loading-spinner" style="margin: 0 auto 10px;"></div>
             <p>Chargement...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Access Token Management Section -->
+      <div class="admin-section">
+        <h3>🎫 Gestion des Jetons d'Accès</h3>
+        <div style="margin-bottom: 15px;">
+          <p style="color: #888; font-size: 0.9em; margin-bottom: 10px;">Générer un jeton d'accès à usage unique</p>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+            <select id="tokenTier" style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+              <option value="free">Gratuit</option>
+              <option value="premium">Premium</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+            <input type="number" id="tokenMaxUses" value="1" min="1" placeholder="Max utilisations" style="width: 150px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+            <input type="number" id="tokenExpiryDays" value="30" min="1" placeholder="Jours validité" style="width: 150px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+            <input type="text" id="tokenDescription" placeholder="Description (optionnelle)" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+            <button class="create-user-btn" onclick="generateAccessToken()" style="margin: 0;">🎫 Générer</button>
+          </div>
+        </div>
+        <div id="tokenResult" style="margin-bottom: 15px;"></div>
+
+        <!-- Liste des jetons -->
+        <div style="margin-top: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h4 style="margin: 0; color: #fff;">Jetons actifs</h4>
+            <button class="create-user-btn" onclick="loadAccessTokens()" style="margin: 0; padding: 8px 15px; font-size: 0.9em;">🔄 Actualiser</button>
+          </div>
+          <div id="tokensListContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 300px; overflow-y: auto;">
+            <div style="text-align: center; padding: 20px; color: #888;">
+              <p>Cliquez sur Actualiser pour afficher les jetons</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subscription Management Section -->
+      <div class="admin-section">
+        <h3>💳 Gestion des Abonnements</h3>
+        <div style="margin-bottom: 15px;">
+          <p style="color: #888; font-size: 0.9em; margin-bottom: 10px;">Mettre à jour l'abonnement d'un utilisateur</p>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <input type="email" id="subscriptionEmail" placeholder="Email de l'utilisateur" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+            <select id="subscriptionTier" style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+              <option value="free">Gratuit (10/50/10)</option>
+              <option value="premium">Premium (500/2000/500) - 9.99€</option>
+              <option value="enterprise">Enterprise (Illimité) - 49.99€</option>
+            </select>
+            <button class="create-user-btn" onclick="updateUserSubscription()" style="margin: 0;">✅ Mettre à jour</button>
+          </div>
+        </div>
+        <div id="subscriptionResult" style="margin-top: 10px;"></div>
+      </div>
+
+      <!-- Logs Viewer Section -->
+      <div class="admin-section">
+        <h3>📋 Visualisation des Logs</h3>
+        <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+          <select id="logType" style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; flex: 1;">
+            <option value="app">Application (app.log)</option>
+            <option value="error">Erreurs (error.log)</option>
+            <option value="access">Accès (access.log)</option>
+            <option value="auth">Authentification (auth.log)</option>
+            <option value="api">API (api.log)</option>
+          </select>
+          <button class="create-user-btn" onclick="loadLogs()" style="margin: 0;">🔄 Actualiser</button>
+        </div>
+        <div id="logsContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 400px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.85em; line-height: 1.6;">
+          <div style="text-align: center; padding: 20px; color: #888;">
+            <p>Sélectionnez un type de log et cliquez sur Actualiser</p>
           </div>
         </div>
       </div>

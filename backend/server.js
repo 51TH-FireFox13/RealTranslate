@@ -6,13 +6,15 @@ import fetch from 'node-fetch';
 import FormData from 'form-data';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { promises as fs } from 'fs';
 import { logger, accessLoggerMiddleware } from './logger.js';
 import {
   authManager,
   authMiddleware,
   requirePermission,
   requireAdmin,
-  ROLES
+  ROLES,
+  SUBSCRIPTION_TIERS
 } from './auth.js';
 
 dotenv.config();
@@ -41,13 +43,29 @@ logger.info('RealTranslate Backend starting...');
 // ROUTES D'AUTHENTIFICATION
 // ===================================
 
-// Login
+// Login (email/password ou access token)
 app.post('/api/auth/login', (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, accessToken } = req.body;
 
+    // Login avec jeton d'accès
+    if (accessToken) {
+      const result = authManager.authenticateWithAccessToken(accessToken);
+
+      if (!result.success) {
+        return res.status(401).json({ error: result.message });
+      }
+
+      return res.json({
+        success: true,
+        token: result.token,
+        user: result.user
+      });
+    }
+
+    // Login classique email/password
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email et mot de passe requis' });
+      return res.status(400).json({ error: 'Email et mot de passe ou jeton d\'accès requis' });
     }
 
     const result = authManager.authenticate(email, password);
@@ -133,7 +151,141 @@ app.post('/api/auth/logout', authMiddleware, (req, res) => {
 
 // Obtenir l'utilisateur actuel
 app.get('/api/auth/me', authMiddleware, (req, res) => {
-  res.json({ user: req.user });
+  const subscriptionInfo = authManager.getSubscriptionInfo(req.user.email);
+  res.json({
+    user: {
+      ...req.user,
+      subscription: subscriptionInfo
+    }
+  });
+});
+
+// Mettre à jour l'abonnement d'un utilisateur (admin uniquement)
+app.post('/api/auth/subscription', authMiddleware, requireAdmin, (req, res) => {
+  try {
+    const { email, tier, expiresAt } = req.body;
+
+    if (!email || !tier) {
+      return res.status(400).json({ error: 'Email et palier requis' });
+    }
+
+    const result = authManager.updateSubscription(email, tier, expiresAt);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    res.json({ success: true, user: result.user });
+  } catch (error) {
+    logger.error('Update subscription error', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Obtenir les paliers d'abonnement disponibles
+app.get('/api/subscription/tiers', (req, res) => {
+  res.json({ tiers: Object.values(SUBSCRIPTION_TIERS) });
+});
+
+// Obtenir les informations d'abonnement de l'utilisateur actuel
+app.get('/api/subscription/info', authMiddleware, (req, res) => {
+  try {
+    const info = authManager.getSubscriptionInfo(req.user.email);
+    res.json({ subscription: info });
+  } catch (error) {
+    logger.error('Get subscription info error', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ===================================
+// ROUTES JETONS D'ACCÈS (ACCESS TOKENS)
+// ===================================
+
+// Générer un jeton d'accès (admin uniquement)
+app.post('/api/auth/access-token/generate', authMiddleware, requireAdmin, (req, res) => {
+  try {
+    const { tier = 'free', expiresInDays = 30, maxUses = 1, description = '' } = req.body;
+
+    const accessToken = authManager.generateAccessToken(tier, expiresInDays, maxUses, description);
+
+    res.json({
+      success: true,
+      accessToken
+    });
+  } catch (error) {
+    logger.error('Generate access token error', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Lister les jetons d'accès (admin uniquement)
+app.get('/api/auth/access-tokens', authMiddleware, requireAdmin, (req, res) => {
+  try {
+    const tokens = authManager.listAccessTokens();
+    res.json({ tokens });
+  } catch (error) {
+    logger.error('List access tokens error', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Révoquer un jeton d'accès (admin uniquement)
+app.delete('/api/auth/access-token/:token', authMiddleware, requireAdmin, (req, res) => {
+  try {
+    const { token } = req.params;
+    const result = authManager.revokeAccessToken(token);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Revoke access token error', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Récupérer les logs (admin uniquement)
+app.get('/api/auth/logs', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { type = 'app', lines = 100 } = req.query;
+    const logDir = join(__dirname, '../logs');
+
+    const validTypes = ['app', 'error', 'access', 'auth', 'api'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ error: 'Type de log invalide' });
+    }
+
+    const logFile = join(logDir, `${type}.log`);
+
+    try {
+      const content = await fs.readFile(logFile, 'utf-8');
+      const logLines = content.trim().split('\n');
+      const recentLines = logLines.slice(-parseInt(lines));
+
+      res.json({
+        type,
+        lines: recentLines,
+        total: logLines.length
+      });
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        res.json({
+          type,
+          lines: [],
+          total: 0,
+          message: 'Fichier de log non trouvé'
+        });
+      } else {
+        throw error;
+      }
+    }
+  } catch (error) {
+    logger.error('Erreur récupération logs', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
 // ===================================
@@ -162,12 +314,22 @@ app.get('/api/detect-region', (req, res) => {
 // Endpoint de transcription (Whisper) - Nécessite authentification
 app.post('/api/transcribe', authMiddleware, requirePermission('transcribe'), upload.single('audio'), async (req, res) => {
   try {
+    // Vérifier le quota
+    const quotaCheck = authManager.consumeQuota(req.user.email, 'transcribe');
+    if (!quotaCheck.allowed) {
+      logger.auth('Quota exceeded', req.user.id, false, { action: 'transcribe' });
+      return res.status(429).json({
+        error: quotaCheck.message,
+        resetAt: quotaCheck.resetAt
+      });
+    }
+
     if (!req.file) {
       return res.status(400).json({ error: 'Aucun fichier audio fourni' });
     }
 
     const { language } = req.body;
-    logger.info('Transcription request', { userId: req.user.id, language });
+    logger.info('Transcription request', { userId: req.user.id, language, quotaRemaining: quotaCheck.remaining });
 
     // Créer le FormData pour Whisper
     const formData = new FormData();
@@ -210,6 +372,16 @@ app.post('/api/transcribe', authMiddleware, requirePermission('transcribe'), upl
 // Endpoint de traduction - Nécessite authentification
 app.post('/api/translate', authMiddleware, requirePermission('translate'), async (req, res) => {
   try {
+    // Vérifier le quota
+    const quotaCheck = authManager.consumeQuota(req.user.email, 'translate');
+    if (!quotaCheck.allowed) {
+      logger.auth('Quota exceeded', req.user.id, false, { action: 'translate' });
+      return res.status(429).json({
+        error: quotaCheck.message,
+        resetAt: quotaCheck.resetAt
+      });
+    }
+
     const { text, targetLanguage, sourceLanguage, provider } = req.body;
 
     if (!text || !targetLanguage) {
@@ -220,7 +392,8 @@ app.post('/api/translate', authMiddleware, requirePermission('translate'), async
       userId: req.user.id,
       sourceLanguage: sourceLanguage || 'auto',
       targetLanguage,
-      textLength: text.length
+      textLength: text.length,
+      quotaRemaining: quotaCheck.remaining
     });
 
     // Déterminer le provider si non spécifié
@@ -309,13 +482,23 @@ Réponds UNIQUEMENT avec la traduction, sans explications.`;
 // Endpoint TTS (Text-to-Speech) - Nécessite authentification
 app.post('/api/speak', authMiddleware, requirePermission('speak'), async (req, res) => {
   try {
+    // Vérifier le quota
+    const quotaCheck = authManager.consumeQuota(req.user.email, 'speak');
+    if (!quotaCheck.allowed) {
+      logger.auth('Quota exceeded', req.user.id, false, { action: 'speak' });
+      return res.status(429).json({
+        error: quotaCheck.message,
+        resetAt: quotaCheck.resetAt
+      });
+    }
+
     const { text, voice = 'nova' } = req.body;
 
     if (!text) {
       return res.status(400).json({ error: 'Texte requis' });
     }
 
-    logger.info('TTS request', { userId: req.user.id, voice, textLength: text.length });
+    logger.info('TTS request', { userId: req.user.id, voice, textLength: text.length, quotaRemaining: quotaCheck.remaining });
 
     const response = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',

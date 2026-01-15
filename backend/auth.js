@@ -11,12 +11,47 @@ const __dirname = dirname(__filename);
 // Fichier de stockage des utilisateurs et tokens
 const USERS_FILE = path.join(__dirname, 'users.json');
 const TOKENS_FILE = path.join(__dirname, 'tokens.json');
+const ACCESS_TOKENS_FILE = path.join(__dirname, 'access-tokens.json');
 
 // Rôles disponibles
 const ROLES = {
   ADMIN: 'admin',
   USER: 'user',
   GUEST: 'guest'
+};
+
+// Paliers d'abonnement
+const SUBSCRIPTION_TIERS = {
+  FREE: {
+    name: 'free',
+    displayName: 'Gratuit',
+    price: 0,
+    quotas: {
+      transcribe: 10,    // 10 transcriptions/jour
+      translate: 50,      // 50 traductions/jour
+      speak: 10           // 10 TTS/jour
+    }
+  },
+  PREMIUM: {
+    name: 'premium',
+    displayName: 'Premium',
+    price: 9.99,
+    quotas: {
+      transcribe: 500,
+      translate: 2000,
+      speak: 500
+    }
+  },
+  ENTERPRISE: {
+    name: 'enterprise',
+    displayName: 'Enterprise',
+    price: 49.99,
+    quotas: {
+      transcribe: -1,    // Illimité
+      translate: -1,
+      speak: -1
+    }
+  }
 };
 
 // Permissions par rôle
@@ -31,6 +66,7 @@ class AuthManager {
   constructor() {
     this.users = this.loadUsers();
     this.tokens = this.loadTokens();
+    this.accessTokens = this.loadAccessTokens();
   }
 
   // Charger les utilisateurs
@@ -72,6 +108,19 @@ class AuthManager {
     return {};
   }
 
+  // Charger les jetons d'accès à usage unique
+  loadAccessTokens() {
+    try {
+      if (fs.existsSync(ACCESS_TOKENS_FILE)) {
+        const data = fs.readFileSync(ACCESS_TOKENS_FILE, 'utf8');
+        return JSON.parse(data);
+      }
+    } catch (error) {
+      logger.error('Erreur chargement access tokens', error);
+    }
+    return {};
+  }
+
   // Sauvegarder les utilisateurs
   saveUsers(users = this.users) {
     try {
@@ -90,6 +139,15 @@ class AuthManager {
     }
   }
 
+  // Sauvegarder les jetons d'accès
+  saveAccessTokens(accessTokens = this.accessTokens) {
+    try {
+      fs.writeFileSync(ACCESS_TOKENS_FILE, JSON.stringify(accessTokens, null, 2));
+    } catch (error) {
+      logger.error('Erreur sauvegarde access tokens', error);
+    }
+  }
+
   // Hasher un mot de passe
   hashPassword(password) {
     return crypto.createHash('sha256').update(password).digest('hex');
@@ -101,7 +159,7 @@ class AuthManager {
   }
 
   // Créer un utilisateur
-  createUser(email, password, role = ROLES.USER) {
+  createUser(email, password, role = ROLES.USER, subscriptionTier = 'free') {
     if (this.users[email]) {
       return { success: false, message: 'Utilisateur existe déjà' };
     }
@@ -111,14 +169,47 @@ class AuthManager {
       email,
       passwordHash: this.hashPassword(password),
       role,
+      subscription: {
+        tier: subscriptionTier,
+        status: 'active',
+        expiresAt: null, // null = pas d'expiration (pour free)
+        quotas: this.resetQuotas(subscriptionTier)
+      },
+      paymentHistory: [],
       createdAt: new Date().toISOString()
     };
 
     this.users[email] = user;
     this.saveUsers();
 
-    logger.auth('User created', email, true, { role });
-    return { success: true, user: { id: user.id, email: user.email, role: user.role } };
+    logger.auth('User created', email, true, { role, subscription: subscriptionTier });
+    return { success: true, user: this.sanitizeUser(user) };
+  }
+
+  // Réinitialiser les quotas utilisateur (quotas journaliers)
+  resetQuotas(tier) {
+    const tierData = SUBSCRIPTION_TIERS[tier.toUpperCase()];
+    if (!tierData) return {};
+
+    return {
+      transcribe: { used: 0, limit: tierData.quotas.transcribe, resetAt: this.getNextDayTimestamp() },
+      translate: { used: 0, limit: tierData.quotas.translate, resetAt: this.getNextDayTimestamp() },
+      speak: { used: 0, limit: tierData.quotas.speak, resetAt: this.getNextDayTimestamp() }
+    };
+  }
+
+  // Obtenir le timestamp de minuit prochain
+  getNextDayTimestamp() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    return tomorrow.toISOString();
+  }
+
+  // Nettoyer les données utilisateur (enlever le hash de mot de passe)
+  sanitizeUser(user) {
+    const { passwordHash, ...sanitized } = user;
+    return sanitized;
   }
 
   // Authentifier un utilisateur
@@ -223,8 +314,264 @@ class AuthManager {
       id: user.id,
       email: user.email,
       role: user.role,
+      subscription: user.subscription || { tier: 'free', status: 'active' },
       createdAt: user.createdAt
     }));
+  }
+
+  // Vérifier et consommer un quota
+  consumeQuota(email, action) {
+    const user = this.users[email];
+    if (!user) {
+      return { allowed: false, message: 'Utilisateur introuvable' };
+    }
+
+    // Vérifier si les quotas doivent être réinitialisés
+    const now = new Date();
+    const quota = user.subscription?.quotas?.[action];
+
+    if (!quota) {
+      // Pas de quota défini, on initialise
+      if (!user.subscription) {
+        user.subscription = {
+          tier: 'free',
+          status: 'active',
+          expiresAt: null,
+          quotas: this.resetQuotas('free')
+        };
+      } else if (!user.subscription.quotas) {
+        user.subscription.quotas = this.resetQuotas(user.subscription.tier);
+      }
+    }
+
+    // Réinitialiser si nécessaire
+    const actionQuota = user.subscription.quotas[action];
+    if (actionQuota && new Date(actionQuota.resetAt) < now) {
+      const tierData = SUBSCRIPTION_TIERS[user.subscription.tier.toUpperCase()];
+      user.subscription.quotas[action] = {
+        used: 0,
+        limit: tierData.quotas[action],
+        resetAt: this.getNextDayTimestamp()
+      };
+    }
+
+    const currentQuota = user.subscription.quotas[action];
+
+    // Quota illimité (-1)
+    if (currentQuota.limit === -1) {
+      currentQuota.used++;
+      this.saveUsers();
+      return { allowed: true, remaining: -1 };
+    }
+
+    // Vérifier si quota dépassé
+    if (currentQuota.used >= currentQuota.limit) {
+      return {
+        allowed: false,
+        message: `Quota ${action} dépassé (${currentQuota.limit}/${currentQuota.limit})`,
+        resetAt: currentQuota.resetAt
+      };
+    }
+
+    // Consommer le quota
+    currentQuota.used++;
+    this.saveUsers();
+
+    return {
+      allowed: true,
+      remaining: currentQuota.limit - currentQuota.used,
+      resetAt: currentQuota.resetAt
+    };
+  }
+
+  // Mettre à jour l'abonnement d'un utilisateur
+  updateSubscription(email, tier, expiresAt = null) {
+    const user = this.users[email];
+    if (!user) {
+      return { success: false, message: 'Utilisateur introuvable' };
+    }
+
+    const tierData = SUBSCRIPTION_TIERS[tier.toUpperCase()];
+    if (!tierData) {
+      return { success: false, message: 'Palier d\'abonnement invalide' };
+    }
+
+    user.subscription = {
+      tier: tierData.name,
+      status: 'active',
+      expiresAt: expiresAt,
+      quotas: this.resetQuotas(tierData.name)
+    };
+
+    // Ajouter à l'historique de paiement
+    if (!user.paymentHistory) {
+      user.paymentHistory = [];
+    }
+
+    user.paymentHistory.push({
+      tier: tierData.name,
+      price: tierData.price,
+      paidAt: new Date().toISOString(),
+      expiresAt: expiresAt
+    });
+
+    this.saveUsers();
+    logger.auth('Subscription updated', email, true, { tier: tierData.name });
+
+    return { success: true, user: this.sanitizeUser(user) };
+  }
+
+  // Obtenir les informations d'abonnement
+  getSubscriptionInfo(email) {
+    const user = this.users[email];
+    if (!user) {
+      return null;
+    }
+
+    return {
+      tier: user.subscription?.tier || 'free',
+      status: user.subscription?.status || 'active',
+      expiresAt: user.subscription?.expiresAt,
+      quotas: user.subscription?.quotas || this.resetQuotas('free')
+    };
+  }
+
+  // ===================================
+  // SYSTÈME DE JETONS D'ACCÈS (ONE-TIME USE)
+  // ===================================
+
+  // Générer un jeton d'accès à usage unique
+  generateAccessToken(subscriptionTier = 'free', expiresInDays = 30, maxUses = 1, description = '') {
+    const token = `AT-${crypto.randomBytes(16).toString('hex')}`;
+
+    this.accessTokens[token] = {
+      token,
+      tier: subscriptionTier,
+      maxUses,
+      usedCount: 0,
+      description,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'active',
+      usedBy: [] // Liste des utilisateurs qui ont utilisé ce token
+    };
+
+    this.saveAccessTokens();
+    logger.auth('Access token generated', 'system', true, { tier: subscriptionTier, maxUses });
+
+    return this.accessTokens[token];
+  }
+
+  // Authentifier avec un jeton d'accès
+  authenticateWithAccessToken(accessToken) {
+    const tokenData = this.accessTokens[accessToken];
+
+    if (!tokenData) {
+      logger.auth('Access token login failed', 'unknown', false, { reason: 'Token not found' });
+      return { success: false, message: 'Jeton d\'accès invalide' };
+    }
+
+    // Vérifier le statut
+    if (tokenData.status !== 'active') {
+      logger.auth('Access token login failed', 'unknown', false, { reason: 'Token inactive' });
+      return { success: false, message: 'Jeton d\'accès désactivé' };
+    }
+
+    // Vérifier l'expiration
+    if (new Date(tokenData.expiresAt) < new Date()) {
+      tokenData.status = 'expired';
+      this.saveAccessTokens();
+      logger.auth('Access token login failed', 'unknown', false, { reason: 'Token expired' });
+      return { success: false, message: 'Jeton d\'accès expiré' };
+    }
+
+    // Vérifier le nombre d'utilisations
+    if (tokenData.usedCount >= tokenData.maxUses) {
+      tokenData.status = 'exhausted';
+      this.saveAccessTokens();
+      logger.auth('Access token login failed', 'unknown', false, { reason: 'Max uses reached' });
+      return { success: false, message: 'Jeton d\'accès déjà utilisé (limite atteinte)' };
+    }
+
+    // Créer un utilisateur temporaire
+    const tempUserId = `guest-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+    const tempUser = {
+      id: tempUserId,
+      email: `${tempUserId}@guest.realtranslate.com`,
+      role: ROLES.GUEST,
+      subscription: {
+        tier: tokenData.tier,
+        status: 'active',
+        expiresAt: tokenData.expiresAt,
+        quotas: this.resetQuotas(tokenData.tier)
+      },
+      accessTokenUsed: accessToken,
+      createdAt: new Date().toISOString()
+    };
+
+    // Enregistrer l'utilisation
+    tokenData.usedCount++;
+    tokenData.usedBy.push({
+      userId: tempUserId,
+      usedAt: new Date().toISOString()
+    });
+
+    // Marquer comme épuisé si limite atteinte
+    if (tokenData.usedCount >= tokenData.maxUses) {
+      tokenData.status = 'exhausted';
+    }
+
+    this.saveAccessTokens();
+
+    // Générer un token de session classique pour cet utilisateur temporaire
+    const sessionToken = this.generateToken();
+    this.tokens[sessionToken] = {
+      userId: tempUser.id,
+      email: tempUser.email,
+      role: tempUser.role,
+      tier: tokenData.tier,
+      createdAt: new Date().toISOString(),
+      expiresAt: tokenData.expiresAt
+    };
+
+    this.saveTokens();
+    logger.auth('Access token login success', tempUserId, true, { tier: tokenData.tier });
+
+    return {
+      success: true,
+      token: sessionToken,
+      user: {
+        id: tempUser.id,
+        email: tempUser.email,
+        role: tempUser.role,
+        subscription: tempUser.subscription
+      }
+    };
+  }
+
+  // Lister tous les jetons d'accès
+  listAccessTokens() {
+    return Object.values(this.accessTokens).map(token => ({
+      token: token.token,
+      tier: token.tier,
+      maxUses: token.maxUses,
+      usedCount: token.usedCount,
+      description: token.description,
+      status: token.status,
+      createdAt: token.createdAt,
+      expiresAt: token.expiresAt
+    }));
+  }
+
+  // Révoquer un jeton d'accès
+  revokeAccessToken(accessToken) {
+    if (this.accessTokens[accessToken]) {
+      this.accessTokens[accessToken].status = 'revoked';
+      this.saveAccessTokens();
+      logger.auth('Access token revoked', 'admin', true, { token: accessToken });
+      return { success: true };
+    }
+    return { success: false, message: 'Jeton introuvable' };
   }
 }
 
@@ -298,5 +645,6 @@ export {
   requirePermission,
   requireAdmin,
   ROLES,
-  PERMISSIONS
+  PERMISSIONS,
+  SUBSCRIPTION_TIERS
 };

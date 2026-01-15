@@ -89,7 +89,9 @@ let state = {
   ttsEnabled: true,   // État de la synthèose vocale
   lang1: null,  // Langue de l'utilisateur
   lang2: null,   // Langue de traduction
-  mode: 'push-to-talk'  // Mode: 'realtime' ou 'push-to-talk' - PTT par défaut
+  mode: 'push-to-talk',  // Mode: 'realtime' ou 'push-to-talk' - PTT par défaut
+  processingQueue: [],  // Queue de traitement des enregistrements
+  isProcessingAPI: false  // Traitement API en cours
 };
 
 // Éléments DOM
@@ -152,18 +154,61 @@ function showApp() {
 }
 
 // Connexion
-async function login(email, password) {
+// Mode de connexion actuel
+let loginMode = 'email';
+
+// Changer le mode de connexion
+function switchLoginMode(mode) {
+  loginMode = mode;
+
+  const emailTab = document.getElementById('emailLoginTab');
+  const tokenTab = document.getElementById('tokenLoginTab');
+  const emailFields = document.getElementById('emailLoginFields');
+  const tokenFields = document.getElementById('tokenLoginFields');
+
+  if (mode === 'email') {
+    emailTab.style.background = '#00ff9d';
+    emailTab.style.color = '#000';
+    emailTab.style.border = 'none';
+    tokenTab.style.background = 'rgba(255,255,255,0.1)';
+    tokenTab.style.color = '#fff';
+    tokenTab.style.border = '1px solid rgba(255,255,255,0.2)';
+
+    emailFields.style.display = 'block';
+    tokenFields.style.display = 'none';
+  } else {
+    tokenTab.style.background = '#00ff9d';
+    tokenTab.style.color = '#000';
+    tokenTab.style.border = 'none';
+    emailTab.style.background = 'rgba(255,255,255,0.1)';
+    emailTab.style.color = '#fff';
+    emailTab.style.border = '1px solid rgba(255,255,255,0.2)';
+
+    emailFields.style.display = 'none';
+    tokenFields.style.display = 'block';
+  }
+
+  // Effacer les erreurs
+  elements.loginError.classList.add('hidden');
+}
+
+async function login(email, password, accessToken) {
   try {
     elements.loginBtn.disabled = true;
     elements.loginBtn.textContent = 'Connexion...';
     elements.loginError.classList.add('hidden');
+
+    // Préparer le body selon le mode de connexion
+    const body = accessToken
+      ? { accessToken }
+      : { email, password };
 
     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify(body)
     });
 
     const data = await response.json();
@@ -257,6 +302,7 @@ async function loadUsers() {
           <tr>
             <th>Email</th>
             <th>Rôle</th>
+            <th>Abonnement</th>
             <th>Créé le</th>
             <th>Actions</th>
           </tr>
@@ -268,10 +314,28 @@ async function loadUsers() {
       const createdDate = new Date(user.createdAt).toLocaleDateString('fr-FR');
       const isCurrentUser = user.email === state.user.email;
 
+      // Afficher l'abonnement
+      const subscription = user.subscription || { tier: 'free', status: 'active' };
+      const tierColors = {
+        free: '#888',
+        premium: '#ffd43b',
+        enterprise: '#00ff9d'
+      };
+      const tierIcons = {
+        free: '🆓',
+        premium: '⭐',
+        enterprise: '💎'
+      };
+
       html += `
         <tr>
           <td>${user.email} ${isCurrentUser ? '<span style="color: #00ff9d;">(vous)</span>' : ''}</td>
           <td><span class="role-badge ${user.role}">${user.role}</span></td>
+          <td>
+            <span style="color: ${tierColors[subscription.tier] || '#888'};">
+              ${tierIcons[subscription.tier] || '🆓'} ${subscription.tier.toUpperCase()}
+            </span>
+          </td>
           <td>${createdDate}</td>
           <td>
             <button
@@ -398,10 +462,288 @@ function showAdminMessage(message, type) {
   }, 5000);
 }
 
+// Charger et afficher les logs
+async function loadLogs() {
+  const logType = document.getElementById('logType').value;
+  const container = document.getElementById('logsContainer');
+
+  try {
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #888;"><p>Chargement...</p></div>';
+
+    const response = await fetch(`${API_BASE_URL}/api/auth/logs?type=${logType}&lines=200`, {
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors du chargement des logs');
+    }
+
+    const data = await response.json();
+
+    if (data.lines.length === 0) {
+      container.innerHTML = '<div style="text-align: center; padding: 20px; color: #888;"><p>Aucun log disponible</p></div>';
+      return;
+    }
+
+    // Afficher les logs avec coloration
+    const logsHTML = data.lines.map(line => {
+      let color = '#fff';
+      if (line.includes('[ERROR]')) color = '#ff6b6b';
+      else if (line.includes('[WARN]')) color = '#ffd43b';
+      else if (line.includes('[INFO]')) color = '#00ff9d';
+
+      return `<div style="color: ${color}; margin-bottom: 5px; word-wrap: break-word;">${escapeHtml(line)}</div>`;
+    }).join('');
+
+    container.innerHTML = `
+      <div style="margin-bottom: 10px; color: #888; text-align: right;">
+        Total: ${data.total} lignes | Affichage: ${data.lines.length} dernières
+      </div>
+      ${logsHTML}
+    `;
+
+    // Scroll vers le bas
+    container.scrollTop = container.scrollHeight;
+
+  } catch (error) {
+    console.error('Erreur chargement logs:', error);
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ff6b6b;"><p>❌ Erreur lors du chargement des logs</p></div>';
+  }
+}
+
+// Fonction utilitaire pour échapper le HTML
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Mettre à jour l'abonnement d'un utilisateur
+async function updateUserSubscription() {
+  const email = document.getElementById('subscriptionEmail').value.trim();
+  const tier = document.getElementById('subscriptionTier').value;
+  const resultDiv = document.getElementById('subscriptionResult');
+
+  if (!email) {
+    resultDiv.innerHTML = '<p style="color: #ff6b6b;">⚠️ Veuillez entrer un email</p>';
+    return;
+  }
+
+  try {
+    resultDiv.innerHTML = '<p style="color: #888;">⏳ Mise à jour en cours...</p>';
+
+    const response = await fetch(`${API_BASE_URL}/api/auth/subscription`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, tier })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Erreur lors de la mise à jour');
+    }
+
+    const data = await response.json();
+    resultDiv.innerHTML = '<p style="color: #00ff9d;">✅ Abonnement mis à jour avec succès</p>';
+
+    // Réinitialiser les champs
+    document.getElementById('subscriptionEmail').value = '';
+    document.getElementById('subscriptionTier').value = 'free';
+
+    // Recharger la liste des utilisateurs
+    loadUsers();
+
+    // Effacer le message après 3 secondes
+    setTimeout(() => {
+      resultDiv.innerHTML = '';
+    }, 3000);
+
+  } catch (error) {
+    console.error('Erreur mise à jour abonnement:', error);
+    resultDiv.innerHTML = `<p style="color: #ff6b6b;">❌ ${error.message}</p>`;
+  }
+}
+
+// ===================================
+// GESTION DES JETONS D'ACCÈS
+// ===================================
+
+// Générer un jeton d'accès
+async function generateAccessToken() {
+  const tier = document.getElementById('tokenTier').value;
+  const maxUses = parseInt(document.getElementById('tokenMaxUses').value);
+  const expiresInDays = parseInt(document.getElementById('tokenExpiryDays').value);
+  const description = document.getElementById('tokenDescription').value.trim();
+  const resultDiv = document.getElementById('tokenResult');
+
+  try {
+    resultDiv.innerHTML = '<p style="color: #888;">⏳ Génération en cours...</p>';
+
+    const response = await fetch(`${API_BASE_URL}/api/auth/access-token/generate`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ tier, maxUses, expiresInDays, description })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Erreur lors de la génération');
+    }
+
+    const data = await response.json();
+    const token = data.accessToken.token;
+
+    resultDiv.innerHTML = `
+      <div style="background: rgba(0,255,157,0.1); border: 1px solid #00ff9d; border-radius: 8px; padding: 15px;">
+        <p style="color: #00ff9d; margin-bottom: 10px;">✅ Jeton généré avec succès !</p>
+        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; margin-bottom: 10px; word-break: break-all; font-family: 'Courier New', monospace; font-size: 0.9em;">
+          ${token}
+        </div>
+        <button onclick="navigator.clipboard.writeText('${token}')" style="padding: 8px 15px; background: #00ff9d; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+          📋 Copier le jeton
+        </button>
+      </div>
+    `;
+
+    // Réinitialiser les champs
+    document.getElementById('tokenMaxUses').value = '1';
+    document.getElementById('tokenExpiryDays').value = '30';
+    document.getElementById('tokenDescription').value = '';
+    document.getElementById('tokenTier').value = 'free';
+
+    // Recharger la liste des jetons
+    loadAccessTokens();
+
+  } catch (error) {
+    console.error('Erreur génération jeton:', error);
+    resultDiv.innerHTML = `<p style="color: #ff6b6b;">❌ ${error.message}</p>`;
+  }
+}
+
+// Charger la liste des jetons d'accès
+async function loadAccessTokens() {
+  const container = document.getElementById('tokensListContainer');
+
+  try {
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #888;"><p>Chargement...</p></div>';
+
+    const response = await fetch(`${API_BASE_URL}/api/auth/access-tokens`, {
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors du chargement des jetons');
+    }
+
+    const data = await response.json();
+    const tokens = data.tokens;
+
+    if (tokens.length === 0) {
+      container.innerHTML = '<div style="text-align: center; padding: 20px; color: #888;"><p>Aucun jeton généré</p></div>';
+      return;
+    }
+
+    // Afficher les jetons
+    const tokensHTML = tokens.map(token => {
+      const statusColors = {
+        active: '#00ff9d',
+        exhausted: '#ffd43b',
+        expired: '#888',
+        revoked: '#ff6b6b'
+      };
+
+      const expiresDate = new Date(token.expiresAt).toLocaleDateString('fr-FR');
+      const createdDate = new Date(token.createdAt).toLocaleDateString('fr-FR');
+
+      return `
+        <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+            <div style="flex: 1;">
+              <div style="font-family: 'Courier New', monospace; font-size: 0.85em; color: #fff; word-break: break-all; margin-bottom: 5px;">
+                ${token.token}
+              </div>
+              ${token.description ? `<div style="color: #888; font-size: 0.85em; margin-bottom: 5px;">${escapeHtml(token.description)}</div>` : ''}
+              <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 0.85em;">
+                <span style="color: ${statusColors[token.status]};">● ${token.status.toUpperCase()}</span>
+                <span style="color: #888;">Palier: ${token.tier.toUpperCase()}</span>
+                <span style="color: #888;">Utilisé: ${token.usedCount}/${token.maxUses}</span>
+                <span style="color: #888;">Créé: ${createdDate}</span>
+                <span style="color: #888;">Expire: ${expiresDate}</span>
+              </div>
+            </div>
+            ${token.status === 'active' ? `
+              <button onclick="revokeAccessToken('${token.token}')" style="padding: 6px 12px; background: #ff6b6b; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-size: 0.85em; margin-left: 10px;">
+                🗑️ Révoquer
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = tokensHTML;
+
+  } catch (error) {
+    console.error('Erreur chargement jetons:', error);
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ff6b6b;"><p>❌ Erreur lors du chargement des jetons</p></div>';
+  }
+}
+
+// Révoquer un jeton d'accès
+async function revokeAccessToken(token) {
+  if (!confirm('Êtes-vous sûr de vouloir révoquer ce jeton ?')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/access-token/${encodeURIComponent(token)}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Erreur lors de la révocation');
+    }
+
+    // Recharger la liste
+    loadAccessTokens();
+
+  } catch (error) {
+    console.error('Erreur révocation jeton:', error);
+    alert(`Erreur: ${error.message}`);
+  }
+}
+
 // Gestionnaire de formulaire de connexion
 elements.loginForm.addEventListener('submit', (e) => {
   e.preventDefault();
-  login(elements.email.value, elements.password.value);
+
+  if (loginMode === 'email') {
+    const email = elements.email.value;
+    const password = elements.password.value;
+    login(email, password);
+  } else {
+    const accessToken = document.getElementById('accessTokenInput').value.trim();
+    if (!accessToken) {
+      elements.loginError.textContent = 'Veuillez entrer un jeton d\'accès';
+      elements.loginError.classList.remove('hidden');
+      return;
+    }
+    login(null, null, accessToken);
+  }
 });
 
 // ===================================
@@ -689,12 +1031,12 @@ function addMessage(panel, text) {
   messageDiv.className = 'message';
   messageDiv.textContent = text;
 
-  // Déterminer le panneau approprié
+  // Déterminer le panneau approprié (lang1 ou lang2)
   let contentElement;
-  if (panel === 'lang1' || panel === state.lang1 || panel === 'fr') {
-    contentElement = elements.frContent;
-  } else if (panel === 'lang2' || panel === state.lang2 || panel === 'zh') {
-    contentElement = elements.zhContent;
+  if (panel === 'lang1' || panel === state.lang1) {
+    contentElement = elements.frContent; // Premier panneau
+  } else if (panel === 'lang2' || panel === state.lang2) {
+    contentElement = elements.zhContent; // Deuxième panneau
   }
 
   if (contentElement) {
@@ -731,7 +1073,8 @@ function vadLoop() {
   const volume = analyzeVolume();
 
   // Ne pas enregistrer si le micro est désactivé OU en mode push-to-talk
-  if (!state.micEnabled || state.isSpeaking || state.mode === 'push-to-talk') {
+  // IMPORTANT: On ne bloque PLUS sur isSpeaking pour permettre l'écoute continue
+  if (!state.micEnabled || state.mode === 'push-to-talk') {
     setTimeout(vadLoop, VAD_CONFIG.RECORDING_INTERVAL);
     return;
   }
@@ -791,12 +1134,49 @@ function stopRecording() {
   }
 }
 
+// ===================================
+// SYSTÈME DE QUEUE DE TRAITEMENT (DUPLEX)
+// ===================================
+
+// Ajouter un enregistrement à la queue de traitement
+function addToProcessingQueue(audioBlob) {
+  console.log(`📥 Ajout à la queue (taille actuelle: ${state.processingQueue.length})`);
+  state.processingQueue.push(audioBlob);
+
+  // Démarrer le traitement si pas déjà en cours
+  if (!state.isProcessingAPI) {
+    processNextInQueue();
+  }
+}
+
+// Traiter le prochain élément de la queue
+async function processNextInQueue() {
+  if (state.processingQueue.length === 0) {
+    state.isProcessingAPI = false;
+    console.log('✅ Queue vide, traitement terminé');
+    return;
+  }
+
+  state.isProcessingAPI = true;
+  const audioBlob = state.processingQueue.shift();
+
+  console.log(`🔄 Traitement (reste dans queue: ${state.processingQueue.length})`);
+
+  try {
+    await processAudio(audioBlob);
+  } catch (error) {
+    console.error('❌ Erreur traitement audio:', error);
+  }
+
+  // Continuer avec le suivant
+  processNextInQueue();
+}
+
 // Traitement de l'audio enregistré
 async function processAudio(audioBlob) {
   // Vérifier la taille du blob
   if (audioBlob.size < 1000) {
     console.log('⚠️ Audio trop court, ignoré');
-    updateStatus('listening', '🎧 Prêt à écouter...');
     return;
   }
 
@@ -1027,7 +1407,9 @@ async function initializeAudio() {
     state.mediaRecorder.onstop = async () => {
       const audioBlob = new Blob(state.audioChunks, { type: 'audio/webm' });
       state.audioChunks = [];
-      await processAudio(audioBlob);
+
+      // Ajouter à la queue au lieu de traiter immédiatement
+      addToProcessingQueue(audioBlob);
     };
 
     // Tout est prêt
