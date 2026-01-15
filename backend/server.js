@@ -16,6 +16,7 @@ import {
   ROLES,
   SUBSCRIPTION_TIERS
 } from './auth.js';
+import { encrypt, decrypt, generateSalt } from './encryption.js';
 
 dotenv.config();
 
@@ -160,6 +161,89 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
   });
 });
 
+// Changer le mot de passe
+app.post('/api/auth/change-password', authMiddleware, (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userEmail = req.user.email;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Mots de passe requis' });
+    }
+
+    const user = authManager.users.find(u => u.email === userEmail);
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Vérifier le mot de passe actuel
+    if (user.password !== currentPassword) {
+      return res.status(401).json({ error: 'Mot de passe actuel incorrect' });
+    }
+
+    // Mettre à jour le mot de passe
+    user.password = newPassword;
+
+    // IMPORTANT: Si l'utilisateur a un historique, il faut le re-crypter avec le nouveau mot de passe
+    if (user.history && user.historySalt) {
+      try {
+        const salt = Buffer.from(user.historySalt, 'base64');
+        const decryptedHistory = decrypt(user.history, currentPassword, salt);
+        user.history = encrypt(decryptedHistory, newPassword, salt);
+      } catch (error) {
+        logger.warn(`Impossible de re-crypter l'historique pour ${userEmail}, suppression`, error);
+        delete user.history;
+        delete user.historySalt;
+      }
+    }
+
+    authManager.saveUsers();
+    logger.info(`Mot de passe changé pour ${userEmail}`);
+
+    res.json({ success: true, message: 'Mot de passe modifié avec succès' });
+  } catch (error) {
+    logger.error('Erreur changement mot de passe', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Supprimer son propre compte
+app.delete('/api/auth/me', authMiddleware, (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ error: 'Mot de passe requis pour confirmation' });
+    }
+
+    const user = authManager.users.find(u => u.email === userEmail);
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Vérifier le mot de passe
+    if (user.password !== password) {
+      return res.status(401).json({ error: 'Mot de passe incorrect' });
+    }
+
+    // Supprimer l'utilisateur
+    authManager.users = authManager.users.filter(u => u.email !== userEmail);
+    authManager.saveUsers();
+
+    // Révoquer tous les tokens de cet utilisateur
+    authManager.tokens = authManager.tokens.filter(t => t.email !== userEmail);
+    authManager.saveTokens();
+
+    logger.info(`Compte supprimé: ${userEmail}`);
+    res.json({ success: true, message: 'Compte supprimé avec succès' });
+
+  } catch (error) {
+    logger.error('Erreur suppression compte', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 // Mettre à jour l'abonnement d'un utilisateur (admin uniquement)
 app.post('/api/auth/subscription', authMiddleware, requireAdmin, (req, res) => {
   try {
@@ -284,6 +368,122 @@ app.get('/api/auth/logs', authMiddleware, requireAdmin, async (req, res) => {
     }
   } catch (error) {
     logger.error('Erreur récupération logs', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ===================================
+// GESTION DE L'HISTORIQUE DES TRADUCTIONS
+// ===================================
+
+// Sauvegarder une traduction dans l'historique (cryptée)
+app.post('/api/history/save', authMiddleware, async (req, res) => {
+  try {
+    const { original, translated, sourceLang, targetLang } = req.body;
+    const userEmail = req.user.email;
+    const user = authManager.users.find(u => u.email === userEmail);
+
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Initialiser le sel de cryptage si nécessaire
+    if (!user.historySalt) {
+      user.historySalt = generateSalt().toString('base64');
+      authManager.saveUsers();
+    }
+
+    // Charger l'historique existant (crypté)
+    let history = [];
+    if (user.history) {
+      try {
+        const salt = Buffer.from(user.historySalt, 'base64');
+        history = decrypt(user.history, user.password, salt);
+      } catch (error) {
+        logger.warn(`Échec décryptage historique pour ${userEmail}`, error);
+        history = [];
+      }
+    }
+
+    // Ajouter la nouvelle traduction
+    history.push({
+      timestamp: new Date().toISOString(),
+      original,
+      translated,
+      sourceLang,
+      targetLang
+    });
+
+    // Limiter l'historique à 1000 entrées (FIFO)
+    if (history.length > 1000) {
+      history = history.slice(-1000);
+    }
+
+    // Crypter et sauvegarder
+    const salt = Buffer.from(user.historySalt, 'base64');
+    user.history = encrypt(history, user.password, salt);
+    authManager.saveUsers();
+
+    logger.info(`Historique sauvegardé pour ${userEmail}`);
+    res.json({ success: true, count: history.length });
+
+  } catch (error) {
+    logger.error('Erreur sauvegarde historique', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Récupérer l'historique des traductions (décrypté)
+app.get('/api/history', authMiddleware, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const user = authManager.users.find(u => u.email === userEmail);
+
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Si pas d'historique, retourner vide
+    if (!user.history || !user.historySalt) {
+      return res.json({ history: [] });
+    }
+
+    // Décrypter l'historique
+    try {
+      const salt = Buffer.from(user.historySalt, 'base64');
+      const history = decrypt(user.history, user.password, salt);
+      res.json({ history });
+    } catch (error) {
+      logger.error(`Échec décryptage historique pour ${userEmail}`, error);
+      res.status(500).json({ error: 'Erreur de décryptage' });
+    }
+
+  } catch (error) {
+    logger.error('Erreur récupération historique', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Supprimer l'historique des traductions
+app.delete('/api/history', authMiddleware, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const user = authManager.users.find(u => u.email === userEmail);
+
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Supprimer l'historique et le sel
+    delete user.history;
+    delete user.historySalt;
+    authManager.saveUsers();
+
+    logger.info(`Historique supprimé pour ${userEmail}`);
+    res.json({ success: true, message: 'Historique supprimé' });
+
+  } catch (error) {
+    logger.error('Erreur suppression historique', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });

@@ -51,6 +51,16 @@ const SUBSCRIPTION_TIERS = {
       translate: 1000,   // 1000 traductions/jour (quotas doublés, marge 55%)
       speak: 200         // 200 TTS/jour (quotas doublés, marge 55%)
     }
+  },
+  ADMIN: {
+    name: 'admin',
+    displayName: 'Admin',
+    price: 0,  // Non vendu publiquement
+    quotas: {
+      transcribe: -1,    // Illimité
+      translate: -1,     // Illimité
+      speak: -1          // Illimité
+    }
   }
 };
 

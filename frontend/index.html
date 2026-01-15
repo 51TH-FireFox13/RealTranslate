@@ -193,12 +193,27 @@
       color: #00a2ff;
     }
 
+    .profile-btn {
+      background: rgba(0, 255, 157, 0.2);
+      border: 1px solid rgba(0, 255, 157, 0.5);
+      color: #00ff9d;
+      padding: 8px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85em;
+      transition: all 0.3s ease;
+    }
+
     .logout-btn:hover {
       background: rgba(255, 107, 107, 0.3);
     }
 
     .admin-btn:hover {
       background: rgba(0, 162, 255, 0.3);
+    }
+
+    .profile-btn:hover {
+      background: rgba(0, 255, 157, 0.3);
     }
 
     /* Admin Panel */
@@ -853,6 +868,40 @@
       font-size: 1.05em;
       animation: slideIn 0.3s ease;
       word-wrap: break-word;
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .message-text {
+      flex: 1;
+      user-select: text;
+      cursor: text;
+    }
+
+    .copy-btn {
+      background: rgba(0, 255, 157, 0.2);
+      border: 1px solid rgba(0, 255, 157, 0.4);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: #00ff9d;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      min-width: 35px;
+      text-align: center;
+    }
+
+    .copy-btn:hover {
+      background: rgba(0, 255, 157, 0.3);
+      border-color: #00ff9d;
+      transform: scale(1.05);
+    }
+
+    .copy-btn:active {
+      transform: scale(0.95);
     }
 
     @keyframes slideIn {
@@ -1419,6 +1468,7 @@
         </div>
         <span class="user-info" id="userInfo"></span>
         <button class="admin-btn hidden" id="adminBtn" onclick="showAdminPanel()">👤 Admin</button>
+        <button class="profile-btn" id="profileBtn" onclick="showProfilePanel()">⚙️ Profil</button>
         <button class="logout-btn" onclick="logout()">↗ Logout</button>
       </div>
     </header>
@@ -1632,6 +1682,82 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Panel -->
+  <div id="profilePanel" class="admin-panel hidden">
+    <div class="admin-content">
+      <div class="admin-header">
+        <h2>⚙️ Mon Profil</h2>
+        <button class="close-admin-btn" onclick="closeProfilePanel()">✕ Fermer</button>
+      </div>
+
+      <!-- Profile Info -->
+      <div class="admin-section">
+        <h3>👤 Informations du compte</h3>
+        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+          <div style="display: grid; gap: 10px;">
+            <div>
+              <span style="color: #888;">Email:</span>
+              <span id="profileEmail" style="color: #fff; margin-left: 10px; font-weight: bold;">-</span>
+            </div>
+            <div>
+              <span style="color: #888;">Abonnement:</span>
+              <span id="profileTier" style="color: #00ff9d; margin-left: 10px; font-weight: bold;">-</span>
+            </div>
+            <div id="profileQuotas" style="color: #888; font-size: 0.9em; margin-top: 5px;">
+              Chargement des quotas...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Change Password -->
+      <div class="admin-section">
+        <h3>🔐 Changer le mot de passe</h3>
+        <div id="changePasswordMessage" class="hidden" style="margin-bottom: 15px;"></div>
+        <form class="create-user-form" onsubmit="return false;">
+          <div class="input-group" style="margin-bottom: 0;">
+            <input type="password" id="currentPassword" placeholder="Mot de passe actuel" required>
+          </div>
+          <div class="input-group" style="margin-bottom: 0;">
+            <input type="password" id="newPassword" placeholder="Nouveau mot de passe" required>
+          </div>
+          <div class="input-group" style="margin-bottom: 0;">
+            <input type="password" id="confirmNewPassword" placeholder="Confirmer le nouveau mot de passe" required>
+          </div>
+          <button class="create-user-btn" onclick="changePassword()">Changer le mot de passe</button>
+        </form>
+      </div>
+
+      <!-- History Management -->
+      <div class="admin-section">
+        <h3>📜 Historique des traductions</h3>
+        <div style="margin-bottom: 15px;">
+          <p style="color: #888; font-size: 0.9em;">Votre historique est crypté et stocké de manière sécurisée.</p>
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="create-user-btn" onclick="viewHistory()" style="margin: 0; flex: 1;">📖 Voir l'historique</button>
+            <button class="create-user-btn" onclick="deleteHistory()" style="margin: 0; flex: 1; background: #ff6b6b; color: #fff;">🗑️ Supprimer l'historique</button>
+          </div>
+        </div>
+        <div id="historyContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 300px; overflow-y: auto; display: none;">
+          <div id="historyContent"></div>
+        </div>
+      </div>
+
+      <!-- Delete Account -->
+      <div class="admin-section" style="border: 2px solid #ff6b6b; border-radius: 10px; padding: 20px;">
+        <h3 style="color: #ff6b6b;">⚠️ Zone dangereuse</h3>
+        <p style="color: #888; font-size: 0.9em; margin-bottom: 15px;">La suppression de votre compte est irréversible. Toutes vos données seront définitivement supprimées.</p>
+        <div id="deleteAccountMessage" class="hidden" style="margin-bottom: 15px;"></div>
+        <form class="create-user-form" onsubmit="return false;">
+          <div class="input-group" style="margin-bottom: 0;">
+            <input type="password" id="deleteAccountPassword" placeholder="Confirmer avec votre mot de passe" required>
+          </div>
+          <button class="create-user-btn" onclick="deleteAccount()" style="background: #ff6b6b; color: #fff;">🗑️ Supprimer mon compte</button>
+        </form>
       </div>
     </div>
   </div>

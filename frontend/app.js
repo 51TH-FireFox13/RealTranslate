@@ -1526,7 +1526,33 @@ function updateStatus(status, text) {
 function addMessage(panel, text) {
   const messageDiv = document.createElement('div');
   messageDiv.className = 'message';
-  messageDiv.textContent = text;
+
+  // Créer le conteneur du texte (sélectionnable)
+  const textSpan = document.createElement('span');
+  textSpan.className = 'message-text';
+  textSpan.textContent = text;
+  textSpan.style.userSelect = 'text';
+  textSpan.style.cursor = 'text';
+
+  // Créer le bouton de copie
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'copy-btn';
+  copyBtn.innerHTML = '📋';
+  copyBtn.title = 'Copier le message';
+  copyBtn.onclick = (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(text).then(() => {
+      copyBtn.innerHTML = '✓';
+      setTimeout(() => {
+        copyBtn.innerHTML = '📋';
+      }, 1500);
+    }).catch(err => {
+      console.error('Erreur copie:', err);
+    });
+  };
+
+  messageDiv.appendChild(textSpan);
+  messageDiv.appendChild(copyBtn);
 
   // Déterminer le panneau approprié (lang1 ou lang2)
   let contentElement;
@@ -1730,6 +1756,11 @@ async function processAudio(audioBlob) {
       addMessage('lang1', translation);
     }
 
+    // 4.5. Sauvegarder dans l'historique (en arrière-plan, sans bloquer)
+    saveToHistory(transcription, translation, sourceLang, targetLang).catch(err => {
+      console.error('⚠️ Erreur sauvegarde historique:', err);
+    });
+
     // 5. Text-to-Speech de la traduction (si activé)
     if (state.ttsEnabled) {
       updateStatus('speaking', '🔊 Lecture audio...');
@@ -1791,6 +1822,31 @@ async function translateText(text, targetLanguage, sourceLanguage = null) {
 
   const data = await response.json();
   return data.translatedText;
+}
+
+// Sauvegarder une traduction dans l'historique
+async function saveToHistory(original, translated, sourceLang, targetLang) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/history/save`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({
+        original,
+        translated,
+        sourceLang,
+        targetLang
+      })
+    });
+
+    if (!response.ok) {
+      console.warn('Échec sauvegarde historique:', response.statusText);
+    }
+  } catch (error) {
+    console.error('Erreur sauvegarde historique:', error);
+  }
 }
 
 // Créer un élément audio réutilisable pour iOS
@@ -1999,6 +2055,264 @@ async function requestMicrophonePermission() {
   }
 
   await initializeAudio();
+}
+
+// ===================================
+// GESTION DU PROFIL UTILISATEUR
+// ===================================
+
+// Afficher le panneau profil
+async function showProfilePanel() {
+  const profilePanel = document.getElementById('profilePanel');
+  profilePanel.classList.remove('hidden');
+
+  // Charger les informations du profil
+  document.getElementById('profileEmail').textContent = state.user.email;
+
+  // Charger l'abonnement et les quotas
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/subscription/info`, {
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const sub = data.subscription;
+
+      // Afficher le palier
+      const tierIcons = { free: '🆓', premium: '⭐', enterprise: '💎', admin: '👑' };
+      const tierNames = { free: 'Gratuit', premium: 'Premium', enterprise: 'Enterprise', admin: 'Admin' };
+      document.getElementById('profileTier').textContent =
+        `${tierIcons[sub.tier] || '📦'} ${tierNames[sub.tier] || sub.tier.toUpperCase()}`;
+
+      // Afficher les quotas
+      const quotasDiv = document.getElementById('profileQuotas');
+      if (sub.quotas.transcribe.limit === -1) {
+        quotasDiv.innerHTML = '✨ Quotas illimités';
+      } else {
+        quotasDiv.innerHTML = `
+          🎤 Transcriptions: ${sub.quotas.transcribe.limit - sub.quotas.transcribe.used}/${sub.quotas.transcribe.limit} restants<br>
+          🔄 Traductions: ${sub.quotas.translate.limit - sub.quotas.translate.used}/${sub.quotas.translate.limit} restants<br>
+          🔊 TTS: ${sub.quotas.speak.limit - sub.quotas.speak.used}/${sub.quotas.speak.limit} restants
+        `;
+      }
+    }
+  } catch (error) {
+    console.error('Erreur chargement quotas:', error);
+    document.getElementById('profileQuotas').textContent = 'Erreur chargement des quotas';
+  }
+}
+
+// Fermer le panneau profil
+function closeProfilePanel() {
+  const profilePanel = document.getElementById('profilePanel');
+  profilePanel.classList.add('hidden');
+
+  // Réinitialiser les formulaires
+  document.getElementById('currentPassword').value = '';
+  document.getElementById('newPassword').value = '';
+  document.getElementById('confirmNewPassword').value = '';
+  document.getElementById('deleteAccountPassword').value = '';
+  document.getElementById('historyContainer').style.display = 'none';
+}
+
+// Changer le mot de passe
+async function changePassword() {
+  const currentPassword = document.getElementById('currentPassword').value;
+  const newPassword = document.getElementById('newPassword').value;
+  const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+  const messageDiv = document.getElementById('changePasswordMessage');
+
+  if (!currentPassword || !newPassword || !confirmNewPassword) {
+    messageDiv.className = 'error-message';
+    messageDiv.textContent = '⚠️ Tous les champs sont requis';
+    messageDiv.classList.remove('hidden');
+    return;
+  }
+
+  if (newPassword !== confirmNewPassword) {
+    messageDiv.className = 'error-message';
+    messageDiv.textContent = '⚠️ Les nouveaux mots de passe ne correspondent pas';
+    messageDiv.classList.remove('hidden');
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    messageDiv.className = 'error-message';
+    messageDiv.textContent = '⚠️ Le mot de passe doit contenir au moins 6 caractères';
+    messageDiv.classList.remove('hidden');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Erreur lors du changement de mot de passe');
+    }
+
+    messageDiv.className = 'success-message';
+    messageDiv.textContent = '✅ Mot de passe modifié avec succès';
+    messageDiv.classList.remove('hidden');
+
+    // Réinitialiser les champs
+    document.getElementById('currentPassword').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmNewPassword').value = '';
+
+    // Masquer le message après 3 secondes
+    setTimeout(() => {
+      messageDiv.classList.add('hidden');
+    }, 3000);
+
+  } catch (error) {
+    console.error('Erreur changement mot de passe:', error);
+    messageDiv.className = 'error-message';
+    messageDiv.textContent = `❌ ${error.message}`;
+    messageDiv.classList.remove('hidden');
+  }
+}
+
+// Voir l'historique
+async function viewHistory() {
+  const historyContainer = document.getElementById('historyContainer');
+  const historyContent = document.getElementById('historyContent');
+
+  try {
+    historyContent.innerHTML = '<div style="text-align: center; padding: 20px; color: #888;"><p>Chargement...</p></div>';
+    historyContainer.style.display = 'block';
+
+    const response = await fetch(`${API_BASE_URL}/api/history`, {
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors de la récupération de l\'historique');
+    }
+
+    const data = await response.json();
+    const history = data.history;
+
+    if (!history || history.length === 0) {
+      historyContent.innerHTML = '<div style="text-align: center; padding: 20px; color: #888;"><p>Aucun historique</p></div>';
+      return;
+    }
+
+    // Afficher l'historique (du plus récent au plus ancien)
+    const historyHTML = history.reverse().map(item => {
+      const date = new Date(item.timestamp).toLocaleString('fr-FR');
+      const sourceLangName = LANGUAGES[item.sourceLang]?.nativeName || item.sourceLang;
+      const targetLangName = LANGUAGES[item.targetLang]?.nativeName || item.targetLang;
+
+      return `
+        <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+          <div style="color: #888; font-size: 0.85em; margin-bottom: 5px;">${date} • ${sourceLangName} → ${targetLangName}</div>
+          <div style="color: #fff; margin-bottom: 5px;"><strong>Original:</strong> ${escapeHtml(item.original)}</div>
+          <div style="color: #00ff9d;"><strong>Traduction:</strong> ${escapeHtml(item.translated)}</div>
+        </div>
+      `;
+    }).join('');
+
+    historyContent.innerHTML = `
+      <div style="margin-bottom: 10px; text-align: right; color: #888; font-size: 0.9em;">
+        Total: ${history.length} traductions
+      </div>
+      ${historyHTML}
+    `;
+
+  } catch (error) {
+    console.error('Erreur récupération historique:', error);
+    historyContent.innerHTML = '<div style="text-align: center; padding: 20px; color: #ff6b6b;"><p>❌ Erreur lors du chargement</p></div>';
+  }
+}
+
+// Supprimer l'historique
+async function deleteHistory() {
+  if (!confirm('Êtes-vous sûr de vouloir supprimer tout votre historique de traductions ?\n\nCette action est irréversible.')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/history`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors de la suppression de l\'historique');
+    }
+
+    alert('✅ Historique supprimé avec succès');
+
+    // Masquer le conteneur d'historique
+    document.getElementById('historyContainer').style.display = 'none';
+
+  } catch (error) {
+    console.error('Erreur suppression historique:', error);
+    alert(`❌ ${error.message}`);
+  }
+}
+
+// Supprimer le compte
+async function deleteAccount() {
+  const password = document.getElementById('deleteAccountPassword').value;
+  const messageDiv = document.getElementById('deleteAccountMessage');
+
+  if (!password) {
+    messageDiv.className = 'error-message';
+    messageDiv.textContent = '⚠️ Veuillez entrer votre mot de passe';
+    messageDiv.classList.remove('hidden');
+    return;
+  }
+
+  if (!confirm('⚠️ ATTENTION ⚠️\n\nÊtes-vous absolument sûr de vouloir supprimer votre compte ?\n\nToutes vos données seront définitivement supprimées :\n- Votre compte utilisateur\n- Votre historique de traductions\n- Votre abonnement\n\nCette action est IRRÉVERSIBLE.\n\nTapez OUI pour confirmer')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({ password })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Erreur lors de la suppression du compte');
+    }
+
+    alert('✅ Votre compte a été supprimé avec succès.\n\nVous allez être déconnecté.');
+
+    // Déconnecter et recharger
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
+    window.location.reload();
+
+  } catch (error) {
+    console.error('Erreur suppression compte:', error);
+    messageDiv.className = 'error-message';
+    messageDiv.textContent = `❌ ${error.message}`;
+    messageDiv.classList.remove('hidden');
+  }
 }
 
 // Initialisation au chargement
