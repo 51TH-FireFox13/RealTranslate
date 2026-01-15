@@ -47,9 +47,9 @@ const SUBSCRIPTION_TIERS = {
     displayName: 'Enterprise',
     price: 49.99,
     quotas: {
-      transcribe: 100,   // 100 transcriptions/jour (marge 77%)
-      translate: 500,    // 500 traductions/jour (marge 77%)
-      speak: 100         // 100 TTS/jour (marge 77%)
+      transcribe: 200,   // 200 transcriptions/jour (quotas doublés, marge 55%)
+      translate: 1000,   // 1000 traductions/jour (quotas doublés, marge 55%)
+      speak: 200         // 200 TTS/jour (quotas doublés, marge 55%)
     }
   }
 };
