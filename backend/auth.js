@@ -27,9 +27,9 @@ const SUBSCRIPTION_TIERS = {
     displayName: 'Gratuit',
     price: 0,
     quotas: {
-      transcribe: 10,    // 10 transcriptions/jour
-      translate: 50,      // 50 traductions/jour
-      speak: 10           // 10 TTS/jour
+      transcribe: 5,     // 5 transcriptions/jour (réduit pour viabilité)
+      translate: 25,     // 25 traductions/jour (réduit pour viabilité)
+      speak: 5           // 5 TTS/jour (réduit pour viabilité)
     }
   },
   PREMIUM: {
@@ -37,9 +37,9 @@ const SUBSCRIPTION_TIERS = {
     displayName: 'Premium',
     price: 9.99,
     quotas: {
-      transcribe: 500,
-      translate: 2000,
-      speak: 500
+      transcribe: 20,    // 20 transcriptions/jour (marge 77%)
+      translate: 100,    // 100 traductions/jour (marge 77%)
+      speak: 20          // 20 TTS/jour (marge 77%)
     }
   },
   ENTERPRISE: {
@@ -47,9 +47,9 @@ const SUBSCRIPTION_TIERS = {
     displayName: 'Enterprise',
     price: 49.99,
     quotas: {
-      transcribe: -1,    // Illimité
-      translate: -1,
-      speak: -1
+      transcribe: 100,   // 100 transcriptions/jour (marge 77%)
+      translate: 500,    // 500 traductions/jour (marge 77%)
+      speak: 100         // 100 TTS/jour (marge 77%)
     }
   }
 };
