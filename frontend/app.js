@@ -1349,28 +1349,20 @@ function updateQuotasDisplay() {
     quotasDiv.id = 'quotasCounter';
     quotasDiv.style.cssText = `
       position: fixed;
-      bottom: 10px;
-      right: 10px;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(10px);
+      bottom: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(15px);
       color: #fff;
-      padding: 10px 15px;
-      border-radius: 10px;
-      font-size: 0.85em;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-      z-index: 999;
-      max-width: 200px;
+      padding: 6px 12px;
+      border-radius: 15px;
+      font-size: 0.75em;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+      z-index: 998;
+      white-space: nowrap;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     `;
-
-    // Sur mobile, positionner au-dessus des contrôles mobiles et affichage horizontal
-    if (window.innerWidth <= 1024) {
-      quotasDiv.style.bottom = '90px';
-      quotasDiv.style.left = '10px';
-      quotasDiv.style.right = 'auto';
-      quotasDiv.style.maxWidth = 'calc(100vw - 20px)';
-    } else {
-      quotasDiv.style.maxWidth = '200px';
-    }
 
     document.body.appendChild(quotasDiv);
   }
@@ -1398,39 +1390,13 @@ function updateQuotasDisplay() {
   const speakDisplay = userQuotas.speak.limit === -1 ? '∞' :
     `${userQuotas.speak.limit - userQuotas.speak.used}/${userQuotas.speak.limit}`;
 
-  // Sur mobile, affichage horizontal des quotas
-  const isMobile = window.innerWidth <= 1024;
-
-  if (isMobile) {
-    quotasDiv.innerHTML = `
-      <div style="font-weight: bold; text-align: center; font-size: 0.85em; margin-bottom: 5px;">📊 Quotas</div>
-      <div style="display: flex; justify-content: space-around; gap: 15px; font-size: 0.9em;">
-        <div style="text-align: center;">
-          <span style="color: ${getColor(transcribePercent)};">🎤</span><br>${transcribeDisplay}
-        </div>
-        <div style="text-align: center;">
-          <span style="color: ${getColor(translatePercent)};">🔄</span><br>${translateDisplay}
-        </div>
-        <div style="text-align: center;">
-          <span style="color: ${getColor(speakPercent)};">🔊</span><br>${speakDisplay}
-        </div>
-      </div>
-    `;
-  } else {
-    // Desktop: affichage vertical
-    quotasDiv.innerHTML = `
-      <div style="font-weight: bold; margin-bottom: 8px; text-align: center; font-size: 0.9em;">📊 Quotas restants</div>
-      <div style="margin-bottom: 5px;">
-        <span style="color: ${getColor(transcribePercent)};">🎤</span> ${transcribeDisplay}
-      </div>
-      <div style="margin-bottom: 5px;">
-        <span style="color: ${getColor(translatePercent)};">🔄</span> ${translateDisplay}
-      </div>
-      <div>
-        <span style="color: ${getColor(speakPercent)};">🔊</span> ${speakDisplay}
-      </div>
-    `;
-  }
+  // Format ultra-compact horizontal pour mobile et desktop
+  quotasDiv.innerHTML = `
+    <span style="font-weight: 600; margin-right: 8px;">QUOTAS :</span>
+    <span style="color: ${getColor(transcribePercent)}; margin-right: 10px;">🎤 ${transcribeDisplay}</span>
+    <span style="color: ${getColor(translatePercent)}; margin-right: 10px;">📄 ${translateDisplay}</span>
+    <span style="color: ${getColor(speakPercent)};">🔊 ${speakDisplay}</span>
+  `;
 }
 
 // Fonction pour décrémenter un quota localement (mise à jour optimiste)
@@ -2133,18 +2099,6 @@ async function initializeAudio() {
     // Initialiser le bouton push-to-talk
     initPushToTalk();
 
-    // Initialiser l'interface en mode PTT (par défaut)
-    if (state.mode === 'push-to-talk') {
-      const modeSwitch = document.getElementById('modeSwitch');
-      const pushToTalkBtn = document.getElementById('pushToTalkBtn');
-      const micBtn = document.getElementById('micBtn');
-
-      modeSwitch.classList.add('push-to-talk');
-      pushToTalkBtn.classList.remove('hidden');
-      micBtn.style.opacity = '0.3';
-      micBtn.style.pointerEvents = 'none';
-    }
-
     console.log('✅ Système audio initialisé');
 
   } catch (error) {
@@ -2156,13 +2110,15 @@ async function initializeAudio() {
 // Initialiser les événements push-to-talk
 function initPushToTalk() {
   const pushToTalkBtn = document.getElementById('pushToTalkBtn');
+  const pushToTalkBtnMobile = document.getElementById('pushToTalkBtnMobile');
 
   // Fonction de début d'enregistrement
   const startPTT = (e) => {
     e.preventDefault();
     if (state.mode !== 'push-to-talk' || state.isRecording || state.isSpeaking) return;
 
-    pushToTalkBtn.classList.add('recording');
+    if (pushToTalkBtn) pushToTalkBtn.classList.add('recording');
+    if (pushToTalkBtnMobile) pushToTalkBtnMobile.classList.add('recording');
     startRecording();
     updateStatus('listening', '🎤 Enregistrement...');
   };
@@ -2172,19 +2128,33 @@ function initPushToTalk() {
     e.preventDefault();
     if (state.mode !== 'push-to-talk' || !state.isRecording) return;
 
-    pushToTalkBtn.classList.remove('recording');
+    if (pushToTalkBtn) pushToTalkBtn.classList.remove('recording');
+    if (pushToTalkBtnMobile) pushToTalkBtnMobile.classList.remove('recording');
     stopRecording();
   };
 
   // Desktop events
-  pushToTalkBtn.addEventListener('mousedown', startPTT);
-  pushToTalkBtn.addEventListener('mouseup', stopPTT);
-  pushToTalkBtn.addEventListener('mouseleave', stopPTT);
+  if (pushToTalkBtn) {
+    pushToTalkBtn.addEventListener('mousedown', startPTT);
+    pushToTalkBtn.addEventListener('mouseup', stopPTT);
+    pushToTalkBtn.addEventListener('mouseleave', stopPTT);
 
-  // Mobile touch events
-  pushToTalkBtn.addEventListener('touchstart', startPTT);
-  pushToTalkBtn.addEventListener('touchend', stopPTT);
-  pushToTalkBtn.addEventListener('touchcancel', stopPTT);
+    // Mobile touch events
+    pushToTalkBtn.addEventListener('touchstart', startPTT);
+    pushToTalkBtn.addEventListener('touchend', stopPTT);
+    pushToTalkBtn.addEventListener('touchcancel', stopPTT);
+  }
+
+  // Mobile button events
+  if (pushToTalkBtnMobile) {
+    pushToTalkBtnMobile.addEventListener('mousedown', startPTT);
+    pushToTalkBtnMobile.addEventListener('mouseup', stopPTT);
+    pushToTalkBtnMobile.addEventListener('mouseleave', stopPTT);
+
+    pushToTalkBtnMobile.addEventListener('touchstart', startPTT);
+    pushToTalkBtnMobile.addEventListener('touchend', stopPTT);
+    pushToTalkBtnMobile.addEventListener('touchcancel', stopPTT);
+  }
 
   console.log('✅ Push-to-Talk initialisé');
 }
@@ -2496,24 +2466,7 @@ document.addEventListener('touchstart', async () => {
   }
 }, { once: true });
 
-// Gestion du resize pour repositionner les éléments
+// Gestion du resize - rafraîchir l'affichage des quotas
 window.addEventListener('resize', () => {
-  const quotasDiv = document.getElementById('quotasCounter');
-  if (quotasDiv) {
-    if (window.innerWidth <= 1024) {
-      // Mobile: en bas à gauche, au-dessus des contrôles, horizontal
-      quotasDiv.style.bottom = '90px';
-      quotasDiv.style.left = '10px';
-      quotasDiv.style.right = 'auto';
-      quotasDiv.style.maxWidth = 'calc(100vw - 20px)';
-    } else {
-      // Desktop: en bas à droite, vertical
-      quotasDiv.style.bottom = '10px';
-      quotasDiv.style.left = 'auto';
-      quotasDiv.style.right = '10px';
-      quotasDiv.style.maxWidth = '200px';
-    }
-    // Rafraîchir le contenu pour adapter le layout (horizontal/vertical)
-    updateQuotasDisplay();
-  }
+  updateQuotasDisplay();
 });

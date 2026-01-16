@@ -151,14 +151,20 @@
       padding: 20px;
       text-align: center;
       border-bottom: 2px solid rgba(0, 255, 157, 0.2);
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      justify-content: space-between;
+      gap: 15px;
     }
 
     .header-content {
-      flex: 1;
+      grid-column: 2;
       text-align: center;
+      white-space: nowrap;
+    }
+
+    .user-menu {
+      justify-self: end;
     }
 
     .user-menu {
@@ -1194,8 +1200,19 @@
 
       /* Header */
       header {
-        padding: 15px;
-        flex-wrap: wrap;
+        padding: 15px 10px;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .header-content {
+        grid-column: 1;
+        order: 1;
+      }
+
+      .user-menu {
+        justify-self: center;
+        order: 2;
       }
 
       h1 {
@@ -1203,12 +1220,14 @@
       }
 
       .subtitle {
-        font-size: 0.9em;
+        font-size: 0.85em;
       }
 
       .user-menu {
-        font-size: 0.9em;
-        gap: 10px;
+        font-size: 0.85em;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
       }
 
       /* Panels */
@@ -1580,7 +1599,7 @@
 
     <!-- Header -->
     <header>
-      <div style="width: 100px;"></div>
+      <div></div>
       <div class="header-content">
         <h1>RealTranslate</h1>
         <div class="subtitle" id="appSubtitle">Traduction en Temps Réel</div>
