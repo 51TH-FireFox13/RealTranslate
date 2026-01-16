@@ -1327,6 +1327,14 @@ function updateQuotasDisplay() {
       z-index: 999;
       max-width: 200px;
     `;
+
+    // Sur mobile, positionner au-dessus des contrôles mobiles
+    if (window.innerWidth <= 1024) {
+      quotasDiv.style.bottom = '90px';
+      quotasDiv.style.left = '10px';
+      quotasDiv.style.right = 'auto';
+    }
+
     document.body.appendChild(quotasDiv);
   }
 
@@ -1388,15 +1396,26 @@ function applyLanguageSettings() {
     subtitle.textContent = `Traduction en Temps Réel • ${lang1.nativeName} ↔ ${lang2.nativeName}`;
   }
 
-  // Mettre à jour les en-têtes des panneaux
+  // Mettre à jour les drapeaux et noms des panneaux (nouveaux IDs)
+  const flag1 = document.getElementById('flag1');
+  const flag2 = document.getElementById('flag2');
+  const langName1 = document.getElementById('langName1');
+  const langName2 = document.getElementById('langName2');
+
+  if (flag1) flag1.textContent = lang1.flag;
+  if (flag2) flag2.textContent = lang2.flag;
+  if (langName1) langName1.textContent = lang1.nativeName;
+  if (langName2) langName2.textContent = lang2.nativeName;
+
+  // Compatibilité avec anciens sélecteurs (si présents)
   const panel1Header = document.querySelector('.panel:first-child h2');
   const panel2Header = document.querySelector('.panel:last-child h2');
 
-  if (panel1Header) {
+  if (panel1Header && !langName1) {
     panel1Header.textContent = `${lang1.flag} ${lang1.nativeName}`;
   }
 
-  if (panel2Header) {
+  if (panel2Header && !langName2) {
     panel2Header.textContent = `${lang2.flag} ${lang2.nativeName}`;
   }
 
@@ -1420,21 +1439,48 @@ function resetLanguageSelection() {
 function toggleMicrophone() {
   state.micEnabled = !state.micEnabled;
 
+  // Boutons desktop
   const micBtn = document.getElementById('micBtn');
   const micIcon = document.getElementById('micIcon');
   const micText = document.getElementById('micText');
 
+  // Boutons mobile
+  const micBtnMobile = document.getElementById('micBtnMobile');
+  const micIconMobile = document.getElementById('micIconMobile');
+
   if (state.micEnabled) {
-    micBtn.classList.add('active');
-    micBtn.classList.remove('muted');
-    micIcon.textContent = '🎤';
-    micText.textContent = 'Micro ON';
+    // Desktop
+    if (micBtn) {
+      micBtn.classList.add('active');
+      micBtn.classList.remove('muted');
+    }
+    if (micIcon) micIcon.textContent = '🎤';
+    if (micText) micText.textContent = 'Micro ON';
+
+    // Mobile
+    if (micBtnMobile) {
+      micBtnMobile.classList.add('active');
+      micBtnMobile.classList.remove('muted');
+    }
+    if (micIconMobile) micIconMobile.textContent = '🎤';
+
     updateStatus('listening', '🎧 Prêt à écouter...');
   } else {
-    micBtn.classList.remove('active');
-    micBtn.classList.add('muted');
-    micIcon.textContent = '🎤';
-    micText.textContent = 'Micro OFF';
+    // Desktop
+    if (micBtn) {
+      micBtn.classList.remove('active');
+      micBtn.classList.add('muted');
+    }
+    if (micIcon) micIcon.textContent = '🎤';
+    if (micText) micText.textContent = 'Micro OFF';
+
+    // Mobile
+    if (micBtnMobile) {
+      micBtnMobile.classList.remove('active');
+      micBtnMobile.classList.add('muted');
+    }
+    if (micIconMobile) micIconMobile.textContent = '🎤';
+
     updateStatus('idle', '🔇 Microphone désactivé');
 
     // Arrêter l'enregistrement en cours si nécessaire
@@ -1448,54 +1494,105 @@ function toggleMicrophone() {
 function toggleTTS() {
   state.ttsEnabled = !state.ttsEnabled;
 
+  // Boutons desktop
   const ttsBtn = document.getElementById('ttsBtn');
   const ttsIcon = document.getElementById('ttsIcon');
   const ttsText = document.getElementById('ttsText');
 
+  // Boutons mobile
+  const ttsBtnMobile = document.getElementById('ttsBtnMobile');
+  const ttsIconMobile = document.getElementById('ttsIconMobile');
+
   if (state.ttsEnabled) {
-    ttsBtn.classList.add('active');
-    ttsBtn.classList.remove('muted');
-    ttsIcon.textContent = '🔊';
-    ttsText.textContent = 'Audio ON';
+    // Desktop
+    if (ttsBtn) {
+      ttsBtn.classList.add('active');
+      ttsBtn.classList.remove('muted');
+    }
+    if (ttsIcon) ttsIcon.textContent = '🔊';
+    if (ttsText) ttsText.textContent = 'Audio ON';
+
+    // Mobile
+    if (ttsBtnMobile) {
+      ttsBtnMobile.classList.add('active');
+      ttsBtnMobile.classList.remove('muted');
+    }
+    if (ttsIconMobile) ttsIconMobile.textContent = '🔊';
   } else {
-    ttsBtn.classList.remove('active');
-    ttsBtn.classList.add('muted');
-    ttsIcon.textContent = '🔇';
-    ttsText.textContent = 'Audio OFF';
+    // Desktop
+    if (ttsBtn) {
+      ttsBtn.classList.remove('active');
+      ttsBtn.classList.add('muted');
+    }
+    if (ttsIcon) ttsIcon.textContent = '🔇';
+    if (ttsText) ttsText.textContent = 'Audio OFF';
+
+    // Mobile
+    if (ttsBtnMobile) {
+      ttsBtnMobile.classList.remove('active');
+      ttsBtnMobile.classList.add('muted');
+    }
+    if (ttsIconMobile) ttsIconMobile.textContent = '🔇';
   }
 }
 
 // Basculer entre mode temps réel et push-to-talk
 function toggleMode() {
+  // Éléments desktop
   const modeSwitch = document.getElementById('modeSwitch');
   const pushToTalkBtn = document.getElementById('pushToTalkBtn');
   const micBtn = document.getElementById('micBtn');
 
+  // Éléments mobile
+  const modeSwitchMobile = document.getElementById('modeSwitchMobile');
+  const pushToTalkBtnMobile = document.getElementById('pushToTalkBtnMobile');
+  const micBtnMobile = document.getElementById('micBtnMobile');
+
   if (state.mode === 'realtime') {
     // Passer en mode push-to-talk
     state.mode = 'push-to-talk';
-    modeSwitch.classList.add('push-to-talk');
-    pushToTalkBtn.classList.remove('hidden');
+
+    // Desktop
+    if (modeSwitch) modeSwitch.classList.add('push-to-talk');
+    if (pushToTalkBtn) pushToTalkBtn.classList.remove('hidden');
+    if (micBtn) {
+      micBtn.style.opacity = '0.3';
+      micBtn.style.pointerEvents = 'none';
+    }
+
+    // Mobile
+    if (modeSwitchMobile) modeSwitchMobile.classList.add('push-to-talk');
+    if (pushToTalkBtnMobile) pushToTalkBtnMobile.classList.remove('hidden');
+    if (micBtnMobile) {
+      micBtnMobile.style.opacity = '0.3';
+      micBtnMobile.style.pointerEvents = 'none';
+    }
 
     // Désactiver le micro automatique
     if (state.isRecording) {
       stopRecording();
     }
 
-    // Masquer le bouton micro
-    micBtn.style.opacity = '0.3';
-    micBtn.style.pointerEvents = 'none';
-
     console.log('🔴 Mode Push-to-Talk activé');
   } else {
     // Passer en mode temps réel
     state.mode = 'realtime';
-    modeSwitch.classList.remove('push-to-talk');
-    pushToTalkBtn.classList.add('hidden');
 
-    // Réactiver le bouton micro
-    micBtn.style.opacity = '1';
-    micBtn.style.pointerEvents = 'auto';
+    // Desktop
+    if (modeSwitch) modeSwitch.classList.remove('push-to-talk');
+    if (pushToTalkBtn) pushToTalkBtn.classList.add('hidden');
+    if (micBtn) {
+      micBtn.style.opacity = '1';
+      micBtn.style.pointerEvents = 'auto';
+    }
+
+    // Mobile
+    if (modeSwitchMobile) modeSwitchMobile.classList.remove('push-to-talk');
+    if (pushToTalkBtnMobile) pushToTalkBtnMobile.classList.add('hidden');
+    if (micBtnMobile) {
+      micBtnMobile.style.opacity = '1';
+      micBtnMobile.style.pointerEvents = 'auto';
+    }
 
     console.log('🟢 Mode Temps Réel activé');
   }
@@ -2340,3 +2437,21 @@ document.addEventListener('touchstart', async () => {
     await state.audioContext.resume();
   }
 }, { once: true });
+
+// Gestion du resize pour repositionner les éléments
+window.addEventListener('resize', () => {
+  const quotasDiv = document.getElementById('quotasCounter');
+  if (quotasDiv) {
+    if (window.innerWidth <= 1024) {
+      // Mobile: en bas à gauche, au-dessus des contrôles
+      quotasDiv.style.bottom = '90px';
+      quotasDiv.style.left = '10px';
+      quotasDiv.style.right = 'auto';
+    } else {
+      // Desktop: en bas à droite
+      quotasDiv.style.bottom = '10px';
+      quotasDiv.style.left = 'auto';
+      quotasDiv.style.right = '10px';
+    }
+  }
+});
