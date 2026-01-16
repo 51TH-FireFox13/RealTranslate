@@ -16,6 +16,7 @@ import {
   ROLES,
   SUBSCRIPTION_TIERS
 } from './auth.js';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -38,6 +39,50 @@ app.use(accessLoggerMiddleware); // Logger toutes les requêtes
 app.use(express.static(join(__dirname, '../frontend')));
 
 logger.info('RealTranslate Backend starting...');
+
+// ===================================
+// FONCTIONS DE CRYPTAGE POUR L'HISTORIQUE
+// ===================================
+
+// Dériver une clé de cryptage à partir du passwordHash
+function deriveEncryptionKey(passwordHash) {
+  // Utiliser le passwordHash comme base pour dériver une clé
+  // PBKDF2 avec un salt fixe (le passwordHash lui-même est déjà un hash sécurisé)
+  return crypto.pbkdf2Sync(passwordHash, 'realtranslate-history-salt', 10000, 32, 'sha256');
+}
+
+// Crypter l'historique avec une clé dérivée du passwordHash
+function encryptHistory(history, passwordHash) {
+  const key = deriveEncryptionKey(passwordHash);
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+
+  const jsonData = JSON.stringify(history);
+  let encrypted = cipher.update(jsonData, 'utf8', 'base64');
+  encrypted += cipher.final('base64');
+
+  // Retourner IV + données cryptées
+  return iv.toString('base64') + ':' + encrypted;
+}
+
+// Décrypter l'historique avec une clé dérivée du passwordHash
+function decryptHistory(encryptedData, passwordHash) {
+  try {
+    const key = deriveEncryptionKey(passwordHash);
+    const parts = encryptedData.split(':');
+    const iv = Buffer.from(parts[0], 'base64');
+    const encrypted = parts[1];
+
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+    let decrypted = decipher.update(encrypted, 'base64', 'utf8');
+    decrypted += decipher.final('utf8');
+
+    return JSON.parse(decrypted);
+  } catch (error) {
+    logger.error('Erreur décryptage historique', error);
+    return [];
+  }
+}
 
 // ===================================
 // ROUTES D'AUTHENTIFICATION
@@ -186,13 +231,22 @@ app.post('/api/auth/change-password', authMiddleware, (req, res) => {
       return res.status(401).json({ error: 'Mot de passe actuel incorrect' });
     }
 
+    // IMPORTANT: Supprimer l'historique car le passwordHash change
+    // (l'historique est crypté avec une clé dérivée du passwordHash)
+    const hadHistory = !!user.historyEncrypted;
+    delete user.historyEncrypted;
+
     // Mettre à jour le mot de passe
     user.passwordHash = authManager.hashPassword(newPassword);
 
     authManager.saveUsers();
-    logger.info(`Mot de passe changé pour ${userEmail}`);
+    logger.info(`Mot de passe changé pour ${userEmail}${hadHistory ? ' (historique supprimé)' : ''}`);
 
-    res.json({ success: true, message: 'Mot de passe modifié avec succès' });
+    res.json({
+      success: true,
+      message: 'Mot de passe modifié avec succès',
+      historyCleared: hadHistory
+    });
   } catch (error) {
     logger.error('Erreur changement mot de passe', error);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -378,7 +432,7 @@ app.get('/api/auth/logs', authMiddleware, requireAdmin, async (req, res) => {
 // GESTION DE L'HISTORIQUE DES TRADUCTIONS
 // ===================================
 
-// Sauvegarder une traduction dans l'historique
+// Sauvegarder une traduction dans l'historique (crypté)
 app.post('/api/history/save', authMiddleware, async (req, res) => {
   try {
     const { original, translated, sourceLang, targetLang } = req.body;
@@ -389,13 +443,19 @@ app.post('/api/history/save', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
     }
 
-    // Initialiser l'historique si nécessaire
-    if (!user.history) {
-      user.history = [];
+    // Vérifier que l'utilisateur a un passwordHash (pas un guest)
+    if (!user.passwordHash) {
+      return res.status(400).json({ error: 'Historique non disponible pour les utilisateurs invités' });
+    }
+
+    // Décrypter l'historique existant
+    let history = [];
+    if (user.historyEncrypted) {
+      history = decryptHistory(user.historyEncrypted, user.passwordHash);
     }
 
     // Ajouter la nouvelle traduction
-    user.history.push({
+    history.push({
       timestamp: new Date().toISOString(),
       original,
       translated,
@@ -404,14 +464,16 @@ app.post('/api/history/save', authMiddleware, async (req, res) => {
     });
 
     // Limiter l'historique à 1000 entrées (FIFO)
-    if (user.history.length > 1000) {
-      user.history = user.history.slice(-1000);
+    if (history.length > 1000) {
+      history = history.slice(-1000);
     }
 
+    // Crypter et sauvegarder
+    user.historyEncrypted = encryptHistory(history, user.passwordHash);
     authManager.saveUsers();
 
     logger.info(`Historique sauvegardé pour ${userEmail}`);
-    res.json({ success: true, count: user.history.length });
+    res.json({ success: true, count: history.length });
 
   } catch (error) {
     logger.error('Erreur sauvegarde historique', error);
@@ -419,7 +481,7 @@ app.post('/api/history/save', authMiddleware, async (req, res) => {
   }
 });
 
-// Récupérer l'historique des traductions
+// Récupérer l'historique des traductions (décrypté)
 app.get('/api/history', authMiddleware, async (req, res) => {
   try {
     const userEmail = req.user.email;
@@ -429,8 +491,14 @@ app.get('/api/history', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
     }
 
-    // Retourner l'historique (ou tableau vide si inexistant)
-    res.json({ history: user.history || [] });
+    // Vérifier que l'utilisateur a un passwordHash (pas un guest)
+    if (!user.passwordHash) {
+      return res.json({ history: [] });
+    }
+
+    // Décrypter et retourner l'historique
+    const history = user.historyEncrypted ? decryptHistory(user.historyEncrypted, user.passwordHash) : [];
+    res.json({ history });
 
   } catch (error) {
     logger.error('Erreur récupération historique', error);
@@ -448,8 +516,8 @@ app.delete('/api/history', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
     }
 
-    // Supprimer l'historique
-    delete user.history;
+    // Supprimer l'historique crypté
+    delete user.historyEncrypted;
     authManager.saveUsers();
 
     logger.info(`Historique supprimé pour ${userEmail}`);

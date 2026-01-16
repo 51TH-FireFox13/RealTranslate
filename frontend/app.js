@@ -1105,8 +1105,8 @@ function detectBrowserLanguage() {
     return langCode;
   }
 
-  // Par défaut: français
-  return 'fr';
+  // Par défaut: anglais (pour être plus international)
+  return 'en';
 }
 
 // Initialiser l'écran de sélection de langues
@@ -1271,8 +1271,8 @@ function showPricingPage() {
   document.getElementById('pricingPage').classList.remove('hidden');
 
   // Traduire la page selon la langue du navigateur
-  const browserLang = navigator.language.slice(0, 2);
-  const lang = UI_TRANSLATIONS[browserLang] ? browserLang : 'en';
+  const detectedLang = detectBrowserLanguage();
+  const lang = UI_TRANSLATIONS[detectedLang] ? detectedLang : 'en';
 
   // Appliquer les traductions
   document.querySelectorAll('[data-i18n]').forEach(element => {
@@ -2290,7 +2290,11 @@ async function changePassword() {
     }
 
     messageDiv.className = 'success-message';
-    messageDiv.textContent = '✅ Mot de passe modifié avec succès';
+    if (data.historyCleared) {
+      messageDiv.textContent = '✅ Mot de passe modifié avec succès. ⚠️ Votre historique de traductions a été supprimé pour des raisons de sécurité (le cryptage utilise votre mot de passe).';
+    } else {
+      messageDiv.textContent = '✅ Mot de passe modifié avec succès';
+    }
     messageDiv.classList.remove('hidden');
 
     // Réinitialiser les champs
