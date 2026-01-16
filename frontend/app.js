@@ -1705,9 +1705,11 @@ function analyzeVolume() {
   }
   const rms = Math.sqrt(sum / bufferLength);
 
-  // Mise à jour de l'indicateur visuel
-  const volumePercent = Math.min(100, rms * 1000);
-  elements.volumeBar.style.width = `${volumePercent}%`;
+  // Mise à jour de l'indicateur visuel (si l'élément existe)
+  if (elements.volumeBar) {
+    const volumePercent = Math.min(100, rms * 1000);
+    elements.volumeBar.style.width = `${volumePercent}%`;
+  }
 
   return rms;
 }

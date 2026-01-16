@@ -1201,18 +1201,23 @@
       /* Header */
       header {
         padding: 15px 10px;
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
         gap: 10px;
+        align-items: center;
+      }
+
+      header > div:first-child {
+        display: none;
       }
 
       .header-content {
-        grid-column: 1;
-        order: 1;
+        text-align: center;
       }
 
       .user-menu {
-        justify-self: center;
-        order: 2;
+        width: 100%;
+        justify-content: center;
       }
 
       h1 {
@@ -1227,7 +1232,6 @@
         font-size: 0.85em;
         gap: 8px;
         flex-wrap: wrap;
-        justify-content: center;
       }
 
       /* Panels */
