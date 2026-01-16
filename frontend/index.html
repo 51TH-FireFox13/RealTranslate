@@ -1767,6 +1767,7 @@
               <option value="free">🆓 Gratuit</option>
               <option value="premium">⭐ Premium</option>
               <option value="enterprise">💎 Enterprise</option>
+              <option value="admin">👑 Admin</option>
             </select>
             <div style="flex: 1; min-width: 150px;">
               <label style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Max utilisations</label>
@@ -1804,9 +1805,10 @@
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
               <input type="email" id="subscriptionEmail" placeholder="Email de l'utilisateur" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
               <select id="subscriptionTier" style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
-                <option value="free">🆓 Gratuit (10/50/10)</option>
-                <option value="premium">⭐ Premium (500/2000/500) - 9.99€</option>
-                <option value="enterprise">💎 Enterprise (Illimité) - 49.99€</option>
+                <option value="free">🆓 Gratuit (5/25/5)</option>
+                <option value="premium">⭐ Premium (20/100/20) - 9.99€</option>
+                <option value="enterprise">💎 Enterprise (200/1000/200) - 49.99€</option>
+                <option value="admin">👑 Admin (∞ Illimité)</option>
               </select>
               <button class="create-user-btn" onclick="updateUserSubscription()" style="margin: 0;">✅ Mettre à jour</button>
               <button class="create-user-btn" onclick="deleteUserSubscription()" style="margin: 0; background: #ff6b6b;">🗑️ Supprimer</button>
