@@ -2494,7 +2494,7 @@ async function updateDisplayName() {
   }
 
   try {
-    const response = await fetch(`${API_URL}/profile/displayname`, {
+    const response = await fetch(`${API_BASE_URL}/api/profile/displayname`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -2551,13 +2551,13 @@ function closeFriendsPanel() {
 async function loadFriendsData() {
   try {
     // Charger les amis
-    const friendsResponse = await fetch(`${API_URL}/friends`, {
+    const friendsResponse = await fetch(`${API_BASE_URL}/api/friends`, {
       headers: { 'Authorization': `Bearer ${state.token}` }
     });
     const friendsData = await friendsResponse.json();
 
     // Charger les demandes
-    const requestsResponse = await fetch(`${API_URL}/friends/requests`, {
+    const requestsResponse = await fetch(`${API_BASE_URL}/api/friends/requests`, {
       headers: { 'Authorization': `Bearer ${state.token}` }
     });
     const requestsData = await requestsResponse.json();
@@ -2626,7 +2626,7 @@ async function searchUsers() {
   }
 
   try {
-    const response = await fetch(`${API_URL}/friends/search?q=${encodeURIComponent(searchTerm)}`, {
+    const response = await fetch(`${API_BASE_URL}/api/friends/search?q=${encodeURIComponent(searchTerm)}`, {
       headers: { 'Authorization': `Bearer ${state.token}` }
     });
     const data = await response.json();
@@ -2655,7 +2655,7 @@ async function searchUsers() {
 
 async function sendFriendRequest(toEmail) {
   try {
-    const response = await fetch(`${API_URL}/friends/request`, {
+    const response = await fetch(`${API_BASE_URL}/api/friends/request`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2679,7 +2679,7 @@ async function sendFriendRequest(toEmail) {
 
 async function acceptFriendRequest(fromEmail) {
   try {
-    const response = await fetch(`${API_URL}/friends/accept`, {
+    const response = await fetch(`${API_BASE_URL}/api/friends/accept`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2704,7 +2704,7 @@ async function acceptFriendRequest(fromEmail) {
 
 async function rejectFriendRequest(fromEmail) {
   try {
-    const response = await fetch(`${API_URL}/friends/reject`, {
+    const response = await fetch(`${API_BASE_URL}/api/friends/reject`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2729,7 +2729,7 @@ async function removeFriend(friendEmail) {
   if (!confirm('Êtes-vous sûr de vouloir retirer cet ami ?')) return;
 
   try {
-    const response = await fetch(`${API_URL}/friends/${friendEmail}`, {
+    const response = await fetch(`${API_BASE_URL}/api/friends/${friendEmail}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${state.token}` }
     });
@@ -2767,7 +2767,7 @@ function closeGroupsPanel() {
 async function loadGroupsData() {
   try {
     // Charger les groupes
-    const groupsResponse = await fetch(`${API_URL}/groups`, {
+    const groupsResponse = await fetch(`${API_BASE_URL}/api/groups`, {
       headers: { 'Authorization': `Bearer ${state.token}` }
     });
     const data = await groupsResponse.json();
@@ -2776,7 +2776,7 @@ async function loadGroupsData() {
     displayGroupsList(groupsData.groups);
 
     // Charger les amis pour la sélection
-    const friendsResponse = await fetch(`${API_URL}/friends`, {
+    const friendsResponse = await fetch(`${API_BASE_URL}/api/friends`, {
       headers: { 'Authorization': `Bearer ${state.token}` }
     });
     const friendsData = await friendsResponse.json();
@@ -2845,7 +2845,7 @@ async function createGroup() {
   }
 
   try {
-    const response = await fetch(`${API_URL}/groups`, {
+    const response = await fetch(`${API_BASE_URL}/api/groups`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2939,7 +2939,7 @@ function connectSocket() {
 async function openGroupChat(groupId) {
   try {
     // Charger les détails du groupe
-    const response = await fetch(`${API_URL}/groups/${groupId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/groups/${groupId}`, {
       headers: { 'Authorization': `Bearer ${state.token}` }
     });
     const data = await response.json();
@@ -2968,7 +2968,7 @@ async function openGroupChat(groupId) {
     document.getElementById('groupMembersCount').textContent = `${data.group.members.length} membres`;
 
     // Charger l'historique
-    const messagesResponse = await fetch(`${API_URL}/groups/${groupId}/messages`, {
+    const messagesResponse = await fetch(`${API_BASE_URL}/api/groups/${groupId}/messages`, {
       headers: { 'Authorization': `Bearer ${state.token}` }
     });
     const messagesData = await messagesResponse.json();
