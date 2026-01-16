@@ -1222,10 +1222,44 @@ function startTranslation() {
   // Charger les quotas utilisateur
   loadUserQuotas();
 
+  // Initialiser le mode switch UI pour refléter le mode par défaut (PTT)
+  initializeModeUI();
+
   // Demander la permission microphone
   setTimeout(() => {
     elements.permissionModal.classList.remove('hidden');
   }, 500);
+}
+
+// Initialiser l'interface du mode (PTT/Temps Réel)
+function initializeModeUI() {
+  const modeSwitch = document.getElementById('modeSwitch');
+  const modeSwitchMobile = document.getElementById('modeSwitchMobile');
+  const pushToTalkBtn = document.getElementById('pushToTalkBtn');
+  const pushToTalkBtnMobile = document.getElementById('pushToTalkBtnMobile');
+  const micBtn = document.getElementById('micBtn');
+  const micBtnMobile = document.getElementById('micBtnMobile');
+
+  if (state.mode === 'push-to-talk') {
+    // Desktop
+    if (modeSwitch) modeSwitch.classList.add('push-to-talk');
+    if (pushToTalkBtn) pushToTalkBtn.classList.remove('hidden');
+    if (micBtn) micBtn.style.opacity = '0.3';
+
+    // Mobile
+    if (modeSwitchMobile) modeSwitchMobile.classList.add('push-to-talk');
+    if (pushToTalkBtnMobile) pushToTalkBtnMobile.classList.remove('hidden');
+    if (micBtnMobile) micBtnMobile.style.opacity = '0.3';
+  } else {
+    // Mode temps réel (par défaut dans l'HTML)
+    if (modeSwitch) modeSwitch.classList.remove('push-to-talk');
+    if (pushToTalkBtn) pushToTalkBtn.classList.add('hidden');
+    if (micBtn) micBtn.style.opacity = '1';
+
+    if (modeSwitchMobile) modeSwitchMobile.classList.remove('push-to-talk');
+    if (pushToTalkBtnMobile) pushToTalkBtnMobile.classList.add('hidden');
+    if (micBtnMobile) micBtnMobile.style.opacity = '1';
+  }
 }
 
 // ===================================
@@ -1328,11 +1362,14 @@ function updateQuotasDisplay() {
       max-width: 200px;
     `;
 
-    // Sur mobile, positionner au-dessus des contrôles mobiles
+    // Sur mobile, positionner au-dessus des contrôles mobiles et affichage horizontal
     if (window.innerWidth <= 1024) {
       quotasDiv.style.bottom = '90px';
       quotasDiv.style.left = '10px';
       quotasDiv.style.right = 'auto';
+      quotasDiv.style.maxWidth = 'calc(100vw - 20px)';
+    } else {
+      quotasDiv.style.maxWidth = '200px';
     }
 
     document.body.appendChild(quotasDiv);
@@ -1361,18 +1398,39 @@ function updateQuotasDisplay() {
   const speakDisplay = userQuotas.speak.limit === -1 ? '∞' :
     `${userQuotas.speak.limit - userQuotas.speak.used}/${userQuotas.speak.limit}`;
 
-  quotasDiv.innerHTML = `
-    <div style="font-weight: bold; margin-bottom: 8px; text-align: center; font-size: 0.9em;">📊 Quotas restants</div>
-    <div style="margin-bottom: 5px;">
-      <span style="color: ${getColor(transcribePercent)};">🎤</span> ${transcribeDisplay}
-    </div>
-    <div style="margin-bottom: 5px;">
-      <span style="color: ${getColor(translatePercent)};">🔄</span> ${translateDisplay}
-    </div>
-    <div>
-      <span style="color: ${getColor(speakPercent)};">🔊</span> ${speakDisplay}
-    </div>
-  `;
+  // Sur mobile, affichage horizontal des quotas
+  const isMobile = window.innerWidth <= 1024;
+
+  if (isMobile) {
+    quotasDiv.innerHTML = `
+      <div style="font-weight: bold; text-align: center; font-size: 0.85em; margin-bottom: 5px;">📊 Quotas</div>
+      <div style="display: flex; justify-content: space-around; gap: 15px; font-size: 0.9em;">
+        <div style="text-align: center;">
+          <span style="color: ${getColor(transcribePercent)};">🎤</span><br>${transcribeDisplay}
+        </div>
+        <div style="text-align: center;">
+          <span style="color: ${getColor(translatePercent)};">🔄</span><br>${translateDisplay}
+        </div>
+        <div style="text-align: center;">
+          <span style="color: ${getColor(speakPercent)};">🔊</span><br>${speakDisplay}
+        </div>
+      </div>
+    `;
+  } else {
+    // Desktop: affichage vertical
+    quotasDiv.innerHTML = `
+      <div style="font-weight: bold; margin-bottom: 8px; text-align: center; font-size: 0.9em;">📊 Quotas restants</div>
+      <div style="margin-bottom: 5px;">
+        <span style="color: ${getColor(transcribePercent)};">🎤</span> ${transcribeDisplay}
+      </div>
+      <div style="margin-bottom: 5px;">
+        <span style="color: ${getColor(translatePercent)};">🔄</span> ${translateDisplay}
+      </div>
+      <div>
+        <span style="color: ${getColor(speakPercent)};">🔊</span> ${speakDisplay}
+      </div>
+    `;
+  }
 }
 
 // Fonction pour décrémenter un quota localement (mise à jour optimiste)
@@ -2443,15 +2501,19 @@ window.addEventListener('resize', () => {
   const quotasDiv = document.getElementById('quotasCounter');
   if (quotasDiv) {
     if (window.innerWidth <= 1024) {
-      // Mobile: en bas à gauche, au-dessus des contrôles
+      // Mobile: en bas à gauche, au-dessus des contrôles, horizontal
       quotasDiv.style.bottom = '90px';
       quotasDiv.style.left = '10px';
       quotasDiv.style.right = 'auto';
+      quotasDiv.style.maxWidth = 'calc(100vw - 20px)';
     } else {
-      // Desktop: en bas à droite
+      // Desktop: en bas à droite, vertical
       quotasDiv.style.bottom = '10px';
       quotasDiv.style.left = 'auto';
       quotasDiv.style.right = '10px';
+      quotasDiv.style.maxWidth = '200px';
     }
+    // Rafraîchir le contenu pour adapter le layout (horizontal/vertical)
+    updateQuotasDisplay();
   }
 });

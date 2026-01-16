@@ -171,7 +171,7 @@ app.post('/api/auth/change-password', authMiddleware, (req, res) => {
       return res.status(400).json({ error: 'Mots de passe requis' });
     }
 
-    const user = authManager.users.find(u => u.email === userEmail);
+    const user = Object.values(authManager.users).find(u => u.email === userEmail);
     if (!user) {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
     }
@@ -217,7 +217,7 @@ app.delete('/api/auth/me', authMiddleware, (req, res) => {
       return res.status(400).json({ error: 'Mot de passe requis pour confirmation' });
     }
 
-    const user = authManager.users.find(u => u.email === userEmail);
+    const user = Object.values(authManager.users).find(u => u.email === userEmail);
     if (!user) {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
     }
@@ -227,8 +227,8 @@ app.delete('/api/auth/me', authMiddleware, (req, res) => {
       return res.status(401).json({ error: 'Mot de passe incorrect' });
     }
 
-    // Supprimer l'utilisateur
-    authManager.users = authManager.users.filter(u => u.email !== userEmail);
+    // Supprimer l'utilisateur de l'objet
+    delete authManager.users[user.id];
     authManager.saveUsers();
 
     // Révoquer tous les tokens de cet utilisateur
@@ -381,7 +381,7 @@ app.post('/api/history/save', authMiddleware, async (req, res) => {
   try {
     const { original, translated, sourceLang, targetLang } = req.body;
     const userEmail = req.user.email;
-    const user = authManager.users.find(u => u.email === userEmail);
+    const user = Object.values(authManager.users).find(u => u.email === userEmail);
 
     if (!user) {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
@@ -437,7 +437,7 @@ app.post('/api/history/save', authMiddleware, async (req, res) => {
 app.get('/api/history', authMiddleware, async (req, res) => {
   try {
     const userEmail = req.user.email;
-    const user = authManager.users.find(u => u.email === userEmail);
+    const user = Object.values(authManager.users).find(u => u.email === userEmail);
 
     if (!user) {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
@@ -468,7 +468,7 @@ app.get('/api/history', authMiddleware, async (req, res) => {
 app.delete('/api/history', authMiddleware, async (req, res) => {
   try {
     const userEmail = req.user.email;
-    const user = authManager.users.find(u => u.email === userEmail);
+    const user = Object.values(authManager.users).find(u => u.email === userEmail);
 
     if (!user) {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
