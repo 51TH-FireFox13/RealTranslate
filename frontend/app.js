@@ -2195,6 +2195,7 @@ async function showProfilePanel() {
 
   // Charger les informations du profil
   document.getElementById('profileEmail').textContent = state.user.email;
+  document.getElementById('profileDisplayName').textContent = state.user.displayName || state.user.email.split('@')[0];
 
   // Charger l'abonnement et les quotas
   try {
@@ -2476,3 +2477,606 @@ document.addEventListener('touchstart', async () => {
 window.addEventListener('resize', () => {
   updateQuotasDisplay();
 });
+
+// ===================================
+// GESTION DU PROFIL - DISPLAYNAME
+// ===================================
+
+async function updateDisplayName() {
+  const newDisplayName = document.getElementById('newDisplayName').value;
+  const messageDiv = document.getElementById('displayNameMessage');
+
+  if (!newDisplayName || newDisplayName.trim().length < 2) {
+    messageDiv.textContent = '❌ Le nom doit contenir au moins 2 caractères';
+    messageDiv.style.color = '#ff6b6b';
+    messageDiv.classList.remove('hidden');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/profile/displayname`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({ displayName: newDisplayName })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      messageDiv.textContent = `✅ Nom d'affichage mis à jour: ${data.displayName}`;
+      messageDiv.style.color = '#00ff9d';
+      messageDiv.classList.remove('hidden');
+
+      document.getElementById('profileDisplayName').textContent = data.displayName;
+      document.getElementById('newDisplayName').value = '';
+
+      // Rafraîchir les infos du profil
+      setTimeout(() => {
+        messageDiv.classList.add('hidden');
+      }, 3000);
+    } else {
+      messageDiv.textContent = `❌ ${data.error}`;
+      messageDiv.style.color = '#ff6b6b';
+      messageDiv.classList.remove('hidden');
+    }
+  } catch (error) {
+    console.error('Error updating display name:', error);
+    messageDiv.textContent = '❌ Erreur lors de la mise à jour';
+    messageDiv.style.color = '#ff6b6b';
+    messageDiv.classList.remove('hidden');
+  }
+}
+
+// ===================================
+// GESTION DES AMIS
+// ===================================
+
+let friendsData = {
+  friends: [],
+  requests: []
+};
+
+function showFriendsPanel() {
+  document.getElementById('friendsPanel').classList.remove('hidden');
+  loadFriendsData();
+}
+
+function closeFriendsPanel() {
+  document.getElementById('friendsPanel').classList.add('hidden');
+}
+
+async function loadFriendsData() {
+  try {
+    // Charger les amis
+    const friendsResponse = await fetch(`${API_URL}/friends`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    const friendsData = await friendsResponse.json();
+
+    // Charger les demandes
+    const requestsResponse = await fetch(`${API_URL}/friends/requests`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    const requestsData = await requestsResponse.json();
+
+    displayFriendRequests(requestsData.requests || []);
+    displayFriendsList(friendsData.friends || []);
+
+    friendsData.friends = friendsData.friends || [];
+    friendsData.requests = requestsData.requests || [];
+  } catch (error) {
+    console.error('Error loading friends data:', error);
+  }
+}
+
+function displayFriendRequests(requests) {
+  const container = document.getElementById('friendRequestsContent');
+
+  if (requests.length === 0) {
+    container.innerHTML = '<p style="color: #888;">Aucune demande d\'ami en attente</p>';
+    return;
+  }
+
+  container.innerHTML = requests.map(req => `
+    <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div style="color: #fff; font-weight: bold;">${req.fromDisplayName}</div>
+        <div style="color: #888; font-size: 0.85em;">${req.from}</div>
+        <div style="color: #666; font-size: 0.8em; margin-top: 4px;">${new Date(req.sentAt).toLocaleDateString()}</div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button onclick="acceptFriendRequest('${req.from}')" style="background: #00ff9d; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;">✓ Accepter</button>
+        <button onclick="rejectFriendRequest('${req.from}')" style="background: #ff6b6b; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">✕ Refuser</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function displayFriendsList(friends) {
+  const container = document.getElementById('friendsListContent');
+
+  if (friends.length === 0) {
+    container.innerHTML = '<p style="color: #888;">Aucun ami pour le moment. Recherchez des utilisateurs ci-dessus!</p>';
+    return;
+  }
+
+  container.innerHTML = friends.map(friend => `
+    <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div style="color: #fff; font-weight: bold;">${friend.displayName}</div>
+        <div style="color: #888; font-size: 0.85em;">${friend.email}</div>
+      </div>
+      <button onclick="removeFriend('${friend.email}')" style="background: #ff6b6b; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Retirer</button>
+    </div>
+  `).join('');
+}
+
+async function searchUsers() {
+  const searchTerm = document.getElementById('searchUserInput').value;
+  const resultsDiv = document.getElementById('searchResults');
+  const contentDiv = document.getElementById('searchResultsContent');
+
+  if (!searchTerm || searchTerm.trim().length < 2) {
+    contentDiv.innerHTML = '<p style="color: #888;">Entrez au moins 2 caractères</p>';
+    resultsDiv.style.display = 'block';
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/friends/search?q=${encodeURIComponent(searchTerm)}`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    const data = await response.json();
+
+    if (data.users && data.users.length > 0) {
+      contentDiv.innerHTML = data.users.map(user => `
+        <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="color: #fff; font-weight: bold;">${user.displayName}</div>
+            <div style="color: #888; font-size: 0.85em;">${user.email}</div>
+          </div>
+          <button onclick="sendFriendRequest('${user.email}')" style="background: #00ff9d; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;">+ Ajouter</button>
+        </div>
+      `).join('');
+    } else {
+      contentDiv.innerHTML = '<p style="color: #888;">Aucun utilisateur trouvé avec ce nom</p>';
+    }
+
+    resultsDiv.style.display = 'block';
+  } catch (error) {
+    console.error('Error searching users:', error);
+    contentDiv.innerHTML = '<p style="color: #ff6b6b;">Erreur lors de la recherche</p>';
+    resultsDiv.style.display = 'block';
+  }
+}
+
+async function sendFriendRequest(toEmail) {
+  try {
+    const response = await fetch(`${API_URL}/friends/request`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({ toEmail })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert(`✅ ${data.message}`);
+    } else {
+      alert(`❌ ${data.error}`);
+    }
+  } catch (error) {
+    console.error('Error sending friend request:', error);
+    alert('❌ Erreur lors de l\'envoi de la demande');
+  }
+}
+
+async function acceptFriendRequest(fromEmail) {
+  try {
+    const response = await fetch(`${API_URL}/friends/accept`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({ fromEmail })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert(`✅ ${data.message}`);
+      loadFriendsData(); // Rafraîchir
+    } else {
+      alert(`❌ ${data.error}`);
+    }
+  } catch (error) {
+    console.error('Error accepting friend request:', error);
+    alert('❌ Erreur');
+  }
+}
+
+async function rejectFriendRequest(fromEmail) {
+  try {
+    const response = await fetch(`${API_URL}/friends/reject`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({ fromEmail })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      loadFriendsData(); // Rafraîchir
+    } else {
+      alert(`❌ ${data.error}`);
+    }
+  } catch (error) {
+    console.error('Error rejecting friend request:', error);
+  }
+}
+
+async function removeFriend(friendEmail) {
+  if (!confirm('Êtes-vous sûr de vouloir retirer cet ami ?')) return;
+
+  try {
+    const response = await fetch(`${API_URL}/friends/${friendEmail}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      loadFriendsData(); // Rafraîchir
+    } else {
+      alert(`❌ ${data.error}`);
+    }
+  } catch (error) {
+    console.error('Error removing friend:', error);
+  }
+}
+
+// ===================================
+// GESTION DES GROUPES
+// ===================================
+
+let groupsData = {
+  groups: [],
+  currentGroup: null
+};
+
+function showGroupsPanel() {
+  document.getElementById('groupsPanel').classList.remove('hidden');
+  loadGroupsData();
+}
+
+function closeGroupsPanel() {
+  document.getElementById('groupsPanel').classList.add('hidden');
+}
+
+async function loadGroupsData() {
+  try {
+    // Charger les groupes
+    const groupsResponse = await fetch(`${API_URL}/groups`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    const data = await groupsResponse.json();
+
+    groupsData.groups = data.groups || [];
+    displayGroupsList(groupsData.groups);
+
+    // Charger les amis pour la sélection
+    const friendsResponse = await fetch(`${API_URL}/friends`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    const friendsData = await friendsResponse.json();
+    displayFriendsSelection(friendsData.friends || []);
+  } catch (error) {
+    console.error('Error loading groups:', error);
+  }
+}
+
+function displayFriendsSelection(friends) {
+  const container = document.getElementById('friendsSelectionList');
+
+  if (friends.length === 0) {
+    container.innerHTML = '<p style="color: #888;">Vous n\'avez pas encore d\'amis. Ajoutez-en dans l\'onglet Amis!</p>';
+    return;
+  }
+
+  container.innerHTML = friends.map(friend => `
+    <label style="display: flex; align-items: center; padding: 8px; cursor: pointer; border-radius: 6px; margin-bottom: 8px; background: rgba(255,255,255,0.03);" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+      <input type="checkbox" value="${friend.email}" style="margin-right: 10px; width: 18px; height: 18px; cursor: pointer;">
+      <div>
+        <div style="color: #fff;">${friend.displayName}</div>
+        <div style="color: #666; font-size: 0.8em;">${friend.email}</div>
+      </div>
+    </label>
+  `).join('');
+}
+
+function displayGroupsList(groups) {
+  const container = document.getElementById('groupsListContent');
+
+  if (groups.length === 0) {
+    container.innerHTML = '<p style="color: #888;">Aucun groupe. Créez-en un ci-dessus!</p>';
+    return;
+  }
+
+  container.innerHTML = groups.map(group => `
+    <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer;" onclick="openGroupChat('${group.id}')">
+      <div style="color: #fff; font-weight: bold; margin-bottom: 4px;">${group.name}</div>
+      <div style="color: #888; font-size: 0.85em;">${group.members.length} membres</div>
+      <div style="color: #666; font-size: 0.8em; margin-top: 4px;">Créé le ${new Date(group.createdAt).toLocaleDateString()}</div>
+    </div>
+  `).join('');
+}
+
+async function createGroup() {
+  const groupName = document.getElementById('groupName').value;
+  const messageDiv = document.getElementById('createGroupMessage');
+
+  if (!groupName || groupName.trim().length < 2) {
+    messageDiv.textContent = '❌ Le nom du groupe doit contenir au moins 2 caractères';
+    messageDiv.style.color = '#ff6b6b';
+    messageDiv.classList.remove('hidden');
+    return;
+  }
+
+  // Récupérer les amis sélectionnés
+  const checkboxes = document.querySelectorAll('#friendsSelectionList input[type="checkbox"]:checked');
+  const memberEmails = Array.from(checkboxes).map(cb => cb.value);
+
+  if (memberEmails.length === 0) {
+    messageDiv.textContent = '❌ Sélectionnez au moins un ami à ajouter au groupe';
+    messageDiv.style.color = '#ff6b6b';
+    messageDiv.classList.remove('hidden');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/groups`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({ name: groupName, memberEmails })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      messageDiv.textContent = `✅ Groupe "${data.group.name}" créé avec succès!`;
+      messageDiv.style.color = '#00ff9d';
+      messageDiv.classList.remove('hidden');
+
+      document.getElementById('groupName').value = '';
+      document.querySelectorAll('#friendsSelectionList input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+      loadGroupsData(); // Rafraîchir
+
+      setTimeout(() => {
+        messageDiv.classList.add('hidden');
+      }, 3000);
+    } else {
+      messageDiv.textContent = `❌ ${data.error}`;
+      messageDiv.style.color = '#ff6b6b';
+      messageDiv.classList.remove('hidden');
+    }
+  } catch (error) {
+    console.error('Error creating group:', error);
+    messageDiv.textContent = '❌ Erreur lors de la création du groupe';
+    messageDiv.style.color = '#ff6b6b';
+    messageDiv.classList.remove('hidden');
+  }
+}
+
+// ===================================
+// SOCKET.IO ET CHAT EN TEMPS RÉEL
+// ===================================
+
+let socket = null;
+let currentChatGroupId = null;
+
+function initializeSocket() {
+  if (socket && socket.connected) return;
+
+  // Charger Socket.IO depuis CDN
+  if (!window.io) {
+    const script = document.createElement('script');
+    script.src = '/socket.io/socket.io.js';
+    script.onload = connectSocket;
+    document.head.appendChild(script);
+  } else {
+    connectSocket();
+  }
+}
+
+function connectSocket() {
+  socket = io({
+    auth: {
+      token: state.token
+    }
+  });
+
+  socket.on('connect', () => {
+    console.log('✅ Socket.IO connected');
+  });
+
+  socket.on('disconnect', () => {
+    console.log('❌ Socket.IO disconnected');
+  });
+
+  socket.on('new_message', (message) => {
+    console.log('📨 New message:', message);
+    if (currentChatGroupId === message.groupId) {
+      appendMessage(message);
+    }
+  });
+
+  socket.on('group_history', ({ groupId, messages }) => {
+    console.log(`📚 Loaded ${messages.length} messages for group ${groupId}`);
+    displayMessages(messages);
+  });
+
+  socket.on('error', (error) => {
+    console.error('Socket error:', error);
+    alert(`❌ ${error.message}`);
+  });
+}
+
+async function openGroupChat(groupId) {
+  try {
+    // Charger les détails du groupe
+    const response = await fetch(`${API_URL}/groups/${groupId}`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(`❌ ${data.error}`);
+      return;
+    }
+
+    groupsData.currentGroup = data.group;
+    currentChatGroupId = groupId;
+
+    // Initialiser Socket.IO si pas déjà fait
+    if (!socket || !socket.connected) {
+      initializeSocket();
+    }
+
+    // Rejoindre le groupe
+    socket.emit('join_group', { groupId });
+
+    // Afficher le panneau de chat
+    document.getElementById('groupChatPanel').classList.remove('hidden');
+    document.getElementById('groupsPanel').classList.add('hidden');
+
+    document.getElementById('groupChatTitle').textContent = `💬 ${data.group.name}`;
+    document.getElementById('groupMembersCount').textContent = `${data.group.members.length} membres`;
+
+    // Charger l'historique
+    const messagesResponse = await fetch(`${API_URL}/groups/${groupId}/messages`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    const messagesData = await messagesResponse.json();
+    displayMessages(messagesData.messages || []);
+  } catch (error) {
+    console.error('Error opening group chat:', error);
+    alert('❌ Erreur lors de l\'ouverture du chat');
+  }
+}
+
+function closeGroupChatPanel() {
+  document.getElementById('groupChatPanel').classList.add('hidden');
+
+  if (currentChatGroupId && socket) {
+    socket.emit('leave_group', { groupId: currentChatGroupId });
+  }
+
+  currentChatGroupId = null;
+}
+
+function displayMessages(messages) {
+  const container = document.getElementById('chatMessagesContent');
+  const userLang = state.lang1; // Langue préférée de l'utilisateur
+
+  if (messages.length === 0) {
+    container.innerHTML = '<p style="color: #888; text-align: center;">Aucun message pour le moment. Soyez le premier à écrire!</p>';
+    return;
+  }
+
+  container.innerHTML = messages.map(msg => {
+    const translation = msg.translations[userLang] || msg.content;
+    const isOwnMessage = msg.from === state.user.email;
+
+    return `
+      <div style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: ${isOwnMessage ? 'flex-end' : 'flex-start'};">
+        <div style="background: ${isOwnMessage ? '#00ff9d' : 'rgba(255,255,255,0.1)'}; color: ${isOwnMessage ? '#000' : '#fff'}; padding: 10px 14px; border-radius: 12px; max-width: 70%; word-wrap: break-word;">
+          <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${msg.fromDisplayName}</div>
+          <div>${translation}</div>
+          <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(msg.timestamp).toLocaleTimeString()}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Scroll vers le bas
+  container.scrollTop = container.scrollHeight;
+}
+
+function appendMessage(message) {
+  const container = document.getElementById('chatMessagesContent');
+  const userLang = state.lang1;
+  const translation = message.translations[userLang] || message.content;
+  const isOwnMessage = message.from === state.user.email;
+
+  const messageHTML = `
+    <div style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: ${isOwnMessage ? 'flex-end' : 'flex-start'};">
+      <div style="background: ${isOwnMessage ? '#00ff9d' : 'rgba(255,255,255,0.1)'}; color: ${isOwnMessage ? '#000' : '#fff'}; padding: 10px 14px; border-radius: 12px; max-width: 70%; word-wrap: break-word;">
+        <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${message.fromDisplayName}</div>
+        <div>${translation}</div>
+        <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(message.timestamp).toLocaleTimeString()}</div>
+      </div>
+    </div>
+  `;
+
+  if (container.innerHTML.includes('Aucun message')) {
+    container.innerHTML = messageHTML;
+  } else {
+    container.innerHTML += messageHTML;
+  }
+
+  // Scroll vers le bas
+  container.scrollTop = container.scrollHeight;
+}
+
+function sendMessage() {
+  const input = document.getElementById('chatMessageInput');
+  const content = input.value.trim();
+
+  if (!content) return;
+  if (!socket || !socket.connected) {
+    alert('❌ Non connecté au serveur. Reconnexion...');
+    initializeSocket();
+    return;
+  }
+
+  socket.emit('send_message', {
+    groupId: currentChatGroupId,
+    content: content,
+    userLang: state.lang1 // Langue de l'utilisateur
+  });
+
+  input.value = '';
+}
+
+function showGroupDetails() {
+  if (!groupsData.currentGroup) return;
+
+  const group = groupsData.currentGroup;
+  const membersList = group.members.map(m =>
+    `${m.displayName} (${m.email}) - ${m.role === 'admin' ? '👑 Admin' : '👤 Membre'}`
+  ).join('\n');
+
+  alert(`📋 Détails du groupe:\n\nNom: ${group.name}\nMembres (${group.members.length}):\n${membersList}\n\nCréé le: ${new Date(group.createdAt).toLocaleString()}`);
+}
+
+// Charger Socket.IO après connexion
+if (state.token) {
+  setTimeout(() => {
+    initializeSocket();
+  }, 1000);
+}

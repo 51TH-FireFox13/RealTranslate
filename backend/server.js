@@ -7,6 +7,8 @@ import FormData from 'form-data';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { promises as fs } from 'fs';
+import { createServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
 import { logger, accessLoggerMiddleware } from './logger.js';
 import {
   authManager,
@@ -24,6 +26,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
+const httpServer = createServer(app);
+const io = new SocketIOServer(httpServer, {
+  cors: {
+    origin: "*", // À restreindre en production
+    methods: ["GET", "POST"]
+  }
+});
 const PORT = process.env.PORT || 3000;
 
 // Configuration multer pour l'upload audio
@@ -39,6 +48,293 @@ app.use(accessLoggerMiddleware); // Logger toutes les requêtes
 app.use(express.static(join(__dirname, '../frontend')));
 
 logger.info('RealTranslate Backend starting...');
+
+// ===================================
+// GESTION DES GROUPES ET MESSAGES
+// ===================================
+
+// Structures de données en mémoire (à migrer vers DB plus tard)
+const groups = {}; // groupId -> { id, name, creator, members: [{ email, displayName, role }], createdAt }
+const messages = {}; // groupId -> [{ id, from, content, translations: {lang: text}, timestamp }]
+const onlineUsers = {}; // socketId -> { email, displayName }
+const userSockets = {}; // email -> Set of socketIds
+
+// Charger les groupes depuis le fichier
+const GROUPS_FILE = join(__dirname, 'groups.json');
+const MESSAGES_FILE = join(__dirname, 'messages.json');
+
+async function loadGroups() {
+  try {
+    const data = await fs.readFile(GROUPS_FILE, 'utf8');
+    const loadedGroups = JSON.parse(data);
+    Object.assign(groups, loadedGroups);
+    logger.info('Groups loaded from file', { count: Object.keys(groups).length });
+  } catch (error) {
+    logger.info('No groups file found, starting fresh');
+  }
+}
+
+async function saveGroups() {
+  try {
+    await fs.writeFile(GROUPS_FILE, JSON.stringify(groups, null, 2));
+  } catch (error) {
+    logger.error('Error saving groups', error);
+  }
+}
+
+async function loadMessages() {
+  try {
+    const data = await fs.readFile(MESSAGES_FILE, 'utf8');
+    const loadedMessages = JSON.parse(data);
+    Object.assign(messages, loadedMessages);
+    logger.info('Messages loaded from file', { groups: Object.keys(messages).length });
+  } catch (error) {
+    logger.info('No messages file found, starting fresh');
+  }
+}
+
+async function saveMessages() {
+  try {
+    await fs.writeFile(MESSAGES_FILE, JSON.stringify(messages, null, 2));
+  } catch (error) {
+    logger.error('Error saving messages', error);
+  }
+}
+
+// Charger au démarrage
+await loadGroups();
+await loadMessages();
+
+// ===================================
+// WEBSOCKET HANDLERS
+// ===================================
+
+// Fonction de traduction pour les messages de groupe
+async function translateMessage(text, targetLang, provider = 'openai') {
+  try {
+    if (provider === 'deepseek') {
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'user',
+              content: `Translate the following text to ${targetLang}. Only output the translation, no explanations:\n\n${text}`
+            }
+          ]
+        })
+      });
+
+      const data = await response.json();
+      return data.choices[0].message.content.trim();
+    } else {
+      // OpenAI GPT-4o-mini
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'user',
+              content: `Translate the following text to ${targetLang}. Only output the translation, no explanations:\n\n${text}`
+            }
+          ]
+        })
+      });
+
+      const data = await response.json();
+      return data.choices[0].message.content.trim();
+    }
+  } catch (error) {
+    logger.error('Translation error', error);
+    return text; // Fallback au texte original
+  }
+}
+
+// Socket.IO Authentication Middleware
+io.use(async (socket, next) => {
+  try {
+    const token = socket.handshake.auth.token;
+
+    if (!token) {
+      return next(new Error('Authentication required'));
+    }
+
+    const tokenData = authManager.verifyToken(token);
+    if (!tokenData) {
+      return next(new Error('Invalid or expired token'));
+    }
+
+    // Attacher les infos utilisateur au socket
+    socket.userEmail = tokenData.email;
+    socket.userId = tokenData.userId;
+
+    const user = authManager.users[socket.userEmail];
+    socket.displayName = user?.displayName || socket.userEmail;
+
+    next();
+  } catch (error) {
+    logger.error('Socket auth error', error);
+    next(new Error('Authentication failed'));
+  }
+});
+
+// Gestion des connexions WebSocket
+io.on('connection', (socket) => {
+  const userEmail = socket.userEmail;
+  const displayName = socket.displayName;
+
+  logger.info(`WebSocket connected: ${userEmail} (${socket.id})`);
+
+  // Enregistrer le socket de l'utilisateur
+  onlineUsers[socket.id] = { email: userEmail, displayName };
+
+  if (!userSockets[userEmail]) {
+    userSockets[userEmail] = new Set();
+  }
+  userSockets[userEmail].add(socket.id);
+
+  // Rejoindre les rooms des groupes de l'utilisateur
+  const user = authManager.users[userEmail];
+  if (user && user.groups) {
+    user.groups.forEach(groupId => {
+      socket.join(groupId);
+      logger.info(`${userEmail} joined room ${groupId}`);
+    });
+  }
+
+  // Envoyer un message de groupe
+  socket.on('send_message', async (data) => {
+    try {
+      const { groupId, content, userLang } = data;
+      const group = groups[groupId];
+
+      if (!group) {
+        socket.emit('error', { message: 'Groupe introuvable' });
+        return;
+      }
+
+      // Vérifier que l'utilisateur est membre
+      const isMember = group.members.some(m => m.email === userEmail);
+      if (!isMember) {
+        socket.emit('error', { message: 'Accès refusé' });
+        return;
+      }
+
+      // Créer le message
+      const messageId = `msg-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+      const message = {
+        id: messageId,
+        groupId,
+        from: userEmail,
+        fromDisplayName: displayName,
+        content,
+        originalLang: userLang,
+        translations: {
+          [userLang]: content // Langue originale
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      // Traduire vers toutes les langues des membres du groupe
+      const targetLangs = new Set();
+      group.members.forEach(member => {
+        const memberUser = authManager.users[member.email];
+        if (memberUser && memberUser.preferredLang) {
+          targetLangs.add(memberUser.preferredLang);
+        }
+      });
+
+      // Ajouter quelques langues communes si pas de préférences
+      if (targetLangs.size === 0) {
+        targetLangs.add('en');
+        targetLangs.add('fr');
+        targetLangs.add('zh');
+      }
+
+      // Traduire en parallèle
+      const translationPromises = Array.from(targetLangs)
+        .filter(lang => lang !== userLang)
+        .map(async (lang) => {
+          const translation = await translateMessage(content, lang);
+          message.translations[lang] = translation;
+        });
+
+      await Promise.all(translationPromises);
+
+      // Sauvegarder le message
+      if (!messages[groupId]) {
+        messages[groupId] = [];
+      }
+      messages[groupId].push(message);
+      await saveMessages();
+
+      // Diffuser à tous les membres du groupe
+      io.to(groupId).emit('new_message', message);
+
+      logger.info(`Message sent in group ${groupId} by ${userEmail}`, { messageId });
+
+    } catch (error) {
+      logger.error('Error sending message', error);
+      socket.emit('error', { message: 'Erreur lors de l\'envoi du message' });
+    }
+  });
+
+  // Rejoindre un groupe
+  socket.on('join_group', (data) => {
+    const { groupId } = data;
+    const group = groups[groupId];
+
+    if (!group) {
+      socket.emit('error', { message: 'Groupe introuvable' });
+      return;
+    }
+
+    // Vérifier que l'utilisateur est membre
+    const isMember = group.members.some(m => m.email === userEmail);
+    if (!isMember) {
+      socket.emit('error', { message: 'Accès refusé' });
+      return;
+    }
+
+    socket.join(groupId);
+    logger.info(`${userEmail} joined group ${groupId}`);
+
+    // Envoyer l'historique des messages
+    const groupMessages = messages[groupId] || [];
+    socket.emit('group_history', { groupId, messages: groupMessages });
+  });
+
+  // Quitter un groupe
+  socket.on('leave_group', (data) => {
+    const { groupId } = data;
+    socket.leave(groupId);
+    logger.info(`${userEmail} left group ${groupId}`);
+  });
+
+  // Déconnexion
+  socket.on('disconnect', () => {
+    logger.info(`WebSocket disconnected: ${userEmail} (${socket.id})`);
+
+    delete onlineUsers[socket.id];
+
+    if (userSockets[userEmail]) {
+      userSockets[userEmail].delete(socket.id);
+      if (userSockets[userEmail].size === 0) {
+        delete userSockets[userEmail];
+      }
+    }
+  });
+});
 
 // ===================================
 // FONCTIONS DE CRYPTAGE POUR L'HISTORIQUE
@@ -888,13 +1184,424 @@ setInterval(checkExpiredSubscriptions, 60 * 60 * 1000);
 // Vérifier au démarrage
 checkExpiredSubscriptions();
 
+// ===================================
+// ROUTES API - GROUPES
+// ===================================
+
+// Créer un groupe
+app.post('/api/groups', authMiddleware, async (req, res) => {
+  try {
+    const { name, memberEmails } = req.body;
+    const creatorEmail = req.user.email;
+    const creator = authManager.users[creatorEmail];
+
+    if (!name || !memberEmails || !Array.isArray(memberEmails)) {
+      return res.status(400).json({ error: 'Nom et membres requis' });
+    }
+
+    // Créer le groupe
+    const groupId = `group-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+    const members = [
+      { email: creatorEmail, displayName: creator.displayName, role: 'admin' }
+    ];
+
+    // Ajouter les membres (seulement les amis)
+    for (const memberEmail of memberEmails) {
+      if (memberEmail === creatorEmail) continue;
+
+      const member = authManager.users[memberEmail];
+      if (!member) continue;
+
+      // Vérifier que c'est un ami
+      if (creator.friends && creator.friends.includes(memberEmail)) {
+        members.push({
+          email: memberEmail,
+          displayName: member.displayName,
+          role: 'member'
+        });
+
+        // Ajouter le groupe à la liste des groupes de l'utilisateur
+        if (!member.groups) member.groups = [];
+        member.groups.push(groupId);
+      }
+    }
+
+    groups[groupId] = {
+      id: groupId,
+      name,
+      creator: creatorEmail,
+      members,
+      createdAt: new Date().toISOString()
+    };
+
+    messages[groupId] = [];
+
+    // Ajouter à la liste des groupes du créateur
+    if (!creator.groups) creator.groups = [];
+    creator.groups.push(groupId);
+
+    await saveGroups();
+    authManager.saveUsers();
+
+    logger.info(`Group created: ${groupId} by ${creatorEmail}`, { name, memberCount: members.length });
+    res.json({ success: true, group: groups[groupId] });
+
+  } catch (error) {
+    logger.error('Error creating group', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Obtenir les groupes de l'utilisateur
+app.get('/api/groups', authMiddleware, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const user = authManager.users[userEmail];
+
+    if (!user.groups) {
+      return res.json({ groups: [] });
+    }
+
+    const userGroups = user.groups
+      .map(groupId => groups[groupId])
+      .filter(g => g); // Filtrer les groupes supprimés
+
+    res.json({ groups: userGroups });
+
+  } catch (error) {
+    logger.error('Error getting groups', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Obtenir les détails d'un groupe
+app.get('/api/groups/:groupId', authMiddleware, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const userEmail = req.user.email;
+    const group = groups[groupId];
+
+    if (!group) {
+      return res.status(404).json({ error: 'Groupe introuvable' });
+    }
+
+    // Vérifier que l'utilisateur est membre
+    const isMember = group.members.some(m => m.email === userEmail);
+    if (!isMember) {
+      return res.status(403).json({ error: 'Accès refusé' });
+    }
+
+    res.json({ group });
+
+  } catch (error) {
+    logger.error('Error getting group', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Obtenir les messages d'un groupe
+app.get('/api/groups/:groupId/messages', authMiddleware, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const userEmail = req.user.email;
+    const group = groups[groupId];
+
+    if (!group) {
+      return res.status(404).json({ error: 'Groupe introuvable' });
+    }
+
+    // Vérifier que l'utilisateur est membre
+    const isMember = group.members.some(m => m.email === userEmail);
+    if (!isMember) {
+      return res.status(403).json({ error: 'Accès refusé' });
+    }
+
+    const groupMessages = messages[groupId] || [];
+    res.json({ messages: groupMessages });
+
+  } catch (error) {
+    logger.error('Error getting messages', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Ajouter un membre au groupe
+app.post('/api/groups/:groupId/members', authMiddleware, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { memberEmail } = req.body;
+    const userEmail = req.user.email;
+    const group = groups[groupId];
+
+    if (!group) {
+      return res.status(404).json({ error: 'Groupe introuvable' });
+    }
+
+    // Vérifier que l'utilisateur est admin
+    const userMember = group.members.find(m => m.email === userEmail);
+    if (!userMember || userMember.role !== 'admin') {
+      return res.status(403).json({ error: 'Seuls les admins peuvent ajouter des membres' });
+    }
+
+    // Vérifier que le nouveau membre existe et est ami
+    const newMember = authManager.users[memberEmail];
+    if (!newMember) {
+      return res.status(404).json({ error: 'Utilisateur introuvable' });
+    }
+
+    const user = authManager.users[userEmail];
+    if (!user.friends || !user.friends.includes(memberEmail)) {
+      return res.status(400).json({ error: 'Seuls vos amis peuvent être ajoutés' });
+    }
+
+    // Vérifier si déjà membre
+    if (group.members.some(m => m.email === memberEmail)) {
+      return res.status(400).json({ error: 'Déjà membre du groupe' });
+    }
+
+    // Ajouter le membre
+    group.members.push({
+      email: memberEmail,
+      displayName: newMember.displayName,
+      role: 'member'
+    });
+
+    if (!newMember.groups) newMember.groups = [];
+    newMember.groups.push(groupId);
+
+    await saveGroups();
+    authManager.saveUsers();
+
+    logger.info(`Member added to group: ${memberEmail} -> ${groupId}`);
+    res.json({ success: true, group });
+
+  } catch (error) {
+    logger.error('Error adding member', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Retirer un membre du groupe
+app.delete('/api/groups/:groupId/members/:memberEmail', authMiddleware, async (req, res) => {
+  try {
+    const { groupId, memberEmail } = req.params;
+    const userEmail = req.user.email;
+    const group = groups[groupId];
+
+    if (!group) {
+      return res.status(404).json({ error: 'Groupe introuvable' });
+    }
+
+    // Vérifier que l'utilisateur est admin
+    const userMember = group.members.find(m => m.email === userEmail);
+    if (!userMember || userMember.role !== 'admin') {
+      return res.status(403).json({ error: 'Seuls les admins peuvent retirer des membres' });
+    }
+
+    // Ne pas retirer le créateur
+    if (memberEmail === group.creator) {
+      return res.status(400).json({ error: 'Impossible de retirer le créateur' });
+    }
+
+    // Retirer le membre
+    group.members = group.members.filter(m => m.email !== memberEmail);
+
+    const member = authManager.users[memberEmail];
+    if (member && member.groups) {
+      member.groups = member.groups.filter(g => g !== groupId);
+    }
+
+    await saveGroups();
+    authManager.saveUsers();
+
+    logger.info(`Member removed from group: ${memberEmail} <- ${groupId}`);
+    res.json({ success: true });
+
+  } catch (error) {
+    logger.error('Error removing member', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ===================================
+// ROUTES API - PROFIL ET AMIS
+// ===================================
+
+// Mettre à jour le displayName
+app.put('/api/profile/displayname', authMiddleware, async (req, res) => {
+  try {
+    const { displayName } = req.body;
+    const userEmail = req.user.email;
+
+    if (!displayName) {
+      return res.status(400).json({ error: 'DisplayName requis' });
+    }
+
+    const result = authManager.updateDisplayName(userEmail, displayName);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    logger.info(`DisplayName updated for ${userEmail}`, { displayName });
+    res.json({ success: true, displayName: result.displayName });
+
+  } catch (error) {
+    logger.error('Erreur mise à jour displayName', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Rechercher des utilisateurs par displayName
+app.get('/api/friends/search', authMiddleware, async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q) {
+      return res.status(400).json({ error: 'Paramètre de recherche requis' });
+    }
+
+    const results = authManager.searchUsersByDisplayName(q);
+    res.json({ users: results });
+
+  } catch (error) {
+    logger.error('Erreur recherche utilisateurs', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Envoyer une demande d'ami
+app.post('/api/friends/request', authMiddleware, async (req, res) => {
+  try {
+    const { toEmail } = req.body;
+    const fromEmail = req.user.email;
+
+    if (!toEmail) {
+      return res.status(400).json({ error: 'Email destinataire requis' });
+    }
+
+    const result = authManager.sendFriendRequest(fromEmail, toEmail);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    logger.info(`Friend request sent from ${fromEmail} to ${toEmail}`);
+    res.json({ success: true, message: result.message });
+
+  } catch (error) {
+    logger.error('Erreur envoi demande ami', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Accepter une demande d'ami
+app.post('/api/friends/accept', authMiddleware, async (req, res) => {
+  try {
+    const { fromEmail } = req.body;
+    const userEmail = req.user.email;
+
+    if (!fromEmail) {
+      return res.status(400).json({ error: 'Email requis' });
+    }
+
+    const result = authManager.acceptFriendRequest(userEmail, fromEmail);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    logger.info(`Friend request accepted by ${userEmail} from ${fromEmail}`);
+    res.json({ success: true, message: result.message });
+
+  } catch (error) {
+    logger.error('Erreur acceptation ami', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Rejeter une demande d'ami
+app.post('/api/friends/reject', authMiddleware, async (req, res) => {
+  try {
+    const { fromEmail } = req.body;
+    const userEmail = req.user.email;
+
+    if (!fromEmail) {
+      return res.status(400).json({ error: 'Email requis' });
+    }
+
+    const result = authManager.rejectFriendRequest(userEmail, fromEmail);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    logger.info(`Friend request rejected by ${userEmail} from ${fromEmail}`);
+    res.json({ success: true, message: result.message });
+
+  } catch (error) {
+    logger.error('Erreur rejet ami', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Supprimer un ami
+app.delete('/api/friends/:friendEmail', authMiddleware, async (req, res) => {
+  try {
+    const { friendEmail } = req.params;
+    const userEmail = req.user.email;
+
+    const result = authManager.removeFriend(userEmail, friendEmail);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    logger.info(`Friend removed by ${userEmail}: ${friendEmail}`);
+    res.json({ success: true, message: result.message });
+
+  } catch (error) {
+    logger.error('Erreur suppression ami', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Obtenir la liste des amis
+app.get('/api/friends', authMiddleware, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const friends = authManager.getFriends(userEmail);
+
+    res.json({ friends });
+
+  } catch (error) {
+    logger.error('Erreur récupération amis', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Obtenir les demandes d'ami en attente
+app.get('/api/friends/requests', authMiddleware, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const requests = authManager.getFriendRequests(userEmail);
+
+    res.json({ requests });
+
+  } catch (error) {
+    logger.error('Erreur récupération demandes ami', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 // Servir le frontend
 app.get('*', (req, res) => {
   res.sendFile(join(__dirname, '../frontend/index.html'));
 });
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   logger.info(`RealTranslate Backend démarré sur http://localhost:${PORT}`);
+  logger.info('WebSocket server ready');
   logger.info('API endpoints disponibles');
   logger.info('Auth: POST /api/auth/login, /api/auth/logout, /api/auth/me');
   logger.info('Admin: POST /api/auth/users, GET /api/auth/users, DELETE /api/auth/users/:email');

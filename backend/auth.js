@@ -95,6 +95,7 @@ class AuthManager {
       'admin': {
         id: 'admin',
         email: 'admin@realtranslate.com',
+        displayName: 'Administrator',
         passwordHash: this.hashPassword('admin123'), // Mot de passe par défaut à changer
         role: ROLES.ADMIN,
         createdAt: new Date().toISOString()
@@ -169,7 +170,7 @@ class AuthManager {
   }
 
   // Créer un utilisateur
-  createUser(email, password, role = ROLES.USER, subscriptionTier = 'free') {
+  createUser(email, password, role = ROLES.USER, subscriptionTier = 'free', displayName = null) {
     if (this.users[email]) {
       return { success: false, message: 'Utilisateur existe déjà' };
     }
@@ -177,6 +178,7 @@ class AuthManager {
     const user = {
       id: email,
       email,
+      displayName: displayName || email.split('@')[0], // Par défaut: partie avant @ de l'email
       passwordHash: this.hashPassword(password),
       role,
       subscription: {
@@ -185,6 +187,9 @@ class AuthManager {
         expiresAt: null, // null = pas d'expiration (pour free)
         quotas: this.resetQuotas(subscriptionTier)
       },
+      friends: [], // Liste des amis (user IDs)
+      friendRequests: [], // Demandes d'amis reçues
+      groups: [], // Liste des groupes (group IDs)
       paymentHistory: [],
       createdAt: new Date().toISOString()
     };
@@ -323,6 +328,7 @@ class AuthManager {
     return Object.values(this.users).map(user => ({
       id: user.id,
       email: user.email,
+      displayName: user.displayName || user.email.split('@')[0],
       role: user.role,
       subscription: user.subscription || { tier: 'free', status: 'active' },
       createdAt: user.createdAt
@@ -582,6 +588,207 @@ class AuthManager {
       return { success: true };
     }
     return { success: false, message: 'Jeton introuvable' };
+  }
+
+  // ===================================
+  // SYSTÈME DE PROFIL ET AMIS
+  // ===================================
+
+  // Mettre à jour le displayName
+  updateDisplayName(email, newDisplayName) {
+    const user = this.users[email];
+    if (!user) {
+      return { success: false, message: 'Utilisateur introuvable' };
+    }
+
+    // Validation du displayName
+    if (!newDisplayName || newDisplayName.trim().length < 2) {
+      return { success: false, message: 'Le nom doit contenir au moins 2 caractères' };
+    }
+
+    if (newDisplayName.trim().length > 50) {
+      return { success: false, message: 'Le nom ne peut pas dépasser 50 caractères' };
+    }
+
+    user.displayName = newDisplayName.trim();
+    this.saveUsers();
+    logger.auth('DisplayName updated', email, true, { newDisplayName });
+
+    return { success: true, displayName: user.displayName };
+  }
+
+  // Rechercher des utilisateurs par displayName (exact match seulement pour privacy)
+  searchUsersByDisplayName(searchTerm) {
+    if (!searchTerm || searchTerm.trim().length < 2) {
+      return [];
+    }
+
+    const exactMatch = Object.values(this.users).filter(user =>
+      user.displayName &&
+      user.displayName.toLowerCase() === searchTerm.trim().toLowerCase() &&
+      user.role !== ROLES.GUEST // Ne pas inclure les invités
+    );
+
+    return exactMatch.map(user => ({
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName
+    }));
+  }
+
+  // Envoyer une demande d'ami
+  sendFriendRequest(fromEmail, toEmail) {
+    const fromUser = this.users[fromEmail];
+    const toUser = this.users[toEmail];
+
+    if (!fromUser || !toUser) {
+      return { success: false, message: 'Utilisateur introuvable' };
+    }
+
+    if (fromEmail === toEmail) {
+      return { success: false, message: 'Vous ne pouvez pas vous ajouter vous-même' };
+    }
+
+    // Vérifier si déjà amis
+    if (!fromUser.friends) fromUser.friends = [];
+    if (!toUser.friends) toUser.friends = [];
+
+    if (fromUser.friends.includes(toEmail)) {
+      return { success: false, message: 'Déjà ami avec cet utilisateur' };
+    }
+
+    // Vérifier si demande déjà envoyée
+    if (!toUser.friendRequests) toUser.friendRequests = [];
+
+    const existingRequest = toUser.friendRequests.find(req => req.from === fromEmail);
+    if (existingRequest) {
+      return { success: false, message: 'Demande d\'ami déjà envoyée' };
+    }
+
+    // Ajouter la demande
+    toUser.friendRequests.push({
+      from: fromEmail,
+      fromDisplayName: fromUser.displayName,
+      sentAt: new Date().toISOString()
+    });
+
+    this.saveUsers();
+    logger.auth('Friend request sent', fromEmail, true, { to: toEmail });
+
+    return { success: true, message: 'Demande d\'ami envoyée' };
+  }
+
+  // Accepter une demande d'ami
+  acceptFriendRequest(userEmail, fromEmail) {
+    const user = this.users[userEmail];
+    const fromUser = this.users[fromEmail];
+
+    if (!user || !fromUser) {
+      return { success: false, message: 'Utilisateur introuvable' };
+    }
+
+    if (!user.friendRequests) user.friendRequests = [];
+
+    const requestIndex = user.friendRequests.findIndex(req => req.from === fromEmail);
+    if (requestIndex === -1) {
+      return { success: false, message: 'Demande d\'ami introuvable' };
+    }
+
+    // Retirer la demande
+    user.friendRequests.splice(requestIndex, 1);
+
+    // Ajouter comme amis mutuellement
+    if (!user.friends) user.friends = [];
+    if (!fromUser.friends) fromUser.friends = [];
+
+    if (!user.friends.includes(fromEmail)) {
+      user.friends.push(fromEmail);
+    }
+    if (!fromUser.friends.includes(userEmail)) {
+      fromUser.friends.push(userEmail);
+    }
+
+    this.saveUsers();
+    logger.auth('Friend request accepted', userEmail, true, { from: fromEmail });
+
+    return { success: true, message: 'Ami ajouté' };
+  }
+
+  // Rejeter une demande d'ami
+  rejectFriendRequest(userEmail, fromEmail) {
+    const user = this.users[userEmail];
+
+    if (!user) {
+      return { success: false, message: 'Utilisateur introuvable' };
+    }
+
+    if (!user.friendRequests) user.friendRequests = [];
+
+    const requestIndex = user.friendRequests.findIndex(req => req.from === fromEmail);
+    if (requestIndex === -1) {
+      return { success: false, message: 'Demande d\'ami introuvable' };
+    }
+
+    user.friendRequests.splice(requestIndex, 1);
+    this.saveUsers();
+    logger.auth('Friend request rejected', userEmail, true, { from: fromEmail });
+
+    return { success: true, message: 'Demande refusée' };
+  }
+
+  // Supprimer un ami
+  removeFriend(userEmail, friendEmail) {
+    const user = this.users[userEmail];
+    const friend = this.users[friendEmail];
+
+    if (!user || !friend) {
+      return { success: false, message: 'Utilisateur introuvable' };
+    }
+
+    if (!user.friends) user.friends = [];
+    if (!friend.friends) friend.friends = [];
+
+    // Retirer mutuellement
+    user.friends = user.friends.filter(f => f !== friendEmail);
+    friend.friends = friend.friends.filter(f => f !== userEmail);
+
+    this.saveUsers();
+    logger.auth('Friend removed', userEmail, true, { friend: friendEmail });
+
+    return { success: true, message: 'Ami supprimé' };
+  }
+
+  // Obtenir la liste des amis
+  getFriends(userEmail) {
+    const user = this.users[userEmail];
+
+    if (!user) {
+      return [];
+    }
+
+    if (!user.friends) return [];
+
+    return user.friends
+      .map(friendEmail => this.users[friendEmail])
+      .filter(friend => friend) // Filtrer les amis supprimés
+      .map(friend => ({
+        id: friend.id,
+        email: friend.email,
+        displayName: friend.displayName
+      }));
+  }
+
+  // Obtenir les demandes d'ami en attente
+  getFriendRequests(userEmail) {
+    const user = this.users[userEmail];
+
+    if (!user) {
+      return [];
+    }
+
+    if (!user.friendRequests) return [];
+
+    return user.friendRequests;
   }
 }
 

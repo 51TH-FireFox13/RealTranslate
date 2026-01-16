@@ -1614,6 +1614,8 @@
         </div>
         <span class="user-info" id="userInfo"></span>
         <button class="admin-btn hidden" id="adminBtn" onclick="showAdminPanel()">👤 Admin</button>
+        <button class="profile-btn" id="friendsBtn" onclick="showFriendsPanel()">👥 Amis</button>
+        <button class="profile-btn" id="groupsBtn" onclick="showGroupsPanel()">💬 Groupes</button>
         <button class="profile-btn" id="profileBtn" onclick="showProfilePanel()">⚙️ Profil</button>
         <button class="logout-btn" onclick="logout()">↗ Logout</button>
       </div>
@@ -1871,6 +1873,10 @@
               <span id="profileEmail" style="color: #fff; margin-left: 10px; font-weight: bold;">-</span>
             </div>
             <div>
+              <span style="color: #888;">Nom d'affichage:</span>
+              <span id="profileDisplayName" style="color: #fff; margin-left: 10px; font-weight: bold;">-</span>
+            </div>
+            <div>
               <span style="color: #888;">Abonnement:</span>
               <span id="profileTier" style="color: #00ff9d; margin-left: 10px; font-weight: bold;">-</span>
             </div>
@@ -1879,6 +1885,18 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Update Display Name -->
+      <div class="admin-section">
+        <h3>✏️ Modifier le nom d'affichage</h3>
+        <div id="displayNameMessage" class="hidden" style="margin-bottom: 15px;"></div>
+        <form class="create-user-form" onsubmit="return false;">
+          <div class="input-group" style="margin-bottom: 0;">
+            <input type="text" id="newDisplayName" placeholder="Nouveau nom d'affichage" required minlength="2" maxlength="50">
+          </div>
+          <button class="create-user-btn" onclick="updateDisplayName()">Mettre à jour</button>
+        </form>
       </div>
 
       <!-- Change Password -->
@@ -1928,6 +1946,116 @@
           </div>
           <button class="create-user-btn" onclick="deleteAccount()" style="background: #ff6b6b; color: #fff;">🗑️ Supprimer mon compte</button>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Friends Panel -->
+  <div id="friendsPanel" class="admin-panel hidden">
+    <div class="admin-content">
+      <div class="admin-header">
+        <h2>👥 Amis</h2>
+        <button class="close-admin-btn" onclick="closeFriendsPanel()">✕ Fermer</button>
+      </div>
+
+      <!-- Search Users -->
+      <div class="admin-section">
+        <h3>🔍 Rechercher des utilisateurs</h3>
+        <div style="margin-bottom: 15px;">
+          <p style="color: #888; font-size: 0.9em; margin-bottom: 10px;">Recherchez des utilisateurs par leur nom d'affichage exact pour leur envoyer une demande d'ami.</p>
+          <div style="display: flex; gap: 10px;">
+            <input type="text" id="searchUserInput" placeholder="Nom d'affichage exact" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;">
+            <button class="create-user-btn" onclick="searchUsers()" style="margin: 0;">Rechercher</button>
+          </div>
+        </div>
+        <div id="searchResults" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 200px; overflow-y: auto; display: none;">
+          <div id="searchResultsContent"></div>
+        </div>
+      </div>
+
+      <!-- Friend Requests -->
+      <div class="admin-section">
+        <h3>📥 Demandes d'ami reçues</h3>
+        <div id="friendRequestsContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 300px; overflow-y: auto;">
+          <div id="friendRequestsContent" style="color: #888;">Chargement...</div>
+        </div>
+      </div>
+
+      <!-- Friends List -->
+      <div class="admin-section">
+        <h3>✅ Mes amis</h3>
+        <div id="friendsListContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 400px; overflow-y: auto;">
+          <div id="friendsListContent" style="color: #888;">Chargement...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Groups Panel -->
+  <div id="groupsPanel" class="admin-panel hidden">
+    <div class="admin-content">
+      <div class="admin-header">
+        <h2>💬 Groupes de discussion</h2>
+        <button class="close-admin-btn" onclick="closeGroupsPanel()">✕ Fermer</button>
+      </div>
+
+      <!-- Create Group -->
+      <div class="admin-section">
+        <h3>➕ Créer un groupe</h3>
+        <div id="createGroupMessage" class="hidden" style="margin-bottom: 15px;"></div>
+        <form class="create-user-form" onsubmit="return false;">
+          <div class="input-group" style="margin-bottom: 0;">
+            <input type="text" id="groupName" placeholder="Nom du groupe" required minlength="2" maxlength="50">
+          </div>
+          <div style="margin: 15px 0;">
+            <label style="color: #888; font-size: 0.9em; display: block; margin-bottom: 10px;">Sélectionner des amis à ajouter:</label>
+            <div id="friendsSelectionList" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 200px; overflow-y: auto;">
+              <p style="color: #888;">Chargement de vos amis...</p>
+            </div>
+          </div>
+          <button class="create-user-btn" onclick="createGroup()">Créer le groupe</button>
+        </form>
+      </div>
+
+      <!-- My Groups -->
+      <div class="admin-section">
+        <h3>📋 Mes groupes</h3>
+        <div id="groupsListContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 400px; overflow-y: auto;">
+          <div id="groupsListContent" style="color: #888;">Chargement...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Group Chat Panel -->
+  <div id="groupChatPanel" class="admin-panel hidden">
+    <div class="admin-content" style="display: flex; flex-direction: column; height: 90vh;">
+      <div class="admin-header">
+        <h2 id="groupChatTitle">💬 Groupe</h2>
+        <button class="close-admin-btn" onclick="closeGroupChatPanel()">✕ Fermer</button>
+      </div>
+
+      <!-- Group Info -->
+      <div class="admin-section" style="flex-shrink: 0;">
+        <div id="groupChatInfo" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span id="groupMembersCount" style="color: #888; font-size: 0.9em;">-</span>
+          </div>
+          <button class="create-user-btn" onclick="showGroupDetails()" style="margin: 0; padding: 8px 16px; font-size: 0.9em;">⚙️ Détails</button>
+        </div>
+      </div>
+
+      <!-- Messages Container -->
+      <div class="admin-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <div id="chatMessages" style="flex: 1; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+          <div id="chatMessagesContent"></div>
+        </div>
+
+        <!-- Message Input -->
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="chatMessageInput" placeholder="Tapez votre message..." style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;" onkeypress="if(event.key === 'Enter') sendMessage()">
+          <button class="create-user-btn" onclick="sendMessage()" style="margin: 0; padding: 12px 24px;">Envoyer</button>
+        </div>
       </div>
     </div>
   </div>
