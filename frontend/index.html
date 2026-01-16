@@ -413,53 +413,203 @@
       to { transform: rotate(360deg); }
     }
 
-    /* Control Buttons */
-    .control-buttons {
-      position: fixed;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
+    /* Center Controls (Desktop) */
+    .center-controls {
       display: flex;
-      gap: 15px;
+      flex-direction: column;
       align-items: center;
-      z-index: 100;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px 15px;
+      min-width: 140px;
     }
 
-    .control-btn {
+    .center-control-btn {
       background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(10px);
       border: 2px solid rgba(255, 255, 255, 0.2);
       color: #fff;
-      padding: 12px 20px;
-      border-radius: 25px;
+      padding: 15px;
+      border-radius: 15px;
       cursor: pointer;
-      font-size: 0.9em;
+      font-size: 0.85em;
       font-weight: 600;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 5px;
       transition: all 0.3s ease;
+      width: 100px;
     }
 
-    .control-btn:hover {
+    .center-control-btn .icon {
+      font-size: 2em;
+    }
+
+    .center-control-btn .label {
+      font-size: 0.8em;
+    }
+
+    .center-control-btn:hover {
       background: rgba(255, 255, 255, 0.15);
-      transform: translateY(-2px);
+      transform: scale(1.05);
     }
 
-    .control-btn.active {
-      background: linear-gradient(90deg, #00ff9d, #00d4aa);
+    .center-control-btn.active {
+      background: linear-gradient(135deg, #00ff9d, #00a2ff);
       border-color: #00ff9d;
       color: #000;
     }
 
-    .control-btn.muted {
+    .center-control-btn.muted {
       background: rgba(255, 107, 107, 0.2);
       border-color: rgba(255, 107, 107, 0.5);
       color: #ff6b6b;
     }
 
-    .control-btn.muted:hover {
-      background: rgba(255, 107, 107, 0.3);
+    .ptt-btn {
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.3), rgba(255, 157, 0, 0.3));
+      border: 3px solid #ff6b6b;
+      color: #fff;
+      padding: 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+      user-select: none;
+      width: 100px;
+    }
+
+    .ptt-btn .icon {
+      font-size: 2.5em;
+    }
+
+    .ptt-btn .label {
+      font-size: 0.7em;
+      font-weight: 600;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .ptt-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 5px 20px rgba(255, 107, 107, 0.4);
+    }
+
+    .ptt-btn:active, .ptt-btn.recording {
+      transform: scale(0.95);
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.5), rgba(255, 157, 0, 0.5));
+    }
+
+    /* Mobile Controls (Hidden on desktop) */
+    .mobile-controls {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(20px);
+      padding: 10px 15px;
+      border-radius: 25px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .mobile-control-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 12px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.5em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      width: 50px;
+      height: 50px;
+    }
+
+    .mobile-control-btn.active {
+      background: linear-gradient(135deg, #00ff9d, #00a2ff);
+      border-color: #00ff9d;
+    }
+
+    .mobile-control-btn.muted {
+      background: rgba(255, 107, 107, 0.2);
+      border-color: rgba(255, 107, 107, 0.5);
+      color: #ff6b6b;
+    }
+
+    .mode-switch-container-mobile {
+      display: flex;
+      align-items: center;
+    }
+
+    .mode-switch-mobile {
+      display: flex;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 5px;
+      gap: 5px;
+    }
+
+    .mode-switch-mobile .mode-text {
+      padding: 8px 12px;
+      border-radius: 15px;
+      font-size: 0.75em;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      color: #888;
+    }
+
+    .mode-switch-mobile .mode-text:first-child {
+      background: transparent;
+    }
+
+    .mode-switch-mobile .mode-text:last-child {
+      background: linear-gradient(135deg, #00ff9d, #00a2ff);
+      color: #000;
+    }
+
+    .mode-switch-mobile.push-to-talk .mode-text:first-child {
+      background: linear-gradient(135deg, #ff6b6b, #ff9d00);
+      color: #fff;
+    }
+
+    .mode-switch-mobile.push-to-talk .mode-text:last-child {
+      background: transparent;
+      color: #888;
+    }
+
+    .mobile-ptt-btn {
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.3), rgba(255, 157, 0, 0.3));
+      border: 2px solid #ff6b6b;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.9em;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .mobile-ptt-btn:active, .mobile-ptt-btn.recording {
+      transform: scale(0.95);
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.5), rgba(255, 157, 0, 0.5));
     }
 
     /* Mode Switch */
@@ -795,8 +945,8 @@
     .container {
       flex: 1;
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 15px;
       padding: 20px;
       overflow: hidden;
       min-height: 0;
@@ -1013,12 +1163,33 @@
     }
 
     /* Mobile Responsive */
-    @media (max-width: 768px) {
-      /* Layout */
+    @media (max-width: 1024px) {
+      /* Layout - 1 colonne sur tablette */
       .container {
         grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
         gap: 15px;
         padding: 15px;
+        padding-bottom: 100px; /* Espace pour controls mobiles */
+      }
+
+      /* Cacher contrôles centraux */
+      .center-controls {
+        display: none;
+      }
+
+      /* Montrer contrôles mobiles */
+      .mobile-controls {
+        display: flex;
+      }
+
+      /* Réorganiser l'ordre des panneaux */
+      .lang1-panel {
+        grid-row: 1;
+      }
+
+      .lang2-panel {
+        grid-row: 2;
       }
 
       /* Header */
@@ -1068,58 +1239,10 @@
         padding: 15px;
       }
 
-      /* Control Buttons */
-      .control-buttons {
-        bottom: 70px;
-        gap: 10px;
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-
-      .control-btn {
-        padding: 12px 20px;
-        font-size: 0.9em;
-        min-width: 110px;
-      }
-
-      /* Mode Switch */
-      .mode-switch {
-        width: 100px;
-        height: 45px;
-      }
-
-      .mode-switch::before {
-        width: 33px;
-        height: 33px;
-      }
-
-      .mode-switch.push-to-talk::before {
-        left: 62px;
-      }
-
-      .mode-switch-text {
-        font-size: 0.65em;
-      }
-
-      /* Push to Talk Button - Plus petit sur mobile */
-      .push-to-talk-btn {
-        width: 160px;
-        height: 160px;
-        bottom: 130px;
-      }
-
-      .push-to-talk-btn .icon {
-        font-size: 3em;
-      }
-
-      .push-to-talk-btn .text {
-        font-size: 0.8em;
-      }
-
-      /* Volume Indicator */
+      /* Volume Indicator - Plus haut pour ne pas cacher les controls */
       .volume-indicator {
         width: 150px;
-        bottom: 15px;
+        bottom: 90px;
       }
 
       /* Admin Panel */
@@ -1481,37 +1604,24 @@
 
   <!-- Main Container -->
   <div class="container">
-    <!-- French Panel -->
-    <div class="panel fr-panel">
+    <!-- Left Panel -->
+    <div class="panel lang1-panel">
       <div class="panel-header">
-        <span class="flag">🇫🇷</span>
-        <h2>Français</h2>
+        <span class="flag" id="flag1">🌐</span>
+        <h2 id="langName1">Langue 1</h2>
       </div>
       <div id="frContent" class="panel-content"></div>
     </div>
 
-    <!-- Chinese Panel -->
-    <div class="panel zh-panel">
-      <div class="panel-header">
-        <span class="flag">🇨🇳</span>
-        <h2>中文</h2>
-      </div>
-      <div id="zhContent" class="panel-content"></div>
-    </div>
-  </div>
-
-    <!-- Volume Indicator -->
-    <div class="volume-indicator">
-      <div id="volumeBar" class="volume-bar"></div>
-    </div>
-
-    <!-- Control Buttons -->
-    <div class="control-buttons">
-      <button class="control-btn active" id="micBtn" onclick="toggleMicrophone()">
-        <span id="micIcon">🎤</span>
-        <span id="micText">Micro ON</span>
+    <!-- Center Controls (Desktop only) -->
+    <div class="center-controls">
+      <!-- Micro Button -->
+      <button class="center-control-btn active" id="micBtn" onclick="toggleMicrophone()">
+        <span id="micIcon" class="icon">🎤</span>
+        <span id="micText" class="label">Micro ON</span>
       </button>
 
+      <!-- Mode Switch -->
       <div class="mode-switch-container">
         <div class="mode-switch-label">Mode</div>
         <div class="mode-switch" id="modeSwitch" onclick="toggleMode()">
@@ -1520,17 +1630,49 @@
         </div>
       </div>
 
-      <button class="control-btn active" id="ttsBtn" onclick="toggleTTS()">
-        <span id="ttsIcon">🔊</span>
-        <span id="ttsText">Audio ON</span>
+      <!-- Push to Talk Button -->
+      <button class="ptt-btn hidden" id="pushToTalkBtn">
+        <span class="icon">🎤</span>
+        <span class="label">Maintenir<br>pour parler</span>
+      </button>
+
+      <!-- Audio Button -->
+      <button class="center-control-btn active" id="ttsBtn" onclick="toggleTTS()">
+        <span id="ttsIcon" class="icon">🔊</span>
+        <span id="ttsText" class="label">Audio ON</span>
       </button>
     </div>
 
-    <!-- Push to Talk Button (hidden by default) -->
-    <div class="push-to-talk-btn hidden" id="pushToTalkBtn">
-      <div class="icon">🎤</div>
-      <div class="text">Maintenir<br>pour parler</div>
+    <!-- Right Panel -->
+    <div class="panel lang2-panel">
+      <div class="panel-header">
+        <span class="flag" id="flag2">🌐</span>
+        <h2 id="langName2">Langue 2</h2>
+      </div>
+      <div id="zhContent" class="panel-content"></div>
     </div>
+  </div>
+
+  <!-- Mobile Controls (Hidden on desktop) -->
+  <div class="mobile-controls">
+    <button class="mobile-control-btn active" id="micBtnMobile" onclick="toggleMicrophone()">
+      <span id="micIconMobile">🎤</span>
+    </button>
+
+    <div class="mode-switch-container-mobile">
+      <div class="mode-switch-mobile" id="modeSwitchMobile" onclick="toggleMode()">
+        <span class="mode-text">PTT</span>
+        <span class="mode-text">Temps Réel</span>
+      </div>
+    </div>
+
+    <button class="mobile-ptt-btn hidden" id="pushToTalkBtnMobile">
+      <span>🎤</span> PTT
+    </button>
+
+    <button class="mobile-control-btn active" id="ttsBtnMobile" onclick="toggleTTS()">
+      <span id="ttsIconMobile">🔊</span>
+    </button>
   </div>
 
   <!-- Admin Panel -->
