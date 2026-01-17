@@ -86,12 +86,14 @@ logger.info('RealTranslate Backend starting...');
 // Structures de données en mémoire (à migrer vers DB plus tard)
 const groups = {}; // groupId -> { id, name, creator, members: [{ email, displayName, role }], createdAt }
 const messages = {}; // groupId -> [{ id, from, content, translations: {lang: text}, timestamp }]
+const directMessages = {}; // conversationId -> [{ id, from, to, content, translations: {lang: text}, timestamp }]
 const onlineUsers = {}; // socketId -> { email, displayName }
 const userSockets = {}; // email -> Set of socketIds
 
 // Charger les groupes depuis le fichier
 const GROUPS_FILE = join(__dirname, 'groups.json');
 const MESSAGES_FILE = join(__dirname, 'messages.json');
+const DMS_FILE = join(__dirname, 'dms.json');
 
 async function loadGroups() {
   try {
@@ -131,9 +133,34 @@ async function saveMessages() {
   }
 }
 
+async function loadDirectMessages() {
+  try {
+    const data = await fs.readFile(DMS_FILE, 'utf8');
+    const loadedDMs = JSON.parse(data);
+    Object.assign(directMessages, loadedDMs);
+    logger.info('Direct messages loaded from file', { conversations: Object.keys(directMessages).length });
+  } catch (error) {
+    logger.info('No DMs file found, starting fresh');
+  }
+}
+
+async function saveDirectMessages() {
+  try {
+    await fs.writeFile(DMS_FILE, JSON.stringify(directMessages, null, 2));
+  } catch (error) {
+    logger.error('Error saving direct messages', error);
+  }
+}
+
+// Générer un ID de conversation entre 2 utilisateurs (toujours dans le même ordre)
+function getConversationId(email1, email2) {
+  return [email1, email2].sort().join('_');
+}
+
 // Charger au démarrage
 await loadGroups();
 await loadMessages();
+await loadDirectMessages();
 
 // ===================================
 // WEBSOCKET HANDLERS
@@ -320,6 +347,79 @@ io.on('connection', (socket) => {
 
     } catch (error) {
       logger.error('Error sending message', error);
+      socket.emit('error', { message: 'Erreur lors de l\'envoi du message' });
+    }
+  });
+
+  // Envoyer un message privé (DM)
+  socket.on('send_dm', async (data) => {
+    try {
+      const { toEmail, content, userLang, fileInfo } = data;
+      const fromEmail = userEmail;
+
+      // Vérifier que l'utilisateur destinataire existe
+      const toUser = authManager.users[toEmail];
+      if (!toUser) {
+        socket.emit('error', { message: 'Utilisateur introuvable' });
+        return;
+      }
+
+      // Vérifier qu'ils sont amis
+      const fromUser = authManager.users[fromEmail];
+      if (!fromUser.friends || !fromUser.friends.includes(toEmail)) {
+        socket.emit('error', { message: 'Vous devez être amis pour échanger des messages' });
+        return;
+      }
+
+      // Créer le message
+      const messageId = `dm-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+      const message = {
+        id: messageId,
+        from: fromEmail,
+        to: toEmail,
+        fromDisplayName: displayName,
+        content,
+        originalLang: userLang,
+        translations: {
+          [userLang]: content
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      // Ajouter les informations du fichier si présent
+      if (fileInfo) {
+        message.fileInfo = fileInfo;
+      }
+
+      // Traduire vers la langue préférée du destinataire
+      const targetLang = toUser.preferredLang || 'en';
+      if (targetLang !== userLang) {
+        const translation = await translateMessage(content, targetLang);
+        message.translations[targetLang] = translation;
+      }
+
+      // Sauvegarder le message
+      const convId = getConversationId(fromEmail, toEmail);
+      if (!directMessages[convId]) {
+        directMessages[convId] = [];
+      }
+      directMessages[convId].push(message);
+      await saveDirectMessages();
+
+      // Envoyer au destinataire (si connecté)
+      if (userSockets[toEmail]) {
+        userSockets[toEmail].forEach(socketId => {
+          io.to(socketId).emit('new_dm', message);
+        });
+      }
+
+      // Confirmer l'envoi à l'expéditeur
+      socket.emit('dm_sent', message);
+
+      logger.info(`DM sent from ${fromEmail} to ${toEmail}`, { messageId });
+
+    } catch (error) {
+      logger.error('Error sending DM', error);
       socket.emit('error', { message: 'Erreur lors de l\'envoi du message' });
     }
   });
@@ -1474,6 +1574,90 @@ app.post('/api/upload-avatar', authMiddleware, avatarUpload.single('avatar'), as
   } catch (error) {
     logger.error('Error uploading avatar', error);
     res.status(500).json({ error: 'Erreur lors de l\'upload de l\'avatar' });
+  }
+});
+
+// ===================================
+// ROUTES API - MESSAGES PRIVÉS (DM)
+// ===================================
+
+// Récupérer toutes les conversations DM de l'utilisateur
+app.get('/api/dms', authMiddleware, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const conversations = [];
+
+    // Parcourir toutes les conversations pour trouver celles de l'utilisateur
+    for (const [convId, msgs] of Object.entries(directMessages)) {
+      const [email1, email2] = convId.split('_');
+
+      if (email1 === userEmail || email2 === userEmail) {
+        const otherEmail = email1 === userEmail ? email2 : email1;
+        const otherUser = authManager.users[otherEmail];
+
+        if (otherUser) {
+          const lastMessage = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+          conversations.push({
+            conversationId: convId,
+            otherUser: {
+              email: otherEmail,
+              displayName: otherUser.displayName || otherEmail.split('@')[0],
+              avatar: otherUser.avatar
+            },
+            lastMessage,
+            unreadCount: 0 // À implémenter plus tard
+          });
+        }
+      }
+    }
+
+    // Trier par dernier message
+    conversations.sort((a, b) => {
+      if (!a.lastMessage) return 1;
+      if (!b.lastMessage) return -1;
+      return new Date(b.lastMessage.timestamp) - new Date(a.lastMessage.timestamp);
+    });
+
+    res.json({ conversations });
+  } catch (error) {
+    logger.error('Error fetching DMs', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des messages' });
+  }
+});
+
+// Récupérer les messages d'une conversation spécifique
+app.get('/api/dms/:otherUserEmail', authMiddleware, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const otherUserEmail = req.params.otherUserEmail;
+
+    // Vérifier que l'autre utilisateur existe
+    const otherUser = authManager.users[otherUserEmail];
+    if (!otherUser) {
+      return res.status(404).json({ error: 'Utilisateur introuvable' });
+    }
+
+    // Vérifier qu'ils sont amis
+    const user = authManager.users[userEmail];
+    if (!user.friends || !user.friends.includes(otherUserEmail)) {
+      return res.status(403).json({ error: 'Vous devez être amis pour échanger des messages' });
+    }
+
+    const convId = getConversationId(userEmail, otherUserEmail);
+    const msgs = directMessages[convId] || [];
+
+    res.json({
+      conversationId: convId,
+      messages: msgs,
+      otherUser: {
+        email: otherUserEmail,
+        displayName: otherUser.displayName || otherUserEmail.split('@')[0],
+        avatar: otherUser.avatar
+      }
+    });
+  } catch (error) {
+    logger.error('Error fetching DM conversation', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération de la conversation' });
   }
 });
 
