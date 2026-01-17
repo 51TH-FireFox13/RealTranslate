@@ -18,6 +18,9 @@ const NOTIFICATION_CONFIG = {
 // Tracker des messages non lus par groupe
 const unreadMessages = {};
 
+// Tracker des statuts en ligne/hors ligne des utilisateurs
+const userStatuses = {}; // email -> { online: boolean, lastSeen: timestamp }
+
 // ===================================
 // GESTION DU THÈME (DARK/LIGHT MODE)
 // ===================================
@@ -235,6 +238,82 @@ function getCurrentGroupMembers() {
     displayName: m.displayName,
     email: m.email
   }));
+}
+
+// ===================================
+// GESTION DES STATUTS EN LIGNE/HORS LIGNE
+// ===================================
+
+// Récupérer les statuts depuis l'API
+async function fetchUserStatuses() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/statuses`, {
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      Object.assign(userStatuses, data.statuses);
+      console.log('📊 Statuts utilisateurs chargés:', Object.keys(userStatuses).length);
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des statuts:', error);
+  }
+}
+
+// Générer l'indicateur de statut en ligne
+function getOnlineIndicator(email) {
+  const status = userStatuses[email];
+  if (!status) {
+    // Par défaut, considérer hors ligne
+    return '<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #888; margin-right: 6px;" title="Hors ligne"></span>';
+  }
+
+  if (status.online) {
+    return '<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #00ff9d; box-shadow: 0 0 4px #00ff9d; margin-right: 6px;" title="En ligne"></span>';
+  } else {
+    const lastSeenText = status.lastSeen ? formatLastSeen(status.lastSeen) : 'Hors ligne';
+    return `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #888; margin-right: 6px;" title="${lastSeenText}"></span>`;
+  }
+}
+
+// Formater le "dernière vue"
+function formatLastSeen(timestamp) {
+  if (!timestamp) return 'Hors ligne';
+
+  const now = new Date();
+  const lastSeen = new Date(timestamp);
+  const diffMs = now - lastSeen;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'À l\'instant';
+  if (diffMins < 60) return `Il y a ${diffMins} min`;
+  if (diffHours < 24) return `Il y a ${diffHours}h`;
+  if (diffDays < 7) return `Il y a ${diffDays}j`;
+  return 'Hors ligne';
+}
+
+// Rafraîchir les indicateurs en ligne dans l'interface
+function refreshOnlineIndicators() {
+  // Rafraîchir la liste des groupes si affichée
+  if (groupsData.groups && groupsData.groups.length > 0) {
+    displayGroups(groupsData.groups);
+  }
+
+  // Rafraîchir les conversations DM si affichées
+  if (!document.getElementById('dmsPanel').classList.contains('hidden')) {
+    loadDMConversations();
+  }
+
+  // Rafraîchir le titre du chat DM actuel si ouvert
+  if (currentDMUser && !document.getElementById('dmChatPanel').classList.contains('hidden')) {
+    const onlineIndicator = getOnlineIndicator(currentDMUser.email);
+    document.getElementById('dmChatTitle').innerHTML = `💬 <span style="display: inline-flex; align-items: center;">${onlineIndicator}${currentDMUser.displayName}</span>`;
+  }
 }
 
 // Configuration des langues
@@ -739,6 +818,9 @@ function showApp() {
 
   // Initialiser la sélection de langues
   initLanguageSelection();
+
+  // Charger les statuts des utilisateurs
+  fetchUserStatuses();
 }
 
 // Connexion
@@ -3875,15 +3957,18 @@ function displayDMsList(conversations) {
     const lastMsg = conv.lastMessage;
     const lastMsgText = lastMsg ? (lastMsg.content.substring(0, 50) + (lastMsg.content.length > 50 ? '...' : '')) : 'Nouvelle conversation';
     const lastMsgTime = lastMsg ? new Date(lastMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const onlineIndicator = getOnlineIndicator(conv.otherUser.email);
 
     return `
       <div onclick="openDMChat('${conv.otherUser.email}')" style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 50px; height: 50px;">
+          <div style="width: 50px; height: 50px; position: relative;">
             ${generateAvatarHTML(conv.otherUser, 50)}
           </div>
           <div style="flex: 1; min-width: 0;">
-            <div style="font-weight: bold; color: #fff; margin-bottom: 4px;">${conv.otherUser.displayName}</div>
+            <div style="font-weight: bold; color: #fff; margin-bottom: 4px; display: flex; align-items: center;">
+              ${onlineIndicator}${conv.otherUser.displayName}
+            </div>
             <div style="color: #888; font-size: 0.9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lastMsgText}</div>
           </div>
           <div style="color: #888; font-size: 0.85em; white-space: nowrap;">${lastMsgTime}</div>
@@ -3914,7 +3999,8 @@ async function openDMChat(userEmail) {
     document.getElementById('dmsPanel').classList.add('hidden');
 
     // Mise à jour de l'UI
-    document.getElementById('dmChatTitle').textContent = `💬 ${currentDMUser.displayName}`;
+    const onlineIndicator = getOnlineIndicator(currentDMUser.email);
+    document.getElementById('dmChatTitle').innerHTML = `💬 <span style="display: inline-flex; align-items: center;">${onlineIndicator}${currentDMUser.displayName}</span>`;
     document.getElementById('dmUserName').textContent = currentDMUser.displayName;
     document.getElementById('dmUserEmail').textContent = currentDMUser.email;
     document.getElementById('dmUserAvatar').innerHTML = generateAvatarHTML(currentDMUser, 40);
@@ -4327,6 +4413,21 @@ function connectSocket() {
         groupId
       );
     }
+  });
+
+  // ===================================
+  // LISTENERS SOCKET.IO POUR STATUTS
+  // ===================================
+
+  // Changement de statut en ligne/hors ligne
+  socket.on('user_status_changed', ({ email, displayName, online, lastSeen }) => {
+    console.log(`📡 Statut changé: ${displayName} est maintenant ${online ? 'en ligne' : 'hors ligne'}`);
+
+    // Mettre à jour le statut local
+    userStatuses[email] = { online, lastSeen };
+
+    // Rafraîchir l'affichage des groupes et DMs
+    refreshOnlineIndicators();
   });
 
   // ===================================

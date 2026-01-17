@@ -89,11 +89,13 @@ const messages = {}; // groupId -> [{ id, from, content, translations: {lang: te
 const directMessages = {}; // conversationId -> [{ id, from, to, content, translations: {lang: text}, timestamp }]
 const onlineUsers = {}; // socketId -> { email, displayName }
 const userSockets = {}; // email -> Set of socketIds
+const userStatuses = {}; // email -> { online: boolean, lastSeen: timestamp }
 
 // Charger les groupes depuis le fichier
 const GROUPS_FILE = join(__dirname, 'groups.json');
 const MESSAGES_FILE = join(__dirname, 'messages.json');
 const DMS_FILE = join(__dirname, 'dms.json');
+const STATUSES_FILE = join(__dirname, 'statuses.json');
 
 async function loadGroups() {
   try {
@@ -157,10 +159,30 @@ function getConversationId(email1, email2) {
   return [email1, email2].sort().join('_');
 }
 
+async function loadStatuses() {
+  try {
+    const data = await fs.readFile(STATUSES_FILE, 'utf8');
+    const loadedStatuses = JSON.parse(data);
+    Object.assign(userStatuses, loadedStatuses);
+    logger.info('User statuses loaded from file', { users: Object.keys(userStatuses).length });
+  } catch (error) {
+    logger.info('No statuses file found, starting fresh');
+  }
+}
+
+async function saveStatuses() {
+  try {
+    await fs.writeFile(STATUSES_FILE, JSON.stringify(userStatuses, null, 2));
+  } catch (error) {
+    logger.error('Error saving user statuses', error);
+  }
+}
+
 // Charger au démarrage
 await loadGroups();
 await loadMessages();
 await loadDirectMessages();
+await loadStatuses();
 
 // ===================================
 // WEBSOCKET HANDLERS
@@ -255,10 +277,66 @@ io.on('connection', (socket) => {
   // Enregistrer le socket de l'utilisateur
   onlineUsers[socket.id] = { email: userEmail, displayName };
 
+  // Vérifier si c'est la première connexion de cet utilisateur
+  const wasOffline = !userSockets[userEmail] || userSockets[userEmail].size === 0;
+
   if (!userSockets[userEmail]) {
     userSockets[userEmail] = new Set();
   }
   userSockets[userEmail].add(socket.id);
+
+  // Mettre à jour le statut en ligne
+  if (wasOffline) {
+    userStatuses[userEmail] = {
+      online: true,
+      lastSeen: new Date().toISOString()
+    };
+    saveStatuses();
+
+    // Notifier tous les utilisateurs concernés (groupes + DMs)
+    const user = authManager.users[userEmail];
+    const notifiedUsers = new Set();
+
+    // Ajouter les membres des groupes
+    if (user && user.groups) {
+      user.groups.forEach(groupId => {
+        const group = groups[groupId];
+        if (group) {
+          group.members.forEach(member => {
+            if (member.email !== userEmail) {
+              notifiedUsers.add(member.email);
+            }
+          });
+        }
+      });
+    }
+
+    // Ajouter les contacts DM
+    Object.keys(directMessages).forEach(convId => {
+      const [email1, email2] = convId.split('_');
+      if (email1 === userEmail) {
+        notifiedUsers.add(email2);
+      } else if (email2 === userEmail) {
+        notifiedUsers.add(email1);
+      }
+    });
+
+    // Émettre le changement de statut
+    notifiedUsers.forEach(targetEmail => {
+      if (userSockets[targetEmail]) {
+        userSockets[targetEmail].forEach(socketId => {
+          io.to(socketId).emit('user_status_changed', {
+            email: userEmail,
+            displayName: displayName,
+            online: true,
+            lastSeen: userStatuses[userEmail].lastSeen
+          });
+        });
+      }
+    });
+
+    logger.info(`${userEmail} is now online`);
+  }
 
   // Rejoindre les rooms des groupes de l'utilisateur
   const user = authManager.users[userEmail];
@@ -666,8 +744,61 @@ io.on('connection', (socket) => {
 
     if (userSockets[userEmail]) {
       userSockets[userEmail].delete(socket.id);
+
+      // Si c'est la dernière socket de l'utilisateur, le marquer comme hors ligne
       if (userSockets[userEmail].size === 0) {
         delete userSockets[userEmail];
+
+        const lastSeenTime = new Date().toISOString();
+        userStatuses[userEmail] = {
+          online: false,
+          lastSeen: lastSeenTime
+        };
+        saveStatuses();
+
+        // Notifier tous les utilisateurs concernés (groupes + DMs)
+        const user = authManager.users[userEmail];
+        const notifiedUsers = new Set();
+
+        // Ajouter les membres des groupes
+        if (user && user.groups) {
+          user.groups.forEach(groupId => {
+            const group = groups[groupId];
+            if (group) {
+              group.members.forEach(member => {
+                if (member.email !== userEmail) {
+                  notifiedUsers.add(member.email);
+                }
+              });
+            }
+          });
+        }
+
+        // Ajouter les contacts DM
+        Object.keys(directMessages).forEach(convId => {
+          const [email1, email2] = convId.split('_');
+          if (email1 === userEmail) {
+            notifiedUsers.add(email2);
+          } else if (email2 === userEmail) {
+            notifiedUsers.add(email1);
+          }
+        });
+
+        // Émettre le changement de statut
+        notifiedUsers.forEach(targetEmail => {
+          if (userSockets[targetEmail]) {
+            userSockets[targetEmail].forEach(socketId => {
+              io.to(socketId).emit('user_status_changed', {
+                email: userEmail,
+                displayName: displayName,
+                online: false,
+                lastSeen: lastSeenTime
+              });
+            });
+          }
+        });
+
+        logger.info(`${userEmail} is now offline`);
       }
     }
   });
@@ -1698,6 +1829,54 @@ app.get('/api/dms/:otherUserEmail', authMiddleware, async (req, res) => {
   } catch (error) {
     logger.error('Error fetching DM conversation', error);
     res.status(500).json({ error: 'Erreur lors de la récupération de la conversation' });
+  }
+});
+
+// Récupérer les statuts des utilisateurs (amis + membres de groupes)
+app.get('/api/statuses', authMiddleware, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const user = authManager.users[userEmail];
+    const relevantUsers = new Set();
+
+    // Ajouter les amis
+    if (user.friends) {
+      user.friends.forEach(email => relevantUsers.add(email));
+    }
+
+    // Ajouter les membres des groupes
+    if (user.groups) {
+      user.groups.forEach(groupId => {
+        const group = groups[groupId];
+        if (group) {
+          group.members.forEach(member => {
+            if (member.email !== userEmail) {
+              relevantUsers.add(member.email);
+            }
+          });
+        }
+      });
+    }
+
+    // Récupérer les statuts
+    const statuses = {};
+    relevantUsers.forEach(email => {
+      const status = userStatuses[email];
+      if (status) {
+        statuses[email] = status;
+      } else {
+        // Par défaut, considérer comme hors ligne
+        statuses[email] = {
+          online: false,
+          lastSeen: null
+        };
+      }
+    });
+
+    res.json({ statuses });
+  } catch (error) {
+    logger.error('Error fetching statuses', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des statuts' });
   }
 });
 
