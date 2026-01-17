@@ -2087,11 +2087,23 @@
 
         <!-- Message Input -->
         <div style="display: flex; gap: 10px; align-items: stretch;">
+          <input type="file" id="chatFileInput" accept="image/*,.pdf,.doc,.docx,.txt,.mp3,.mp4,.webm,.ogg" style="display: none;" onchange="handleFileSelection(event)">
+          <button id="chatFileBtn" class="create-user-btn" onclick="document.getElementById('chatFileInput').click()" style="margin: 0; padding: 12px 16px; background: #4CAF50; min-width: 60px; display: flex; align-items: center; justify-content: center; font-size: 1.2em;" title="Partager un fichier">
+            📎
+          </button>
           <button id="chatPttBtn" class="create-user-btn" onmousedown="startChatPTT()" onmouseup="stopChatPTT()" ontouchstart="startChatPTT(event)" ontouchend="stopChatPTT(event)" style="margin: 0; padding: 12px 16px; background: #ff6b6b; min-width: 60px; display: flex; align-items: center; justify-content: center; font-size: 1.2em;">
             🎤
           </button>
           <input type="text" id="chatMessageInput" placeholder="Tapez votre message..." style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;" onkeypress="if(event.key === 'Enter') sendMessage()">
           <button class="create-user-btn" id="chatSendBtn" onclick="sendMessage()" style="margin: 0; padding: 12px 24px;">Envoyer</button>
+        </div>
+
+        <!-- File Preview Area -->
+        <div id="filePreviewArea" style="display: none; margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span id="filePreviewName" style="flex: 1; color: #fff;"></span>
+            <button onclick="cancelFileSelection()" style="background: #ff6b6b; border: none; border-radius: 4px; padding: 4px 8px; color: #fff; cursor: pointer;">✕</button>
+          </div>
         </div>
       </div>
     </div>

@@ -41,11 +41,41 @@ const upload = multer({
   limits: { fileSize: 25 * 1024 * 1024 } // 25MB max
 });
 
+// Configuration multer pour l'upload de fichiers (chat)
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, join(__dirname, 'uploads'));
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+    const ext = file.originalname.split('.').pop();
+    cb(null, `${uniqueSuffix}.${ext}`);
+  }
+});
+
+const fileUpload = multer({
+  storage: fileStorage,
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB max
+  fileFilter: (req, file, cb) => {
+    // Types de fichiers autorisés
+    const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|txt|mp3|mp4|webm|ogg/;
+    const extname = allowedTypes.test(file.originalname.toLowerCase().split('.').pop());
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Type de fichier non autorisé'));
+    }
+  }
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(accessLoggerMiddleware); // Logger toutes les requêtes
 app.use(express.static(join(__dirname, '../frontend')));
+app.use('/uploads', express.static(join(__dirname, 'uploads'))); // Servir les fichiers uploadés
 
 logger.info('RealTranslate Backend starting...');
 
@@ -215,7 +245,7 @@ io.on('connection', (socket) => {
   // Envoyer un message de groupe
   socket.on('send_message', async (data) => {
     try {
-      const { groupId, content, userLang } = data;
+      const { groupId, content, userLang, fileInfo } = data;
       const group = groups[groupId];
 
       if (!group) {
@@ -244,6 +274,11 @@ io.on('connection', (socket) => {
         },
         timestamp: new Date().toISOString()
       };
+
+      // Ajouter les informations du fichier si présent
+      if (fileInfo) {
+        message.fileInfo = fileInfo;
+      }
 
       // Traduire vers toutes les langues des membres du groupe
       const targetLangs = new Set();
@@ -1345,6 +1380,38 @@ setInterval(checkExpiredSubscriptions, 60 * 60 * 1000);
 
 // Vérifier au démarrage
 checkExpiredSubscriptions();
+
+// ===================================
+// ROUTES API - FICHIERS
+// ===================================
+
+// Upload de fichier pour le chat
+app.post('/api/upload-file', authMiddleware, fileUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Aucun fichier fourni' });
+    }
+
+    const fileUrl = `/uploads/${req.file.filename}`;
+    const fileInfo = {
+      url: fileUrl,
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      size: req.file.size
+    };
+
+    logger.info('File uploaded successfully', {
+      user: req.user.email,
+      fileName: req.file.originalname,
+      size: req.file.size
+    });
+
+    res.json(fileInfo);
+  } catch (error) {
+    logger.error('Error uploading file', error);
+    res.status(500).json({ error: 'Erreur lors de l\'upload du fichier' });
+  }
+});
 
 // ===================================
 // ROUTES API - GROUPES

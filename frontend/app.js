@@ -1605,12 +1605,14 @@ function displaySearchResults(messages, searchTerm) {
         <div style="position: relative; display: inline-block; max-width: 70%;">
           <div style="background: ${isOwnMessage ? '#00ff9d' : 'rgba(255,255,255,0.1)'}; color: ${isOwnMessage ? '#000' : '#fff'}; padding: 10px 14px; border-radius: 12px; word-wrap: break-word;">
             <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${msg.fromDisplayName}</div>
-            <div>${highlightedText}</div>
+            ${msg.fileInfo ? '' : `<div>${highlightedText}</div>`}
+            ${msg.fileInfo ? generateFileDisplay(msg.fileInfo) : ''}
+            ${msg.fileInfo && translation ? `<div style="margin-top: 8px;">${highlightedText}</div>` : ''}
             <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(msg.timestamp).toLocaleTimeString()}</div>
           </div>
           <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: ${isOwnMessage ? 'flex-end' : 'flex-start'}; flex-wrap: wrap;">
-            <button onclick="playMessageAudio('${translation.replace(/'/g, "\\'")}', '${userLang}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('listen')}">🔊</button>
-            <button onclick="copyMessage('${translation.replace(/'/g, "\\'")}', '${msg.id || Date.now()}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('copy')}">📋</button>
+            ${!msg.fileInfo ? `<button onclick="playMessageAudio('${translation.replace(/'/g, "\\'")}', '${userLang}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('listen')}">🔊</button>` : ''}
+            ${!msg.fileInfo ? `<button onclick="copyMessage('${translation.replace(/'/g, "\\'")}', '${msg.id || Date.now()}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('copy')}">📋</button>` : ''}
             ${generateReactionButtons(msg.id)}
             ${isOwnMessage ? `<button onclick="deleteMessage('${msg.id}')" style="background: rgba(255,107,107,0.2); border: 1px solid #ff6b6b; color: #ff6b6b; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="Supprimer">🗑️</button>` : ''}
           </div>
@@ -1831,6 +1833,115 @@ function handleChatInput() {
     isCurrentlyTyping = false;
     emitTypingEvent(false);
   }, TYPING_TIMEOUT_MS);
+}
+
+// ===================================
+// PARTAGE DE FICHIERS/IMAGES
+// ===================================
+
+let selectedFile = null;
+
+// Gérer la sélection d'un fichier
+function handleFileSelection(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Vérifier la taille (25MB max)
+  const maxSize = 25 * 1024 * 1024; // 25MB
+  if (file.size > maxSize) {
+    alert('❌ Fichier trop volumineux. Taille maximale: 25MB');
+    event.target.value = '';
+    return;
+  }
+
+  selectedFile = file;
+
+  // Afficher la prévisualisation
+  const previewArea = document.getElementById('filePreviewArea');
+  const previewName = document.getElementById('filePreviewName');
+
+  const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+  previewName.textContent = `📎 ${file.name} (${sizeInMB} MB)`;
+  previewArea.style.display = 'block';
+
+  // Clear the input
+  event.target.value = '';
+}
+
+// Annuler la sélection de fichier
+function cancelFileSelection() {
+  selectedFile = null;
+  const previewArea = document.getElementById('filePreviewArea');
+  previewArea.style.display = 'none';
+  document.getElementById('chatFileInput').value = '';
+}
+
+// Upload du fichier vers le serveur
+async function uploadFile(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/upload-file`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error('Upload failed');
+    }
+
+    const fileInfo = await response.json();
+    return fileInfo;
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    throw error;
+  }
+}
+
+// Générer l'affichage d'un fichier dans un message
+function generateFileDisplay(fileInfo) {
+  if (!fileInfo) return '';
+
+  const isImage = fileInfo.mimeType && fileInfo.mimeType.startsWith('image/');
+  const fileUrl = `${API_BASE_URL}${fileInfo.url}`;
+
+  if (isImage) {
+    return `
+      <div style="margin-top: 8px;">
+        <a href="${fileUrl}" target="_blank">
+          <img src="${fileUrl}" alt="${fileInfo.originalName}" style="max-width: 300px; max-height: 300px; border-radius: 8px; cursor: pointer;">
+        </a>
+        <div style="font-size: 0.85em; margin-top: 4px; opacity: 0.7;">📷 ${fileInfo.originalName}</div>
+      </div>
+    `;
+  } else {
+    // Fichier non-image
+    const sizeInMB = (fileInfo.size / (1024 * 1024)).toFixed(2);
+    let icon = '📄';
+    if (fileInfo.mimeType) {
+      if (fileInfo.mimeType.includes('pdf')) icon = '📕';
+      else if (fileInfo.mimeType.includes('audio')) icon = '🎵';
+      else if (fileInfo.mimeType.includes('video')) icon = '🎬';
+      else if (fileInfo.mimeType.includes('text')) icon = '📝';
+    }
+
+    return `
+      <div style="margin-top: 8px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+        <a href="${fileUrl}" target="_blank" download="${fileInfo.originalName}" style="color: #00ff9d; text-decoration: none; display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.5em;">${icon}</span>
+          <div style="flex: 1;">
+            <div>${fileInfo.originalName}</div>
+            <div style="font-size: 0.8em; opacity: 0.7;">${sizeInMB} MB</div>
+          </div>
+          <span>⬇️</span>
+        </a>
+      </div>
+    `;
+  }
 }
 
 // Initialiser l'écran de sélection de langues
@@ -3834,12 +3945,14 @@ function displayMessages(messages) {
         <div style="position: relative; display: inline-block; max-width: 70%;">
           <div style="background: ${isOwnMessage ? '#00ff9d' : 'rgba(255,255,255,0.1)'}; color: ${isOwnMessage ? '#000' : '#fff'}; padding: 10px 14px; border-radius: 12px; word-wrap: break-word;">
             <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${msg.fromDisplayName}</div>
-            <div>${translation}</div>
+            ${msg.fileInfo ? '' : `<div>${translation}</div>`}
+            ${msg.fileInfo ? generateFileDisplay(msg.fileInfo) : ''}
+            ${msg.fileInfo && translation ? `<div style="margin-top: 8px;">${translation}</div>` : ''}
             <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(msg.timestamp).toLocaleTimeString()}</div>
           </div>
           <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: ${isOwnMessage ? 'flex-end' : 'flex-start'}; flex-wrap: wrap;">
-            <button onclick="playMessageAudio('${translation.replace(/'/g, "\\'")}', '${userLang}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('listen')}">🔊</button>
-            <button onclick="copyMessage('${translation.replace(/'/g, "\\'")}', '${msg.id || Date.now()}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('copy')}">📋</button>
+            ${!msg.fileInfo ? `<button onclick="playMessageAudio('${translation.replace(/'/g, "\\'")}', '${userLang}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('listen')}">🔊</button>` : ''}
+            ${!msg.fileInfo ? `<button onclick="copyMessage('${translation.replace(/'/g, "\\'")}', '${msg.id || Date.now()}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('copy')}">📋</button>` : ''}
             ${generateReactionButtons(msg.id)}
             ${isOwnMessage ? `<button onclick="deleteMessage('${msg.id}')" style="background: rgba(255,107,107,0.2); border: 1px solid #ff6b6b; color: #ff6b6b; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="Supprimer">🗑️</button>` : ''}
           </div>
@@ -3867,13 +3980,16 @@ function appendMessage(message) {
       <div style="position: relative; display: inline-block; max-width: 70%;">
         <div style="background: ${isOwnMessage ? '#00ff9d' : 'rgba(255,255,255,0.1)'}; color: ${isOwnMessage ? '#000' : '#fff'}; padding: 10px 14px; border-radius: 12px; word-wrap: break-word;">
           <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${message.fromDisplayName}</div>
-          <div>${translation}</div>
+          ${message.fileInfo ? '' : `<div>${translation}</div>`}
+          ${message.fileInfo ? generateFileDisplay(message.fileInfo) : ''}
+          ${message.fileInfo && translation ? `<div style="margin-top: 8px;">${translation}</div>` : ''}
           <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(message.timestamp).toLocaleTimeString()}</div>
         </div>
         <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: ${isOwnMessage ? 'flex-end' : 'flex-start'}; flex-wrap: wrap;">
-          <button onclick="playMessageAudio('${translation.replace(/'/g, "\\'")}', '${userLang}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('listen')}">🔊</button>
-          <button onclick="copyMessage('${translation.replace(/'/g, "\\'")}', '${message.id || Date.now()}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('copy')}">📋</button>
+          ${!message.fileInfo ? `<button onclick="playMessageAudio('${translation.replace(/'/g, "\\'")}', '${userLang}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('listen')}">🔊</button>` : ''}
+          ${!message.fileInfo ? `<button onclick="copyMessage('${translation.replace(/'/g, "\\'")}', '${message.id || Date.now()}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('copy')}">📋</button>` : ''}
           ${generateReactionButtons(message.id)}
+          ${isOwnMessage ? `<button onclick="deleteMessage('${message.id}')" style="background: rgba(255,107,107,0.2); border: 1px solid #ff6b6b; color: #ff6b6b; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="Supprimer">🗑️</button>` : ''}
         </div>
         ${generateReactionsDisplay(message.reactions, message.id)}
       </div>
@@ -3890,11 +4006,13 @@ function appendMessage(message) {
   container.scrollTop = container.scrollHeight;
 }
 
-function sendMessage() {
+async function sendMessage() {
   const input = document.getElementById('chatMessageInput');
   const content = input.value.trim();
 
-  if (!content) return;
+  // Vérifier qu'il y a soit du texte soit un fichier
+  if (!content && !selectedFile) return;
+
   if (!socket || !socket.connected) {
     alert('❌ Non connecté au serveur. Reconnexion...');
     initializeSocket();
@@ -3910,13 +4028,41 @@ function sendMessage() {
     }
   }
 
+  let fileInfo = null;
+
+  // Si un fichier est sélectionné, l'uploader d'abord
+  if (selectedFile) {
+    try {
+      const sendBtn = document.getElementById('chatSendBtn');
+      sendBtn.disabled = true;
+      sendBtn.textContent = '📤 Envoi...';
+
+      fileInfo = await uploadFile(selectedFile);
+
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Envoyer';
+    } catch (error) {
+      alert('❌ Erreur lors de l\'envoi du fichier');
+      const sendBtn = document.getElementById('chatSendBtn');
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Envoyer';
+      return;
+    }
+  }
+
   socket.emit('send_message', {
     groupId: currentChatGroupId,
-    content: content,
-    userLang: state.lang1 // Langue de l'utilisateur
+    content: content || (selectedFile ? selectedFile.name : ''),
+    userLang: state.lang1, // Langue de l'utilisateur
+    fileInfo: fileInfo
   });
 
   input.value = '';
+
+  // Réinitialiser la sélection de fichier
+  if (selectedFile) {
+    cancelFileSelection();
+  }
 }
 
 function showGroupDetails() {
