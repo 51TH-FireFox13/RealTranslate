@@ -1826,7 +1826,8 @@
         <span class="user-info" id="userInfo"></span>
         <button class="admin-btn hidden" id="adminBtn" onclick="showAdminPanel()">👤 Admin</button>
         <button class="profile-btn" id="friendsBtn" onclick="showFriendsPanel()">👥 Amis</button>
-        <button class="profile-btn" id="groupsBtn" onclick="showGroupsPanel()">💬 Groupes</button>
+        <button class="profile-btn" id="dmsBtn" onclick="showDMsPanel()">💬 Messages</button>
+        <button class="profile-btn" id="groupsBtn" onclick="showGroupsPanel()">👨‍👩‍👧‍👦 Groupes</button>
         <button class="profile-btn" id="profileBtn" onclick="showProfilePanel()">⚙️ Profil</button>
         <button class="logout-btn" onclick="logout()">↗ Logout</button>
       </div>
@@ -2219,6 +2220,77 @@
         <h3>✅ Mes amis</h3>
         <div id="friendsListContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 400px; overflow-y: auto;">
           <div id="friendsListContent" style="color: #888;">Chargement...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Direct Messages Panel -->
+  <div id="dmsPanel" class="admin-panel hidden">
+    <div class="admin-content">
+      <div class="admin-header">
+        <h2>💬 Messages privés</h2>
+        <button class="close-admin-btn" onclick="closeDMsPanel()">✕ Fermer</button>
+      </div>
+
+      <!-- Conversations List -->
+      <div class="admin-section">
+        <h3>📋 Conversations</h3>
+        <div id="dmsListContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 500px; overflow-y: auto;">
+          <div id="dmsListContent" style="color: #888;">Chargement...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DM Chat Panel -->
+  <div id="dmChatPanel" class="admin-panel hidden">
+    <div class="admin-content" style="display: flex; flex-direction: column; height: 90vh;">
+      <div class="admin-header">
+        <h2 id="dmChatTitle">💬 Message</h2>
+        <button class="close-admin-btn" onclick="closeDMChatPanel()">✕ Fermer</button>
+      </div>
+
+      <!-- User Info -->
+      <div class="admin-section" style="flex-shrink: 0;">
+        <div id="dmChatInfo" style="display: flex; align-items: center; gap: 10px;">
+          <div id="dmUserAvatar" style="width: 40px; height: 40px;"></div>
+          <div>
+            <div id="dmUserName" style="font-weight: bold; color: #fff;"></div>
+            <span id="dmUserEmail" style="color: #888; font-size: 0.85em;"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="admin-section" style="flex: 1; overflow-y: auto; padding: 15px 0; display: flex; flex-direction: column;">
+        <div id="dmMessagesContent" style="flex: 1; overflow-y: auto; padding: 0 10px;">
+          <p style="color: #888; text-align: center;">Aucun message</p>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div id="dmTypingIndicator" style="display: none; padding: 10px; color: #888; font-size: 0.9em; font-style: italic;">
+          <span id="dmTypingIndicatorText"></span><span class="typing-dots"></span>
+        </div>
+      </div>
+
+      <!-- Message Input -->
+      <div class="admin-section" style="flex-shrink: 0;">
+        <div style="display: flex; gap: 10px; align-items: stretch;">
+          <input type="file" id="dmFileInput" accept="image/*,.pdf,.doc,.docx,.txt,.mp3,.mp4,.webm,.ogg" style="display: none;" onchange="handleDMFileSelection(event)">
+          <button id="dmFileBtn" class="create-user-btn" onclick="document.getElementById('dmFileInput').click()" style="margin: 0; padding: 12px 16px; background: #4CAF50; min-width: 60px; display: flex; align-items: center; justify-content: center; font-size: 1.2em;" title="Partager un fichier">
+            📎
+          </button>
+          <input type="text" id="dmMessageInput" placeholder="Tapez votre message..." style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;" onkeypress="if(event.key === 'Enter') sendDM()" oninput="handleDMTyping()">
+          <button class="create-user-btn" id="dmSendBtn" onclick="sendDM()" style="margin: 0; padding: 12px 24px;">Envoyer</button>
+        </div>
+
+        <!-- File Preview Area for DM -->
+        <div id="dmFilePreviewArea" style="display: none; margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span id="dmFilePreviewName" style="flex: 1; color: #fff;"></span>
+            <button onclick="cancelDMFileSelection()" style="background: #ff6b6b; border: none; border-radius: 4px; padding: 4px 8px; color: #fff; cursor: pointer;">✕</button>
+          </div>
         </div>
       </div>
     </div>

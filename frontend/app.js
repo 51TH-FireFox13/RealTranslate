@@ -3797,6 +3797,247 @@ function closeGroupsPanel() {
   document.getElementById('groupsPanel').classList.add('hidden');
 }
 
+// ===================================
+// PANNEAU MESSAGES PRIVÉS (DM)
+// ===================================
+
+let currentDMUser = null;
+let selectedDMFile = null;
+let currentDMMessages = [];
+
+// Afficher le panneau des DMs
+function showDMsPanel() {
+  document.getElementById('dmsPanel').classList.remove('hidden');
+  loadDMConversations();
+}
+
+// Fermer le panneau des DMs
+function closeDMsPanel() {
+  document.getElementById('dmsPanel').classList.add('hidden');
+}
+
+// Charger les conversations DM
+async function loadDMConversations() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/dms`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to load conversations');
+    }
+
+    const data = await response.json();
+    displayDMsList(data.conversations || []);
+  } catch (error) {
+    console.error('Error loading DM conversations:', error);
+    document.getElementById('dmsListContent').innerHTML = '<p style="color: #ff6b6b;">❌ Erreur de chargement</p>';
+  }
+}
+
+// Afficher la liste des conversations
+function displayDMsList(conversations) {
+  const container = document.getElementById('dmsListContent');
+
+  if (conversations.length === 0) {
+    container.innerHTML = '<p style="color: #888;">Aucune conversation. Envoyez un message à un ami pour démarrer !</p>';
+    return;
+  }
+
+  container.innerHTML = conversations.map(conv => {
+    const lastMsg = conv.lastMessage;
+    const lastMsgText = lastMsg ? (lastMsg.content.substring(0, 50) + (lastMsg.content.length > 50 ? '...' : '')) : 'Nouvelle conversation';
+    const lastMsgTime = lastMsg ? new Date(lastMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+    return `
+      <div onclick="openDMChat('${conv.otherUser.email}')" style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 50px; height: 50px;">
+            ${generateAvatarHTML(conv.otherUser, 50)}
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: bold; color: #fff; margin-bottom: 4px;">${conv.otherUser.displayName}</div>
+            <div style="color: #888; font-size: 0.9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lastMsgText}</div>
+          </div>
+          <div style="color: #888; font-size: 0.85em; white-space: nowrap;">${lastMsgTime}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Ouvrir une conversation DM
+async function openDMChat(userEmail) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/dms/${userEmail}`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to load conversation');
+    }
+
+    const data = await response.json();
+
+    currentDMUser = data.otherUser;
+    currentDMMessages = data.messages || [];
+
+    // Afficher le panel de chat DM
+    document.getElementById('dmChatPanel').classList.remove('hidden');
+    document.getElementById('dmsPanel').classList.add('hidden');
+
+    // Mise à jour de l'UI
+    document.getElementById('dmChatTitle').textContent = `💬 ${currentDMUser.displayName}`;
+    document.getElementById('dmUserName').textContent = currentDMUser.displayName;
+    document.getElementById('dmUserEmail').textContent = currentDMUser.email;
+    document.getElementById('dmUserAvatar').innerHTML = generateAvatarHTML(currentDMUser, 40);
+
+    // Afficher les messages
+    displayDMMessages(currentDMMessages);
+
+  } catch (error) {
+    console.error('Error opening DM chat:', error);
+    alert('❌ Erreur lors de l\'ouverture de la conversation');
+  }
+}
+
+// Fermer le panel de chat DM
+function closeDMChatPanel() {
+  document.getElementById('dmChatPanel').classList.add('hidden');
+  currentDMUser = null;
+  currentDMMessages = [];
+  document.getElementById('dmMessageInput').value = '';
+  if (selectedDMFile) {
+    cancelDMFileSelection();
+  }
+  // Retourner à la liste des DMs
+  showDMsPanel();
+}
+
+// Afficher les messages DM
+function displayDMMessages(messages) {
+  const container = document.getElementById('dmMessagesContent');
+  const userLang = state.lang1;
+
+  if (messages.length === 0) {
+    container.innerHTML = '<p style="color: #888; text-align: center;">Aucun message. Commencez la conversation !</p>';
+    return;
+  }
+
+  container.innerHTML = messages.map(msg => {
+    const translation = msg.translations[userLang] || msg.content;
+    const isOwnMessage = msg.from === state.user.email;
+
+    return `
+      <div style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: ${isOwnMessage ? 'flex-end' : 'flex-start'};">
+        <div style="display: inline-block; max-width: 70%;">
+          <div style="background: ${isOwnMessage ? 'var(--message-bg-own)' : 'var(--message-bg-other)'}; color: ${isOwnMessage ? 'var(--message-text-own)' : 'var(--message-text-other)'}; padding: 10px 14px; border-radius: 12px; word-wrap: break-word;">
+            ${msg.fileInfo ? '' : `<div>${translation}</div>`}
+            ${msg.fileInfo ? generateFileDisplay(msg.fileInfo) : ''}
+            ${msg.fileInfo && translation ? `<div style="margin-top: 8px;">${translation}</div>` : ''}
+            <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(msg.timestamp).toLocaleTimeString()}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Scroll vers le bas
+  container.scrollTop = container.scrollHeight;
+}
+
+// Envoyer un message DM
+async function sendDM() {
+  const input = document.getElementById('dmMessageInput');
+  const content = input.value.trim();
+
+  if (!content && !selectedDMFile) return;
+  if (!currentDMUser) return;
+
+  if (!socket || !socket.connected) {
+    alert('❌ Non connecté au serveur');
+    return;
+  }
+
+  let fileInfo = null;
+
+  // Upload du fichier si sélectionné
+  if (selectedDMFile) {
+    try {
+      const sendBtn = document.getElementById('dmSendBtn');
+      sendBtn.disabled = true;
+      sendBtn.textContent = '📤 Envoi...';
+
+      fileInfo = await uploadFile(selectedDMFile);
+
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Envoyer';
+    } catch (error) {
+      alert('❌ Erreur lors de l\'envoi du fichier');
+      const sendBtn = document.getElementById('dmSendBtn');
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Envoyer';
+      return;
+    }
+  }
+
+  // Envoyer via Socket.IO
+  socket.emit('send_dm', {
+    toEmail: currentDMUser.email,
+    content: content || (selectedDMFile ? selectedDMFile.name : ''),
+    userLang: state.lang1,
+    fileInfo: fileInfo
+  });
+
+  input.value = '';
+
+  // Réinitialiser fichier
+  if (selectedDMFile) {
+    cancelDMFileSelection();
+  }
+}
+
+// Gestion du typing dans DM
+let dmTypingTimeout = null;
+let isDMTyping = false;
+
+function handleDMTyping() {
+  if (!currentDMUser) return;
+  // À implémenter plus tard avec Socket.IO typing indicator
+}
+
+// Sélection fichier DM
+function handleDMFileSelection(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const maxSize = 25 * 1024 * 1024;
+  if (file.size > maxSize) {
+    alert('❌ Fichier trop volumineux. Taille maximale: 25MB');
+    event.target.value = '';
+    return;
+  }
+
+  selectedDMFile = file;
+
+  const previewArea = document.getElementById('dmFilePreviewArea');
+  const previewName = document.getElementById('dmFilePreviewName');
+
+  const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+  previewName.textContent = `📎 ${file.name} (${sizeInMB} MB)`;
+  previewArea.style.display = 'block';
+
+  event.target.value = '';
+}
+
+// Annuler sélection fichier DM
+function cancelDMFileSelection() {
+  selectedDMFile = null;
+  const previewArea = document.getElementById('dmFilePreviewArea');
+  previewArea.style.display = 'none';
+  document.getElementById('dmFileInput').value = '';
+}
+
 async function loadGroupsData() {
   try {
     // Charger les groupes
@@ -4037,6 +4278,37 @@ function connectSocket() {
   socket.on('error', (error) => {
     console.error('Socket error:', error);
     alert(`❌ ${error.message}`);
+  });
+
+  // ===================================
+  // LISTENERS SOCKET.IO POUR DMS
+  // ===================================
+
+  // Réception d'un nouveau message DM
+  socket.on('new_dm', (message) => {
+    console.log('💬 New DM received:', message);
+
+    // Si c'est pour la conversation actuelle
+    if (currentDMUser && (message.from === currentDMUser.email || message.to === currentDMUser.email)) {
+      currentDMMessages.push(message);
+      displayDMMessages(currentDMMessages);
+    } else {
+      // Notification pour DM d'une autre conversation
+      const fromUser = message.from === state.user.email ? message.to : message.from;
+      showNotificationToast(`💬 Nouveau message de ${message.fromDisplayName}`);
+      playNotificationSound();
+    }
+  });
+
+  // Confirmation d'envoi de DM
+  socket.on('dm_sent', (message) => {
+    console.log('✅ DM sent successfully:', message);
+
+    // Ajouter le message à la liste si dans la bonne conversation
+    if (currentDMUser && message.to === currentDMUser.email) {
+      currentDMMessages.push(message);
+      displayDMMessages(currentDMMessages);
+    }
   });
 }
 
