@@ -1326,6 +1326,27 @@
         bottom: 120px;
       }
     }
+
+    /* Animation pour l'indicateur "en train d'écrire..." */
+    .typing-dots::after {
+      content: '';
+      animation: typingDots 1.4s infinite;
+    }
+
+    @keyframes typingDots {
+      0%, 20% {
+        content: '';
+      }
+      40% {
+        content: '.';
+      }
+      60% {
+        content: '..';
+      }
+      80%, 100% {
+        content: '...';
+      }
+    }
   </style>
 </head>
 <body>
@@ -2049,6 +2070,10 @@
       <div class="admin-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
         <div id="chatMessages" style="flex: 1; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
           <div id="chatMessagesContent"></div>
+          <!-- Indicateur "en train d'écrire..." -->
+          <div id="typingIndicator" style="display: none; padding: 8px 12px; margin-top: 10px; color: #888; font-size: 0.9em; font-style: italic;">
+            <span id="typingIndicatorText"></span><span class="typing-dots"></span>
+          </div>
         </div>
 
         <!-- Message Input -->

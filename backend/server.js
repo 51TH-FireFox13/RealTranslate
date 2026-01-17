@@ -289,6 +289,110 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Indicateur "en train d'écrire..."
+  socket.on('user_typing', (data) => {
+    try {
+      const { groupId, isTyping } = data;
+      const group = groups[groupId];
+
+      if (!group) {
+        return;
+      }
+
+      // Vérifier que l'utilisateur est membre
+      const isMember = group.members.some(m => m.email === userEmail);
+      if (!isMember) {
+        return;
+      }
+
+      // Diffuser l'état "typing" aux autres membres du groupe
+      socket.to(groupId).emit('user_typing', {
+        groupId,
+        userEmail,
+        displayName,
+        isTyping
+      });
+
+    } catch (error) {
+      logger.error('Error broadcasting typing indicator', error);
+    }
+  });
+
+  // Ajouter/retirer une réaction sur un message
+  socket.on('toggle_reaction', async (data) => {
+    try {
+      const { groupId, messageId, emoji } = data;
+      const group = groups[groupId];
+
+      if (!group) {
+        socket.emit('error', { message: 'Groupe introuvable' });
+        return;
+      }
+
+      // Vérifier que l'utilisateur est membre
+      const isMember = group.members.some(m => m.email === userEmail);
+      if (!isMember) {
+        socket.emit('error', { message: 'Accès refusé' });
+        return;
+      }
+
+      // Trouver le message
+      const groupMessages = messages[groupId] || [];
+      const message = groupMessages.find(m => m.id === messageId);
+
+      if (!message) {
+        socket.emit('error', { message: 'Message introuvable' });
+        return;
+      }
+
+      // Initialiser les réactions si elles n'existent pas
+      if (!message.reactions) {
+        message.reactions = {};
+      }
+
+      // Initialiser la réaction pour cet emoji si elle n'existe pas
+      if (!message.reactions[emoji]) {
+        message.reactions[emoji] = [];
+      }
+
+      // Vérifier si l'utilisateur a déjà réagi avec cet emoji
+      const reactionIndex = message.reactions[emoji].findIndex(r => r.email === userEmail);
+
+      if (reactionIndex !== -1) {
+        // Retirer la réaction
+        message.reactions[emoji].splice(reactionIndex, 1);
+
+        // Supprimer l'emoji s'il n'y a plus de réactions
+        if (message.reactions[emoji].length === 0) {
+          delete message.reactions[emoji];
+        }
+      } else {
+        // Ajouter la réaction
+        message.reactions[emoji].push({
+          email: userEmail,
+          displayName: displayName,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Sauvegarder les messages
+      await saveMessages();
+
+      // Diffuser la mise à jour à tous les membres du groupe
+      io.to(groupId).emit('message_reaction_updated', {
+        groupId,
+        messageId,
+        reactions: message.reactions
+      });
+
+      logger.info(`Reaction ${emoji} toggled on message ${messageId} by ${userEmail}`);
+
+    } catch (error) {
+      logger.error('Error toggling reaction', error);
+      socket.emit('error', { message: 'Erreur lors de l\'ajout de la réaction' });
+    }
+  });
+
   // Rejoindre un groupe
   socket.on('join_group', (data) => {
     const { groupId } = data;

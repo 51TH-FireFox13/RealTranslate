@@ -7,6 +7,17 @@ const VAD_CONFIG = {
   RECORDING_INTERVAL: 80       // Intervalle d'analyse (ms) - plus réactif
 };
 
+// Configuration des notifications
+const NOTIFICATION_CONFIG = {
+  enabled: true,
+  sound: true,
+  desktop: true, // Notifications navigateur
+  toastDuration: 4000 // Durée d'affichage du toast (ms)
+};
+
+// Tracker des messages non lus par groupe
+const unreadMessages = {};
+
 // Configuration des langues
 const LANGUAGES = {
   fr: { name: 'Français', flag: '🇫🇷', nativeName: 'Français', code: 'fr', voice: 'onyx' },
@@ -503,6 +514,9 @@ function showApp() {
   // Initialiser le badge provider avec la valeur par défaut
   elements.providerName.textContent = state.provider.toUpperCase();
   elements.providerBadge.classList.remove('hidden');
+
+  // Demander la permission pour les notifications
+  requestNotificationPermission();
 
   // Initialiser la sélection de langues
   initLanguageSelection();
@@ -1326,6 +1340,353 @@ function applyUITranslations() {
   document.querySelectorAll('.close-admin-btn').forEach(btn => {
     btn.textContent = `✕ ${t('close')}`;
   });
+}
+
+// ===================================
+// SYSTÈME DE NOTIFICATIONS
+// ===================================
+
+// Demander la permission pour les notifications navigateur
+function requestNotificationPermission() {
+  if (!('Notification' in window)) {
+    console.warn('Ce navigateur ne supporte pas les notifications desktop');
+    NOTIFICATION_CONFIG.desktop = false;
+    return;
+  }
+
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().then(permission => {
+      console.log(`🔔 Permission notifications: ${permission}`);
+      NOTIFICATION_CONFIG.desktop = (permission === 'granted');
+    });
+  } else if (Notification.permission === 'granted') {
+    NOTIFICATION_CONFIG.desktop = true;
+  } else {
+    NOTIFICATION_CONFIG.desktop = false;
+  }
+}
+
+// Jouer un son de notification
+function playNotificationSound() {
+  if (!NOTIFICATION_CONFIG.sound) return;
+
+  try {
+    // Créer un son simple avec Web Audio API
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.frequency.value = 800; // Fréquence en Hz
+    oscillator.type = 'sine';
+
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+  } catch (error) {
+    console.warn('Impossible de jouer le son de notification:', error);
+  }
+}
+
+// Afficher une notification toast dans l'UI
+function showNotificationToast(message) {
+  if (!NOTIFICATION_CONFIG.enabled) return;
+
+  // Créer ou réutiliser le conteneur de toast
+  let toastContainer = document.getElementById('notificationToastContainer');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'notificationToastContainer';
+    toastContainer.style.cssText = `
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 10000;
+      max-width: 400px;
+    `;
+    document.body.appendChild(toastContainer);
+  }
+
+  // Créer le toast
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    background: linear-gradient(135deg, #00ff9d, #00a2ff);
+    color: #000;
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 8px 32px rgba(0, 255, 157, 0.3);
+    animation: slideInRight 0.3s ease-out;
+    font-weight: 600;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.3s;
+  `;
+  toast.textContent = `🔔 ${message}`;
+
+  // Animation CSS
+  if (!document.getElementById('notificationToastStyles')) {
+    const style = document.createElement('style');
+    style.id = 'notificationToastStyles';
+    style.textContent = `
+      @keyframes slideInRight {
+        from {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      @keyframes slideOutRight {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Hover effect
+  toast.addEventListener('mouseenter', () => {
+    toast.style.transform = 'scale(1.02)';
+  });
+  toast.addEventListener('mouseleave', () => {
+    toast.style.transform = 'scale(1)';
+  });
+
+  // Click to dismiss
+  toast.addEventListener('click', () => {
+    toast.style.animation = 'slideOutRight 0.3s ease-out';
+    setTimeout(() => toast.remove(), 300);
+  });
+
+  toastContainer.appendChild(toast);
+
+  // Auto-remove après durée configurée
+  setTimeout(() => {
+    if (toast.parentElement) {
+      toast.style.animation = 'slideOutRight 0.3s ease-out';
+      setTimeout(() => toast.remove(), 300);
+    }
+  }, NOTIFICATION_CONFIG.toastDuration);
+}
+
+// Afficher une notification navigateur
+function showDesktopNotification(title, body, groupId) {
+  if (!NOTIFICATION_CONFIG.desktop || Notification.permission !== 'granted') {
+    return;
+  }
+
+  try {
+    const notification = new Notification(title, {
+      body: body,
+      icon: '/favicon.ico',
+      badge: '/favicon.ico',
+      tag: `group-${groupId}`, // Permet de grouper les notifications
+      requireInteraction: false,
+      silent: true // On joue notre propre son
+    });
+
+    notification.onclick = () => {
+      window.focus();
+      // Ouvrir le groupe si possible
+      if (groupId && typeof openGroupChat === 'function') {
+        openGroupChat(groupId);
+      }
+      notification.close();
+    };
+
+    // Auto-close après 5 secondes
+    setTimeout(() => notification.close(), 5000);
+  } catch (error) {
+    console.warn('Erreur notification desktop:', error);
+  }
+}
+
+// Incrémenter le compteur de messages non lus
+function incrementUnreadCount(groupId) {
+  if (!unreadMessages[groupId]) {
+    unreadMessages[groupId] = 0;
+  }
+  unreadMessages[groupId]++;
+  updateGroupBadges();
+}
+
+// Réinitialiser le compteur pour un groupe
+function clearUnreadCount(groupId) {
+  unreadMessages[groupId] = 0;
+  updateGroupBadges();
+}
+
+// Mettre à jour les badges sur la liste des groupes
+function updateGroupBadges() {
+  // Cette fonction sera appelée pour mettre à jour l'UI des groupes
+  // Elle sera implémentée dans displayGroupsList()
+  if (typeof displayGroupsList === 'function' && groupsData.groups) {
+    displayGroupsList(groupsData.groups);
+  }
+}
+
+// ===================================
+// RÉACTIONS SUR LES MESSAGES
+// ===================================
+
+// Emojis disponibles pour les réactions
+const REACTION_EMOJIS = ['👍', '❤️', '😂', '🎉', '😮', '😢'];
+
+// Générer l'HTML des boutons de réaction
+function generateReactionButtons(messageId) {
+  return REACTION_EMOJIS.map(emoji => `
+    <button onclick="toggleReaction('${messageId}', '${emoji}')" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.15); padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 1em; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.4)'" onmouseout="this.style.background='rgba(0,0,0,0.2)'" title="Réagir avec ${emoji}">
+      ${emoji}
+    </button>
+  `).join('');
+}
+
+// Générer l'HTML d'affichage des réactions existantes
+function generateReactionsDisplay(reactions, messageId) {
+  if (!reactions || Object.keys(reactions).length === 0) {
+    return '';
+  }
+
+  return `
+    <div class="reactions-display" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+      ${Object.entries(reactions).map(([emoji, users]) => {
+        if (users.length === 0) return '';
+
+        const hasReacted = users.some(u => u.email === state.user.email);
+        const usersList = users.map(u => u.displayName).join(', ');
+
+        return `
+          <button onclick="toggleReaction('${messageId}', '${emoji}')" style="background: ${hasReacted ? 'rgba(0, 255, 157, 0.2)' : 'rgba(0,0,0,0.3)'}; border: 1px solid ${hasReacted ? '#00ff9d' : 'rgba(255,255,255,0.2)'}; color: #fff; padding: 4px 10px; border-radius: 12px; cursor: pointer; font-size: 0.9em; display: flex; align-items: center; gap: 4px; transition: all 0.2s;" title="${usersList}">
+            <span>${emoji}</span>
+            <span style="font-size: 0.85em; font-weight: bold;">${users.length}</span>
+          </button>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+// Toggle une réaction sur un message
+function toggleReaction(messageId, emoji) {
+  if (!socket || !socket.connected || !currentChatGroupId) {
+    alert('❌ Non connecté au serveur');
+    return;
+  }
+
+  socket.emit('toggle_reaction', {
+    groupId: currentChatGroupId,
+    messageId: messageId,
+    emoji: emoji
+  });
+}
+
+// Mettre à jour l'affichage des réactions d'un message
+function updateMessageReactions(messageId, reactions) {
+  // Trouver le message dans le DOM
+  const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+  if (!messageElement) {
+    console.warn(`Message ${messageId} not found in DOM`);
+    return;
+  }
+
+  // Trouver ou créer le conteneur des réactions
+  let reactionsContainer = messageElement.querySelector('.reactions-display');
+
+  if (!reactionsContainer) {
+    // Créer le conteneur s'il n'existe pas
+    const messageInner = messageElement.querySelector('div > div');
+    if (messageInner) {
+      reactionsContainer = document.createElement('div');
+      reactionsContainer.className = 'reactions-display';
+      messageInner.parentElement.appendChild(reactionsContainer);
+    }
+  }
+
+  if (reactionsContainer) {
+    // Régénérer l'HTML des réactions
+    reactionsContainer.innerHTML = generateReactionsDisplay(reactions, messageId);
+  }
+}
+
+// ===================================
+// INDICATEUR "EN TRAIN D'ÉCRIRE..."
+// ===================================
+
+// Variables pour l'indicateur typing
+let typingTimeout = null;
+let isCurrentlyTyping = false;
+const TYPING_TIMEOUT_MS = 3000; // Timeout après 3 secondes sans frappe
+
+// Afficher l'indicateur "en train d'écrire..."
+function showTypingIndicator(displayName) {
+  const indicator = document.getElementById('typingIndicator');
+  const text = document.getElementById('typingIndicatorText');
+
+  if (indicator && text) {
+    text.textContent = `${displayName} est en train d'écrire`;
+    indicator.style.display = 'block';
+
+    // Scroll vers le bas pour voir l'indicateur
+    const chatMessages = document.getElementById('chatMessages');
+    if (chatMessages) {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+  }
+}
+
+// Cacher l'indicateur "en train d'écrire..."
+function hideTypingIndicator() {
+  const indicator = document.getElementById('typingIndicator');
+  if (indicator) {
+    indicator.style.display = 'none';
+  }
+}
+
+// Émettre l'événement "user_typing" au serveur
+function emitTypingEvent(isTyping) {
+  if (!socket || !socket.connected || !currentChatGroupId) {
+    return;
+  }
+
+  socket.emit('user_typing', {
+    groupId: currentChatGroupId,
+    isTyping: isTyping
+  });
+}
+
+// Handler pour la frappe dans l'input du chat
+function handleChatInput() {
+  if (!currentChatGroupId) return;
+
+  // Si on n'était pas en train de taper, signaler qu'on commence
+  if (!isCurrentlyTyping) {
+    isCurrentlyTyping = true;
+    emitTypingEvent(true);
+  }
+
+  // Clear le timeout précédent
+  if (typingTimeout) {
+    clearTimeout(typingTimeout);
+  }
+
+  // Définir un nouveau timeout pour arrêter le signal après 3 secondes
+  typingTimeout = setTimeout(() => {
+    isCurrentlyTyping = false;
+    emitTypingEvent(false);
+  }, TYPING_TIMEOUT_MS);
 }
 
 // Initialiser l'écran de sélection de langues
@@ -3035,13 +3396,23 @@ function displayGroupsList(groups) {
     return;
   }
 
-  container.innerHTML = groups.map(group => `
-    <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer;" onclick="openGroupChat('${group.id}')">
-      <div style="color: #fff; font-weight: bold; margin-bottom: 4px;">${group.name}</div>
-      <div style="color: #888; font-size: 0.85em;">${group.members.length} ${t('members')}</div>
-      <div style="color: #666; font-size: 0.8em; margin-top: 4px;">${t('createdOn')} ${new Date(group.createdAt).toLocaleDateString()}</div>
-    </div>
-  `).join('');
+  container.innerHTML = groups.map(group => {
+    const unreadCount = unreadMessages[group.id] || 0;
+    const badgeHTML = unreadCount > 0 ? `
+      <div style="position: absolute; top: 8px; right: 8px; background: linear-gradient(135deg, #ff6b6b, #ff9d00); color: #fff; border-radius: 12px; padding: 4px 10px; font-size: 0.75em; font-weight: bold; box-shadow: 0 2px 8px rgba(255,107,107,0.4);">
+        ${unreadCount > 99 ? '99+' : unreadCount}
+      </div>
+    ` : '';
+
+    return `
+      <div style="position: relative; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;" onclick="openGroupChat('${group.id}')" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+        ${badgeHTML}
+        <div style="color: #fff; font-weight: bold; margin-bottom: 4px;">${group.name}</div>
+        <div style="color: #888; font-size: 0.85em;">${group.members.length} ${t('members')}</div>
+        <div style="color: #666; font-size: 0.8em; margin-top: 4px;">${t('createdOn')} ${new Date(group.createdAt).toLocaleDateString()}</div>
+      </div>
+    `;
+  }).join('');
 }
 
 async function createGroup() {
@@ -3142,14 +3513,67 @@ function connectSocket() {
 
   socket.on('new_message', (message) => {
     console.log('📨 New message:', message);
+
+    // Si le message est dans le groupe actuellement ouvert
     if (currentChatGroupId === message.groupId) {
       appendMessage(message);
+    } else {
+      // Message d'un autre groupe → Afficher notification
+
+      // Incrémenter le compteur de messages non lus
+      incrementUnreadCount(message.groupId);
+
+      // Trouver le nom du groupe
+      const group = groupsData.groups.find(g => g.id === message.groupId);
+      const groupName = group ? group.name : 'Groupe';
+
+      // Ne pas notifier pour ses propres messages
+      if (message.from !== state.user.email) {
+        // Notification toast
+        showNotificationToast(`${message.fromDisplayName} dans ${groupName}`);
+
+        // Notification desktop
+        const translation = message.translations[state.lang1] || message.content;
+        showDesktopNotification(
+          `${groupName} - ${message.fromDisplayName}`,
+          translation.substring(0, 100), // Limiter la longueur
+          message.groupId
+        );
+
+        // Son de notification
+        playNotificationSound();
+      }
     }
   });
 
   socket.on('group_history', ({ groupId, messages }) => {
     console.log(`📚 Loaded ${messages.length} messages for group ${groupId}`);
     displayMessages(messages);
+  });
+
+  // Indicateur "en train d'écrire..."
+  socket.on('user_typing', ({ groupId, displayName, isTyping }) => {
+    // Afficher uniquement si c'est le groupe actuellement ouvert
+    if (groupId === currentChatGroupId) {
+      if (isTyping) {
+        showTypingIndicator(displayName);
+
+        // Auto-hide après 5 secondes au cas où on ne reçoit pas de "stop typing"
+        setTimeout(() => {
+          hideTypingIndicator();
+        }, 5000);
+      } else {
+        hideTypingIndicator();
+      }
+    }
+  });
+
+  // Mise à jour des réactions sur un message
+  socket.on('message_reaction_updated', ({ groupId, messageId, reactions }) => {
+    // Mettre à jour uniquement si c'est le groupe actuellement ouvert
+    if (groupId === currentChatGroupId) {
+      updateMessageReactions(messageId, reactions);
+    }
   });
 
   socket.on('error', (error) => {
@@ -3174,6 +3598,9 @@ async function openGroupChat(groupId) {
     groupsData.currentGroup = data.group;
     currentChatGroupId = groupId;
 
+    // Réinitialiser le compteur de messages non lus
+    clearUnreadCount(groupId);
+
     // Initialiser Socket.IO si pas déjà fait
     if (!socket || !socket.connected) {
       initializeSocket();
@@ -3187,7 +3614,16 @@ async function openGroupChat(groupId) {
     document.getElementById('groupsPanel').classList.add('hidden');
 
     document.getElementById('groupChatTitle').textContent = `💬 ${data.group.name}`;
-    document.getElementById('groupMembersCount').textContent = `${data.group.members.length} membres`;
+    document.getElementById('groupMembersCount').textContent = `${data.group.members.length} ${t('members')}`;
+
+    // Ajouter le listener pour l'indicateur "en train d'écrire..."
+    const chatInput = document.getElementById('chatMessageInput');
+    if (chatInput) {
+      // Enlever les anciens listeners pour éviter les doublons
+      chatInput.removeEventListener('input', handleChatInput);
+      // Ajouter le nouveau listener
+      chatInput.addEventListener('input', handleChatInput);
+    }
 
     // Charger l'historique
     const messagesResponse = await fetch(`${API_BASE_URL}/api/groups/${groupId}/messages`, {
@@ -3203,6 +3639,16 @@ async function openGroupChat(groupId) {
 
 function closeGroupChatPanel() {
   document.getElementById('groupChatPanel').classList.add('hidden');
+
+  // Arrêter le signal "en train d'écrire..." et cacher l'indicateur
+  if (isCurrentlyTyping) {
+    isCurrentlyTyping = false;
+    emitTypingEvent(false);
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
+  }
+  hideTypingIndicator();
 
   if (currentChatGroupId && socket) {
     socket.emit('leave_group', { groupId: currentChatGroupId });
@@ -3225,17 +3671,19 @@ function displayMessages(messages) {
     const isOwnMessage = msg.from === state.user.email;
 
     return `
-      <div style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: ${isOwnMessage ? 'flex-end' : 'flex-start'};">
+      <div style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: ${isOwnMessage ? 'flex-end' : 'flex-start'};" data-message-id="${msg.id}">
         <div style="position: relative; display: inline-block; max-width: 70%;">
           <div style="background: ${isOwnMessage ? '#00ff9d' : 'rgba(255,255,255,0.1)'}; color: ${isOwnMessage ? '#000' : '#fff'}; padding: 10px 14px; border-radius: 12px; word-wrap: break-word;">
             <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${msg.fromDisplayName}</div>
             <div>${translation}</div>
             <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(msg.timestamp).toLocaleTimeString()}</div>
           </div>
-          <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: ${isOwnMessage ? 'flex-end' : 'flex-start'};">
+          <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: ${isOwnMessage ? 'flex-end' : 'flex-start'}; flex-wrap: wrap;">
             <button onclick="playMessageAudio('${translation.replace(/'/g, "\\'")}', '${userLang}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('listen')}">🔊</button>
             <button onclick="copyMessage('${translation.replace(/'/g, "\\'")}', '${msg.id || Date.now()}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('copy')}">📋</button>
+            ${generateReactionButtons(msg.id)}
           </div>
+          ${generateReactionsDisplay(msg.reactions, msg.id)}
         </div>
       </div>
     `;
@@ -3252,17 +3700,19 @@ function appendMessage(message) {
   const isOwnMessage = message.from === state.user.email;
 
   const messageHTML = `
-    <div style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: ${isOwnMessage ? 'flex-end' : 'flex-start'};">
+    <div style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: ${isOwnMessage ? 'flex-end' : 'flex-start'};" data-message-id="${message.id}">
       <div style="position: relative; display: inline-block; max-width: 70%;">
         <div style="background: ${isOwnMessage ? '#00ff9d' : 'rgba(255,255,255,0.1)'}; color: ${isOwnMessage ? '#000' : '#fff'}; padding: 10px 14px; border-radius: 12px; word-wrap: break-word;">
           <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${message.fromDisplayName}</div>
           <div>${translation}</div>
           <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(message.timestamp).toLocaleTimeString()}</div>
         </div>
-        <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: ${isOwnMessage ? 'flex-end' : 'flex-start'};">
+        <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: ${isOwnMessage ? 'flex-end' : 'flex-start'}; flex-wrap: wrap;">
           <button onclick="playMessageAudio('${translation.replace(/'/g, "\\'")}', '${userLang}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('listen')}">🔊</button>
           <button onclick="copyMessage('${translation.replace(/'/g, "\\'")}', '${message.id || Date.now()}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('copy')}">📋</button>
+          ${generateReactionButtons(message.id)}
         </div>
+        ${generateReactionsDisplay(message.reactions, message.id)}
       </div>
     </div>
   `;
@@ -3286,6 +3736,15 @@ function sendMessage() {
     alert('❌ Non connecté au serveur. Reconnexion...');
     initializeSocket();
     return;
+  }
+
+  // Arrêter le signal "en train d'écrire..."
+  if (isCurrentlyTyping) {
+    isCurrentlyTyping = false;
+    emitTypingEvent(false);
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
   }
 
   socket.emit('send_message', {
