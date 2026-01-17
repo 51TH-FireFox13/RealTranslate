@@ -5,6 +5,79 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>RealTranslate - Traduction en Temps Réel</title>
   <style>
+    /* Variables CSS pour les thèmes */
+    :root {
+      /* Dark theme (default) */
+      --bg-gradient-start: #0a0a0a;
+      --bg-gradient-end: #1a1a2e;
+      --text-primary: #ffffff;
+      --text-secondary: #aaaaaa;
+      --text-tertiary: #888888;
+
+      --panel-bg: rgba(255, 255, 255, 0.05);
+      --panel-border: rgba(255, 255, 255, 0.1);
+      --input-bg: rgba(255, 255, 255, 0.08);
+      --input-border: rgba(255, 255, 255, 0.1);
+      --input-focus-bg: rgba(255, 255, 255, 0.12);
+
+      --button-bg: rgba(0, 0, 0, 0.3);
+      --button-border: rgba(255, 255, 255, 0.2);
+      --header-bg: rgba(0, 0, 0, 0.3);
+
+      --message-bg-own: #00ff9d;
+      --message-text-own: #000000;
+      --message-bg-other: rgba(255, 255, 255, 0.1);
+      --message-text-other: #ffffff;
+
+      --accent-gradient: linear-gradient(90deg, #00ff9d, #00a2ff);
+      --accent-primary: #00ff9d;
+      --accent-secondary: #00a2ff;
+
+      --error-bg: rgba(255, 107, 107, 0.2);
+      --error-border: rgba(255, 107, 107, 0.5);
+      --error-text: #ff6b6b;
+
+      --success-bg: rgba(0, 255, 157, 0.2);
+      --success-border: rgba(0, 255, 157, 0.5);
+      --success-text: #00ff9d;
+    }
+
+    /* Light theme */
+    body.light-theme {
+      --bg-gradient-start: #f5f7fa;
+      --bg-gradient-end: #c3cfe2;
+      --text-primary: #1a1a1a;
+      --text-secondary: #4a4a4a;
+      --text-tertiary: #6a6a6a;
+
+      --panel-bg: rgba(255, 255, 255, 0.9);
+      --panel-border: rgba(0, 0, 0, 0.1);
+      --input-bg: rgba(0, 0, 0, 0.05);
+      --input-border: rgba(0, 0, 0, 0.15);
+      --input-focus-bg: rgba(0, 0, 0, 0.08);
+
+      --button-bg: rgba(255, 255, 255, 0.8);
+      --button-border: rgba(0, 0, 0, 0.15);
+      --header-bg: rgba(255, 255, 255, 0.95);
+
+      --message-bg-own: #00cc7a;
+      --message-text-own: #ffffff;
+      --message-bg-other: rgba(0, 0, 0, 0.08);
+      --message-text-other: #1a1a1a;
+
+      --accent-gradient: linear-gradient(90deg, #00cc7a, #0088cc);
+      --accent-primary: #00cc7a;
+      --accent-secondary: #0088cc;
+
+      --error-bg: rgba(255, 107, 107, 0.15);
+      --error-border: rgba(255, 107, 107, 0.4);
+      --error-text: #d63031;
+
+      --success-bg: rgba(0, 184, 148, 0.15);
+      --success-border: rgba(0, 184, 148, 0.4);
+      --success-text: #00b894;
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -13,10 +86,11 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
-      color: #ffffff;
+      background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+      color: var(--text-primary);
       height: 100vh;
       overflow: hidden;
+      transition: background 0.3s ease, color 0.3s ease;
     }
 
     /* Main App Container */
@@ -37,18 +111,18 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+      background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
       z-index: 9999;
     }
 
     .login-box {
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--panel-bg);
       backdrop-filter: blur(20px);
       border-radius: 20px;
       padding: 40px;
       width: 90%;
       max-width: 400px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--panel-border);
     }
 
     .login-box h2 {
@@ -75,31 +149,31 @@
     .input-group label {
       display: block;
       margin-bottom: 8px;
-      color: #aaa;
+      color: var(--text-secondary);
       font-size: 0.9em;
     }
 
     .input-group input {
       width: 100%;
       padding: 12px 15px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
       border-radius: 10px;
-      color: #fff;
+      color: var(--text-primary);
       font-size: 1em;
       transition: all 0.3s ease;
     }
 
     .input-group input:focus {
       outline: none;
-      border-color: #00ff9d;
-      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--accent-primary);
+      background: var(--input-focus-bg);
     }
 
     .login-btn {
       width: 100%;
       padding: 15px;
-      background: linear-gradient(90deg, #00ff9d, #00a2ff);
+      background: var(--accent-gradient);
       border: none;
       border-radius: 10px;
       color: #000;
@@ -123,9 +197,9 @@
     }
 
     .error-message {
-      background: rgba(255, 107, 107, 0.2);
-      border: 1px solid rgba(255, 107, 107, 0.5);
-      color: #ff6b6b;
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      color: var(--error-text);
       padding: 10px 15px;
       border-radius: 8px;
       margin-bottom: 20px;
@@ -134,9 +208,9 @@
     }
 
     .success-message {
-      background: rgba(0, 255, 157, 0.2);
-      border: 1px solid rgba(0, 255, 157, 0.5);
-      color: #00ff9d;
+      background: var(--success-bg);
+      border: 1px solid var(--success-border);
+      color: var(--success-text);
       padding: 10px 15px;
       border-radius: 8px;
       margin-bottom: 20px;
@@ -146,11 +220,11 @@
 
     /* Header */
     header {
-      background: rgba(0, 0, 0, 0.3);
+      background: var(--header-bg);
       backdrop-filter: blur(10px);
       padding: 20px;
       text-align: center;
-      border-bottom: 2px solid rgba(0, 255, 157, 0.2);
+      border-bottom: 2px solid var(--panel-border);
       display: grid;
       grid-template-columns: 1fr auto 1fr;
       align-items: center;
@@ -897,7 +971,7 @@
 
     .subtitle {
       font-size: 0.9em;
-      color: #888;
+      color: var(--text-tertiary);
       margin-top: 5px;
     }
 
@@ -1624,7 +1698,11 @@
 
     <!-- Header -->
     <header>
-      <div></div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button id="themeToggleBtn" onclick="toggleTheme()" style="background: var(--button-bg); border: 1px solid var(--button-border); color: var(--text-primary); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 1.2em; transition: all 0.3s ease;" title="Changer de thème">
+          🌙
+        </button>
+      </div>
       <div class="header-content">
         <h1>RealTranslate</h1>
         <div class="subtitle" id="appSubtitle">Traduction en Temps Réel</div>

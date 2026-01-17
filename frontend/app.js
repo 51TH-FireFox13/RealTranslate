@@ -18,6 +18,42 @@ const NOTIFICATION_CONFIG = {
 // Tracker des messages non lus par groupe
 const unreadMessages = {};
 
+// ===================================
+// GESTION DU THÈME (DARK/LIGHT MODE)
+// ===================================
+
+// Initialiser le thème au démarrage
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  if (savedTheme === 'light') {
+    document.body.classList.add('light-theme');
+    updateThemeIcon('light');
+  } else {
+    document.body.classList.remove('light-theme');
+    updateThemeIcon('dark');
+  }
+}
+
+// Toggle entre dark et light mode
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-theme');
+  const theme = isLight ? 'light' : 'dark';
+  localStorage.setItem('theme', theme);
+  updateThemeIcon(theme);
+
+  // Animation de transition douce
+  document.body.style.transition = 'background 0.3s ease, color 0.3s ease';
+}
+
+// Mettre à jour l'icône du bouton de thème
+function updateThemeIcon(theme) {
+  const themeBtn = document.getElementById('themeToggleBtn');
+  if (themeBtn) {
+    themeBtn.textContent = theme === 'light' ? '☀️' : '🌙';
+    themeBtn.title = theme === 'light' ? 'Mode sombre' : 'Mode clair';
+  }
+}
+
 // Configuration des langues
 const LANGUAGES = {
   fr: { name: 'Français', flag: '🇫🇷', nativeName: 'Français', code: 'fr', voice: 'onyx' },
@@ -4273,6 +4309,9 @@ async function copyMessage(text, messageId) {
     alert(`❌ ${t('copyError') || 'Erreur lors de la copie'}`);
   }
 }
+
+// Initialiser le thème au chargement de la page
+initTheme();
 
 // Charger Socket.IO après connexion
 if (state.token) {
