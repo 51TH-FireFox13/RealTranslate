@@ -4479,3 +4479,58 @@ if (state.token) {
     initializeSocket();
   }, 1000);
 }
+
+// ===================================
+// PWA - SERVICE WORKER
+// ===================================
+
+// Enregistrer le service worker pour PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('✅ Service Worker enregistré:', registration.scope);
+
+        // Vérifier les mises à jour
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          console.log('🔄 Nouvelle version du Service Worker détectée');
+
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // Nouvelle version disponible
+              console.log('🆕 Nouvelle version disponible');
+              // Optionnel: Afficher une notification à l'utilisateur
+              if (confirm('Une nouvelle version de RealTranslate est disponible. Recharger maintenant ?')) {
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                window.location.reload();
+              }
+            }
+          });
+        });
+      })
+      .catch((error) => {
+        console.error('❌ Erreur enregistrement Service Worker:', error);
+      });
+  });
+
+  // Recharger quand le SW prend le contrôle
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    console.log('🔄 Service Worker activé, rechargement...');
+    window.location.reload();
+  });
+}
+
+// Détecter si l'app est installée (PWA)
+window.addEventListener('appinstalled', () => {
+  console.log('✅ RealTranslate installé comme PWA');
+});
+
+// Bouton d'installation PWA (optionnel)
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  console.log('💡 Installation PWA disponible');
+  // On pourrait afficher un bouton "Installer l'app" ici
+});

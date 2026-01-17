@@ -1,0 +1,29 @@
+{
+  "name": "RealTranslate - Traduction en Temps Réel",
+  "short_name": "RealTranslate",
+  "description": "Application de traduction instantanée multilingue avec chat de groupe",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#00ff9d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities", "social"],
+  "lang": "fr-FR",
+  "dir": "ltr",
+  "scope": "/",
+  "prefer_related_applications": false
+}
