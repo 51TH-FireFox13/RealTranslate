@@ -2088,6 +2088,28 @@
         </div>
       </div>
 
+      <!-- Avatar Section -->
+      <div class="admin-section">
+        <h3>🖼️ Photo de profil</h3>
+        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+          <div style="display: flex; align-items: center; gap: 20px;">
+            <div id="profileAvatarPreview" style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); display: flex; align-items: center; justify-content: center; font-size: 2em; color: #fff; font-weight: bold; overflow: hidden;">
+              ?
+            </div>
+            <div style="flex: 1;">
+              <input type="file" id="avatarInput" accept="image/*" style="display: none;" onchange="handleAvatarSelection(event)">
+              <button class="create-user-btn" onclick="document.getElementById('avatarInput').click()" style="margin-bottom: 10px;">
+                📷 Choisir une photo
+              </button>
+              <div style="color: #888; font-size: 0.85em;">
+                JPG, PNG, GIF ou WebP • Max 5MB
+              </div>
+              <div id="avatarMessage" class="hidden" style="margin-top: 10px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Update Display Name -->
       <div class="admin-section">
         <h3>✏️ Modifier le nom d'affichage</h3>

@@ -103,6 +103,113 @@ document.addEventListener('click', (event) => {
   }
 });
 
+// ===================================
+// GESTION DES AVATARS
+// ===================================
+
+// Gérer la sélection d'un avatar
+async function handleAvatarSelection(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Vérifier que c'est une image
+  if (!file.type.startsWith('image/')) {
+    showAvatarMessage('❌ Veuillez sélectionner une image', 'error');
+    return;
+  }
+
+  // Vérifier la taille (5MB max)
+  const maxSize = 5 * 1024 * 1024;
+  if (file.size > maxSize) {
+    showAvatarMessage('❌ Image trop volumineuse. Taille maximale: 5MB', 'error');
+    event.target.value = '';
+    return;
+  }
+
+  // Upload de l'avatar
+  try {
+    showAvatarMessage('📤 Upload en cours...', 'info');
+
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const response = await fetch(`${API_BASE_URL}/api/upload-avatar`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Upload failed');
+    }
+
+    const result = await response.json();
+
+    // Mettre à jour l'aperçu de l'avatar
+    updateAvatarPreview(result.avatarUrl);
+
+    // Mettre à jour le state
+    if (state.user) {
+      state.user.avatar = result.avatarUrl;
+    }
+
+    showAvatarMessage('✅ Photo de profil mise à jour !', 'success');
+
+    // Clear input
+    event.target.value = '';
+  } catch (error) {
+    console.error('Error uploading avatar:', error);
+    showAvatarMessage('❌ Erreur lors de l\'upload', 'error');
+  }
+}
+
+// Afficher un message pour l'avatar
+function showAvatarMessage(message, type) {
+  const messageDiv = document.getElementById('avatarMessage');
+  if (!messageDiv) return;
+
+  messageDiv.textContent = message;
+  messageDiv.className = type === 'error' ? 'error-message' : (type === 'success' ? 'success-message' : '');
+  messageDiv.classList.remove('hidden');
+
+  if (type === 'success') {
+    setTimeout(() => {
+      messageDiv.classList.add('hidden');
+    }, 3000);
+  }
+}
+
+// Mettre à jour l'aperçu de l'avatar
+function updateAvatarPreview(avatarUrl) {
+  const preview = document.getElementById('profileAvatarPreview');
+  if (!preview) return;
+
+  if (avatarUrl) {
+    const fullUrl = avatarUrl.startsWith('http') ? avatarUrl : `${API_BASE_URL}${avatarUrl}`;
+    preview.innerHTML = `<img src="${fullUrl}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">`;
+  } else {
+    // Afficher initiales
+    const initials = state.user && state.user.displayName ?
+      state.user.displayName.substring(0, 2).toUpperCase() : '?';
+    preview.textContent = initials;
+  }
+}
+
+// Générer l'avatar HTML pour un utilisateur
+function generateAvatarHTML(user, size = 40) {
+  if (user.avatar) {
+    const fullUrl = user.avatar.startsWith('http') ? user.avatar : `${API_BASE_URL}${user.avatar}`;
+    return `<img src="${fullUrl}" alt="${user.displayName || user.email}" style="width: ${size}px; height: ${size}px; border-radius: 50%; object-fit: cover;">`;
+  } else {
+    // Avatar par défaut avec initiales
+    const initials = user.displayName ? user.displayName.substring(0, 2).toUpperCase() : user.email.substring(0, 2).toUpperCase();
+    return `<div style="width: ${size}px; height: ${size}px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); display: flex; align-items: center; justify-content: center; font-size: ${size * 0.4}px; color: #fff; font-weight: bold;">${initials}</div>`;
+  }
+}
+
 // Configuration des langues
 const LANGUAGES = {
   fr: { name: 'Français', flag: '🇫🇷', nativeName: 'Français', code: 'fr', voice: 'onyx' },
@@ -3119,6 +3226,9 @@ async function showProfilePanel() {
   // Charger les informations du profil
   document.getElementById('profileEmail').textContent = state.user.email;
   document.getElementById('profileDisplayName').textContent = state.user.displayName || state.user.email.split('@')[0];
+
+  // Charger et afficher l'avatar
+  updateAvatarPreview(state.user.avatar);
 
   // Charger l'abonnement et les quotas
   try {

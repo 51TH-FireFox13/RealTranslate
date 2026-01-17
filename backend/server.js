@@ -1413,6 +1413,70 @@ app.post('/api/upload-file', authMiddleware, fileUpload.single('file'), async (r
   }
 });
 
+// Configuration multer pour les avatars (images uniquement, 5MB max)
+const avatarStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, join(__dirname, 'uploads'));
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = `avatar-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+    const ext = file.originalname.split('.').pop();
+    cb(null, `${uniqueSuffix}.${ext}`);
+  }
+});
+
+const avatarUpload = multer({
+  storage: avatarStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    // Seulement les images
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(file.originalname.toLowerCase().split('.').pop());
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Type de fichier non autorisé. Utilisez JPG, PNG, GIF ou WebP.'));
+    }
+  }
+});
+
+// Upload d'avatar
+app.post('/api/upload-avatar', authMiddleware, avatarUpload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Aucune image fournie' });
+    }
+
+    const avatarUrl = `/uploads/${req.file.filename}`;
+    const userEmail = req.user.email;
+    const user = authManager.users[userEmail];
+
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur introuvable' });
+    }
+
+    // Sauvegarder l'URL de l'avatar dans le profil utilisateur
+    user.avatar = avatarUrl;
+    await authManager.saveUsers();
+
+    logger.info('Avatar uploaded successfully', {
+      user: userEmail,
+      avatarUrl
+    });
+
+    res.json({
+      success: true,
+      avatarUrl,
+      message: 'Avatar mis à jour avec succès'
+    });
+  } catch (error) {
+    logger.error('Error uploading avatar', error);
+    res.status(500).json({ error: 'Erreur lors de l\'upload de l\'avatar' });
+  }
+});
+
 // ===================================
 // ROUTES API - GROUPES
 // ===================================
