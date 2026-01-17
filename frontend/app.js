@@ -26,6 +26,59 @@ const UI_TRANSLATIONS = {
     yourLanguage: '📱 Votre langue',
     targetLanguage: '🗣️ Langue à traduire',
     startButton: 'Commencer la traduction',
+    // Interface principale
+    friends: 'Amis',
+    groups: 'Groupes',
+    profile: 'Profil',
+    logout: 'Déconnexion',
+    // Amis
+    friendsTitle: '👥 Amis',
+    searchUsers: '🔍 Rechercher des utilisateurs',
+    searchPlaceholder: 'Nom d\'affichage exact',
+    searchButton: 'Rechercher',
+    friendRequests: '📥 Demandes d\'ami reçues',
+    myFriends: '✅ Mes amis',
+    noRequests: 'Aucune demande d\'ami en attente',
+    noPendingRequests: 'Aucune demande d\'ami en attente',
+    noFriends: 'Aucun ami pour le moment. Recherchez des utilisateurs ci-dessus!',
+    accept: 'Accepter',
+    reject: 'Refuser',
+    remove: 'Retirer',
+    addFriend: 'Ajouter',
+    minTwoChars: 'Entrez au moins 2 caractères',
+    noUserFound: 'Aucun utilisateur trouvé avec ce nom',
+    searchError: 'Erreur lors de la recherche',
+    // Groupes
+    groupsTitle: '💬 Groupes de discussion',
+    createGroup: '➕ Créer un groupe',
+    myGroups: '📋 Mes groupes',
+    groupName: 'Nom du groupe',
+    selectFriends: 'Sélectionner des amis à ajouter:',
+    createButton: 'Créer le groupe',
+    noGroups: 'Aucun groupe. Créez-en un ci-dessus!',
+    noFriendsAddInTab: 'Vous n\'avez pas encore d\'amis. Ajoutez-en dans l\'onglet Amis!',
+    members: 'membres',
+    createdOn: 'Créé le',
+    // Chat
+    chatTitle: '💬',
+    details: '⚙️ Détails',
+    close: '✕ Fermer',
+    typeMessage: 'Tapez votre message...',
+    send: 'Envoyer',
+    noMessages: 'Aucun message pour le moment. Soyez le premier à écrire!',
+    listen: 'Écouter',
+    copy: 'Copier',
+    audioPlaybackError: 'Erreur lors de la lecture audio',
+    copyError: 'Erreur lors de la copie',
+    // Profil
+    profileTitle: '⚙️ Mon Profil',
+    accountInfo: '👤 Informations du compte',
+    email: 'Email:',
+    displayName: 'Nom d\'affichage:',
+    subscription: 'Abonnement:',
+    updateDisplayName: '✏️ Modifier le nom d\'affichage',
+    newDisplayName: 'Nouveau nom d\'affichage',
+    update: 'Mettre à jour',
     // Pricing
     'pricing-subtitle': 'Choisissez le plan adapté à vos besoins',
     'pricing-free-title': 'GRATUIT',
@@ -61,6 +114,59 @@ const UI_TRANSLATIONS = {
     yourLanguage: '📱 Your language',
     targetLanguage: '🗣️ Language to translate',
     startButton: 'Start translation',
+    // Main interface
+    friends: 'Friends',
+    groups: 'Groups',
+    profile: 'Profile',
+    logout: 'Logout',
+    // Friends
+    friendsTitle: '👥 Friends',
+    searchUsers: '🔍 Search users',
+    searchPlaceholder: 'Exact display name',
+    searchButton: 'Search',
+    friendRequests: '📥 Friend requests',
+    myFriends: '✅ My friends',
+    noRequests: 'No pending friend requests',
+    noPendingRequests: 'No pending friend requests',
+    noFriends: 'No friends yet. Search for users above!',
+    accept: 'Accept',
+    reject: 'Reject',
+    remove: 'Remove',
+    addFriend: 'Add',
+    minTwoChars: 'Enter at least 2 characters',
+    noUserFound: 'No user found with that name',
+    searchError: 'Error during search',
+    // Groups
+    groupsTitle: '💬 Discussion groups',
+    createGroup: '➕ Create group',
+    myGroups: '📋 My groups',
+    groupName: 'Group name',
+    selectFriends: 'Select friends to add:',
+    createButton: 'Create group',
+    noGroups: 'No groups. Create one above!',
+    noFriendsAddInTab: 'You don\'t have any friends yet. Add some in the Friends tab!',
+    members: 'members',
+    createdOn: 'Created on',
+    // Chat
+    chatTitle: '💬',
+    details: '⚙️ Details',
+    close: '✕ Close',
+    typeMessage: 'Type your message...',
+    send: 'Send',
+    noMessages: 'No messages yet. Be the first to write!',
+    listen: 'Listen',
+    copy: 'Copy',
+    audioPlaybackError: 'Error playing audio',
+    copyError: 'Error copying',
+    // Profile
+    profileTitle: '⚙️ My Profile',
+    accountInfo: '👤 Account information',
+    email: 'Email:',
+    displayName: 'Display name:',
+    subscription: 'Subscription:',
+    updateDisplayName: '✏️ Change display name',
+    newDisplayName: 'New display name',
+    update: 'Update',
     // Pricing
     'pricing-subtitle': 'Choose the plan that fits your needs',
     'pricing-free-title': 'FREE',
@@ -96,6 +202,59 @@ const UI_TRANSLATIONS = {
     yourLanguage: '📱 您的语言',
     targetLanguage: '🗣️ 翻译语言',
     startButton: '开始翻译',
+    // 主界面
+    friends: '好友',
+    groups: '群组',
+    profile: '个人资料',
+    logout: '退出',
+    // 好友
+    friendsTitle: '👥 好友',
+    searchUsers: '🔍 搜索用户',
+    searchPlaceholder: '精确显示名称',
+    searchButton: '搜索',
+    friendRequests: '📥 好友请求',
+    myFriends: '✅ 我的好友',
+    noRequests: '没有待处理的好友请求',
+    noPendingRequests: '没有待处理的好友请求',
+    noFriends: '暂无好友。在上方搜索用户吧！',
+    accept: '接受',
+    reject: '拒绝',
+    remove: '移除',
+    addFriend: '添加',
+    minTwoChars: '请输入至少2个字符',
+    noUserFound: '未找到该用户',
+    searchError: '搜索时出错',
+    // 群组
+    groupsTitle: '💬 讨论群组',
+    createGroup: '➕ 创建群组',
+    myGroups: '📋 我的群组',
+    groupName: '群组名称',
+    selectFriends: '选择要添加的好友:',
+    createButton: '创建群组',
+    noGroups: '没有群组。在上方创建一个吧！',
+    noFriendsAddInTab: '您还没有好友。在好友标签中添加吧！',
+    members: '成员',
+    createdOn: '创建于',
+    // 聊天
+    chatTitle: '💬',
+    details: '⚙️ 详情',
+    close: '✕ 关闭',
+    typeMessage: '输入您的消息...',
+    send: '发送',
+    noMessages: '暂无消息。成为第一个发言的人吧！',
+    listen: '收听',
+    copy: '复制',
+    audioPlaybackError: '播放音频时出错',
+    copyError: '复制时出错',
+    // 个人资料
+    profileTitle: '⚙️ 我的资料',
+    accountInfo: '👤 账户信息',
+    email: '邮箱:',
+    displayName: '显示名称:',
+    subscription: '订阅:',
+    updateDisplayName: '✏️ 修改显示名称',
+    newDisplayName: '新显示名称',
+    update: '更新',
     // Pricing
     'pricing-subtitle': '选择适合您需求的套餐',
     'pricing-free-title': '免费',
@@ -1096,17 +1255,77 @@ elements.loginForm.addEventListener('submit', (e) => {
 // ===================================
 
 // Détecter la langue du navigateur
+// Variable globale pour stocker la langue de l'interface
+let currentUILang = 'en';
+
 function detectBrowserLanguage() {
   const browserLang = navigator.language || navigator.userLanguage;
   const langCode = browserLang.split('-')[0].toLowerCase();
 
-  // Vérifier si la langue est supportée
-  if (LANGUAGES[langCode]) {
+  // Vérifier si la langue est supportée dans les traductions UI
+  if (UI_TRANSLATIONS[langCode]) {
+    currentUILang = langCode;
     return langCode;
   }
 
-  // Par défaut: anglais (pour être plus international)
+  // Fallback vers anglais
+  currentUILang = 'en';
   return 'en';
+}
+
+// Fonction helper pour traduire un texte
+function t(key) {
+  return UI_TRANSLATIONS[currentUILang]?.[key] || UI_TRANSLATIONS['en']?.[key] || key;
+}
+
+// Appliquer les traductions UI à tous les éléments de l'interface
+function applyUITranslations() {
+  // Détecter la langue
+  detectBrowserLanguage();
+
+  // Header navigation
+  const friendsBtn = document.getElementById('friendsBtn');
+  const groupsBtn = document.getElementById('groupsBtn');
+  const profileBtn = document.getElementById('profileBtn');
+  const logoutBtn = document.querySelector('.logout-btn');
+
+  if (friendsBtn) friendsBtn.innerHTML = `👥 ${t('friends')}`;
+  if (groupsBtn) groupsBtn.innerHTML = `💬 ${t('groups')}`;
+  if (profileBtn) profileBtn.innerHTML = `⚙️ ${t('profile')}`;
+  if (logoutBtn) logoutBtn.textContent = `↗ ${t('logout')}`;
+
+  // Friends Panel - Headers
+  const friendsPanelTitle = document.querySelector('#friendsPanel .admin-header h2');
+  if (friendsPanelTitle) friendsPanelTitle.textContent = t('friendsTitle');
+
+  const searchUsersTitle = document.getElementById('searchUsersTitle');
+  if (searchUsersTitle) searchUsersTitle.textContent = t('searchUsers');
+
+  const searchUsersBtn = document.getElementById('searchUsersBtn');
+  if (searchUsersBtn) searchUsersBtn.textContent = t('searchButton');
+
+  const searchUserInput = document.getElementById('searchUserInput');
+  if (searchUserInput) searchUserInput.placeholder = t('searchPlaceholder');
+
+  // Groups Panel - Headers
+  const groupsPanelTitle = document.querySelector('#groupsPanel .admin-header h2');
+  if (groupsPanelTitle) groupsPanelTitle.textContent = t('groupsTitle');
+
+  // Profile Panel - Headers
+  const profilePanelTitle = document.querySelector('#profilePanel .admin-header h2');
+  if (profilePanelTitle) profilePanelTitle.textContent = t('profileTitle');
+
+  // Chat interface
+  const chatMessageInput = document.getElementById('chatMessageInput');
+  if (chatMessageInput) chatMessageInput.placeholder = t('typeMessage');
+
+  const chatSendBtn = document.getElementById('chatSendBtn');
+  if (chatSendBtn) chatSendBtn.textContent = t('send');
+
+  // Close buttons
+  document.querySelectorAll('.close-admin-btn').forEach(btn => {
+    btn.textContent = `✕ ${t('close')}`;
+  });
 }
 
 // Initialiser l'écran de sélection de langues
@@ -1413,6 +1632,9 @@ function decrementQuota(action) {
 function applyLanguageSettings() {
   const lang1 = LANGUAGES[state.lang1];
   const lang2 = LANGUAGES[state.lang2];
+
+  // Appliquer les traductions UI
+  applyUITranslations();
 
   // Mettre à jour le sous-titre dynamique
   const subtitle = document.getElementById('appSubtitle');
@@ -2576,7 +2798,7 @@ function displayFriendRequests(requests) {
   const container = document.getElementById('friendRequestsContent');
 
   if (requests.length === 0) {
-    container.innerHTML = '<p style="color: #888;">Aucune demande d\'ami en attente</p>';
+    container.innerHTML = `<p style="color: #888;">${t('noPendingRequests')}</p>`;
     return;
   }
 
@@ -2588,8 +2810,8 @@ function displayFriendRequests(requests) {
         <div style="color: #666; font-size: 0.8em; margin-top: 4px;">${new Date(req.sentAt).toLocaleDateString()}</div>
       </div>
       <div style="display: flex; gap: 8px;">
-        <button onclick="acceptFriendRequest('${req.from}')" style="background: #00ff9d; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;">✓ Accepter</button>
-        <button onclick="rejectFriendRequest('${req.from}')" style="background: #ff6b6b; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">✕ Refuser</button>
+        <button onclick="acceptFriendRequest('${req.from}')" style="background: #00ff9d; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;">✓ ${t('accept')}</button>
+        <button onclick="rejectFriendRequest('${req.from}')" style="background: #ff6b6b; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">✕ ${t('reject')}</button>
       </div>
     </div>
   `).join('');
@@ -2599,7 +2821,7 @@ function displayFriendsList(friends) {
   const container = document.getElementById('friendsListContent');
 
   if (friends.length === 0) {
-    container.innerHTML = '<p style="color: #888;">Aucun ami pour le moment. Recherchez des utilisateurs ci-dessus!</p>';
+    container.innerHTML = `<p style="color: #888;">${t('noFriends')}</p>`;
     return;
   }
 
@@ -2609,7 +2831,7 @@ function displayFriendsList(friends) {
         <div style="color: #fff; font-weight: bold;">${friend.displayName}</div>
         <div style="color: #888; font-size: 0.85em;">${friend.email}</div>
       </div>
-      <button onclick="removeFriend('${friend.email}')" style="background: #ff6b6b; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Retirer</button>
+      <button onclick="removeFriend('${friend.email}')" style="background: #ff6b6b; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">${t('remove')}</button>
     </div>
   `).join('');
 }
@@ -2620,7 +2842,7 @@ async function searchUsers() {
   const contentDiv = document.getElementById('searchResultsContent');
 
   if (!searchTerm || searchTerm.trim().length < 2) {
-    contentDiv.innerHTML = '<p style="color: #888;">Entrez au moins 2 caractères</p>';
+    contentDiv.innerHTML = `<p style="color: #888;">${t('minTwoChars')}</p>`;
     resultsDiv.style.display = 'block';
     return;
   }
@@ -2638,17 +2860,17 @@ async function searchUsers() {
             <div style="color: #fff; font-weight: bold;">${user.displayName}</div>
             <div style="color: #888; font-size: 0.85em;">${user.email}</div>
           </div>
-          <button onclick="sendFriendRequest('${user.email}')" style="background: #00ff9d; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;">+ Ajouter</button>
+          <button onclick="sendFriendRequest('${user.email}')" style="background: #00ff9d; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;">+ ${t('addFriend')}</button>
         </div>
       `).join('');
     } else {
-      contentDiv.innerHTML = '<p style="color: #888;">Aucun utilisateur trouvé avec ce nom</p>';
+      contentDiv.innerHTML = `<p style="color: #888;">${t('noUserFound')}</p>`;
     }
 
     resultsDiv.style.display = 'block';
   } catch (error) {
     console.error('Error searching users:', error);
-    contentDiv.innerHTML = '<p style="color: #ff6b6b;">Erreur lors de la recherche</p>';
+    contentDiv.innerHTML = `<p style="color: #ff6b6b;">${t('searchError')}</p>`;
     resultsDiv.style.display = 'block';
   }
 }
@@ -2790,7 +3012,7 @@ function displayFriendsSelection(friends) {
   const container = document.getElementById('friendsSelectionList');
 
   if (friends.length === 0) {
-    container.innerHTML = '<p style="color: #888;">Vous n\'avez pas encore d\'amis. Ajoutez-en dans l\'onglet Amis!</p>';
+    container.innerHTML = `<p style="color: #888;">${t('noFriendsAddInTab')}</p>`;
     return;
   }
 
@@ -2809,15 +3031,15 @@ function displayGroupsList(groups) {
   const container = document.getElementById('groupsListContent');
 
   if (groups.length === 0) {
-    container.innerHTML = '<p style="color: #888;">Aucun groupe. Créez-en un ci-dessus!</p>';
+    container.innerHTML = `<p style="color: #888;">${t('noGroups')}</p>`;
     return;
   }
 
   container.innerHTML = groups.map(group => `
     <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer;" onclick="openGroupChat('${group.id}')">
       <div style="color: #fff; font-weight: bold; margin-bottom: 4px;">${group.name}</div>
-      <div style="color: #888; font-size: 0.85em;">${group.members.length} membres</div>
-      <div style="color: #666; font-size: 0.8em; margin-top: 4px;">Créé le ${new Date(group.createdAt).toLocaleDateString()}</div>
+      <div style="color: #888; font-size: 0.85em;">${group.members.length} ${t('members')}</div>
+      <div style="color: #666; font-size: 0.8em; margin-top: 4px;">${t('createdOn')} ${new Date(group.createdAt).toLocaleDateString()}</div>
     </div>
   `).join('');
 }
@@ -2994,7 +3216,7 @@ function displayMessages(messages) {
   const userLang = state.lang1; // Langue préférée de l'utilisateur
 
   if (messages.length === 0) {
-    container.innerHTML = '<p style="color: #888; text-align: center;">Aucun message pour le moment. Soyez le premier à écrire!</p>';
+    container.innerHTML = `<p style="color: #888; text-align: center;">${t('noMessages')}</p>`;
     return;
   }
 
@@ -3004,10 +3226,16 @@ function displayMessages(messages) {
 
     return `
       <div style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: ${isOwnMessage ? 'flex-end' : 'flex-start'};">
-        <div style="background: ${isOwnMessage ? '#00ff9d' : 'rgba(255,255,255,0.1)'}; color: ${isOwnMessage ? '#000' : '#fff'}; padding: 10px 14px; border-radius: 12px; max-width: 70%; word-wrap: break-word;">
-          <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${msg.fromDisplayName}</div>
-          <div>${translation}</div>
-          <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(msg.timestamp).toLocaleTimeString()}</div>
+        <div style="position: relative; display: inline-block; max-width: 70%;">
+          <div style="background: ${isOwnMessage ? '#00ff9d' : 'rgba(255,255,255,0.1)'}; color: ${isOwnMessage ? '#000' : '#fff'}; padding: 10px 14px; border-radius: 12px; word-wrap: break-word;">
+            <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${msg.fromDisplayName}</div>
+            <div>${translation}</div>
+            <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(msg.timestamp).toLocaleTimeString()}</div>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: ${isOwnMessage ? 'flex-end' : 'flex-start'};">
+            <button onclick="playMessageAudio('${translation.replace(/'/g, "\\'")}', '${userLang}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('listen')}">🔊</button>
+            <button onclick="copyMessage('${translation.replace(/'/g, "\\'")}', '${msg.id || Date.now()}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('copy')}">📋</button>
+          </div>
         </div>
       </div>
     `;
@@ -3025,15 +3253,21 @@ function appendMessage(message) {
 
   const messageHTML = `
     <div style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: ${isOwnMessage ? 'flex-end' : 'flex-start'};">
-      <div style="background: ${isOwnMessage ? '#00ff9d' : 'rgba(255,255,255,0.1)'}; color: ${isOwnMessage ? '#000' : '#fff'}; padding: 10px 14px; border-radius: 12px; max-width: 70%; word-wrap: break-word;">
-        <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${message.fromDisplayName}</div>
-        <div>${translation}</div>
-        <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(message.timestamp).toLocaleTimeString()}</div>
+      <div style="position: relative; display: inline-block; max-width: 70%;">
+        <div style="background: ${isOwnMessage ? '#00ff9d' : 'rgba(255,255,255,0.1)'}; color: ${isOwnMessage ? '#000' : '#fff'}; padding: 10px 14px; border-radius: 12px; word-wrap: break-word;">
+          <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${message.fromDisplayName}</div>
+          <div>${translation}</div>
+          <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(message.timestamp).toLocaleTimeString()}</div>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: ${isOwnMessage ? 'flex-end' : 'flex-start'};">
+          <button onclick="playMessageAudio('${translation.replace(/'/g, "\\'")}', '${userLang}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('listen')}">🔊</button>
+          <button onclick="copyMessage('${translation.replace(/'/g, "\\'")}', '${message.id || Date.now()}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('copy')}">📋</button>
+        </div>
       </div>
     </div>
   `;
 
-  if (container.innerHTML.includes('Aucun message')) {
+  if (container.innerHTML.includes(t('noMessages'))) {
     container.innerHTML = messageHTML;
   } else {
     container.innerHTML += messageHTML;
@@ -3202,6 +3436,73 @@ async function processChatAudio(audioBlob) {
     // Reset du bouton
     pttBtn.textContent = '🎤';
     pttBtn.style.background = '#ff6b6b';
+  }
+}
+
+// ===================================
+// ACTIONS SUR LES MESSAGES
+// ===================================
+
+// Écouter un message (TTS)
+async function playMessageAudio(text, language) {
+  if (!text || text.trim().length === 0) {
+    console.warn('Texte vide, lecture audio ignorée');
+    return;
+  }
+
+  try {
+    // Décrémenter le quota
+    decrementQuota('speak');
+
+    // Utiliser la fonction speakText existante
+    await speakText(text, language);
+
+    console.log('✅ Lecture audio terminée');
+  } catch (error) {
+    console.error('❌ Erreur lecture audio du message:', error);
+    alert(`❌ ${t('audioPlaybackError') || 'Erreur lors de la lecture audio'}`);
+  }
+}
+
+// Copier un message dans le presse-papier
+async function copyMessage(text, messageId) {
+  if (!text || text.trim().length === 0) {
+    console.warn('Texte vide, copie ignorée');
+    return;
+  }
+
+  try {
+    // Utiliser l'API Clipboard moderne si disponible
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      // Fallback pour navigateurs plus anciens
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      try {
+        document.execCommand('copy');
+        textArea.remove();
+      } catch (err) {
+        textArea.remove();
+        throw err;
+      }
+    }
+
+    console.log('✅ Message copié:', text.substring(0, 50));
+
+    // Feedback visuel temporaire (optionnel)
+    // Vous pouvez ajouter un petit toast ou changer l'icône temporairement
+
+  } catch (error) {
+    console.error('❌ Erreur copie du message:', error);
+    alert(`❌ ${t('copyError') || 'Erreur lors de la copie'}`);
   }
 }
 

@@ -1960,12 +1960,12 @@
 
       <!-- Search Users -->
       <div class="admin-section">
-        <h3>🔍 Rechercher des utilisateurs</h3>
+        <h3 id="searchUsersTitle">🔍 Rechercher des utilisateurs</h3>
         <div style="margin-bottom: 15px;">
-          <p style="color: #888; font-size: 0.9em; margin-bottom: 10px;">Recherchez des utilisateurs par leur nom d'affichage exact pour leur envoyer une demande d'ami.</p>
+          <p id="searchUsersDesc" style="color: #888; font-size: 0.9em; margin-bottom: 10px;">Recherchez des utilisateurs par leur nom d'affichage exact pour leur envoyer une demande d'ami.</p>
           <div style="display: flex; gap: 10px;">
             <input type="text" id="searchUserInput" placeholder="Nom d'affichage exact" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;">
-            <button class="create-user-btn" onclick="searchUsers()" style="margin: 0;">Rechercher</button>
+            <button class="create-user-btn" id="searchUsersBtn" onclick="searchUsers()" style="margin: 0;">Rechercher</button>
           </div>
         </div>
         <div id="searchResults" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 200px; overflow-y: auto; display: none;">
@@ -2057,7 +2057,7 @@
             🎤
           </button>
           <input type="text" id="chatMessageInput" placeholder="Tapez votre message..." style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;" onkeypress="if(event.key === 'Enter') sendMessage()">
-          <button class="create-user-btn" onclick="sendMessage()" style="margin: 0; padding: 12px 24px;">Envoyer</button>
+          <button class="create-user-btn" id="chatSendBtn" onclick="sendMessage()" style="margin: 0; padding: 12px 24px;">Envoyer</button>
         </div>
       </div>
     </div>
