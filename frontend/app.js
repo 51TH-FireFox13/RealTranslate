@@ -210,6 +210,33 @@ function generateAvatarHTML(user, size = 40) {
   }
 }
 
+// ===================================
+// GESTION DES MENTIONS @utilisateur
+// ===================================
+
+// Mettre en évidence les mentions dans un texte
+function highlightMentions(text, mentions = []) {
+  if (!text) return text;
+
+  // Regex pour détecter les @mentions
+  const mentionRegex = /@(\w+)/g;
+
+  return text.replace(mentionRegex, (match, username) => {
+    // Style pour les mentions
+    return `<span style="background: rgba(var(--accent-primary-rgb, 0, 255, 157), 0.2); color: var(--accent-primary); font-weight: bold; padding: 2px 4px; border-radius: 4px;">${match}</span>`;
+  });
+}
+
+// Récupérer les membres du groupe actuel pour autocomplétion
+function getCurrentGroupMembers() {
+  if (!groupsData.currentGroup) return [];
+
+  return groupsData.currentGroup.members.map(m => ({
+    displayName: m.displayName,
+    email: m.email
+  }));
+}
+
 // Configuration des langues
 const LANGUAGES = {
   fr: { name: 'Français', flag: '🇫🇷', nativeName: 'Français', code: 'fr', voice: 'onyx' },
@@ -4281,6 +4308,28 @@ function connectSocket() {
   });
 
   // ===================================
+  // LISTENERS SOCKET.IO POUR MENTIONS
+  // ===================================
+
+  // Notification quand on est mentionné
+  socket.on('user_mentioned', ({ groupId, messageId, mentionedBy, groupName }) => {
+    console.log(`🔔 Vous avez été mentionné par ${mentionedBy} dans ${groupName}`);
+
+    // Afficher une notification spéciale pour mention
+    showNotificationToast(`🎯 ${mentionedBy} vous a mentionné dans ${groupName}`);
+    playNotificationSound();
+
+    // Notification desktop si autorisée
+    if (NOTIFICATION_CONFIG.desktop && Notification.permission === 'granted') {
+      showDesktopNotification(
+        `${mentionedBy} vous a mentionné`,
+        `Dans le groupe ${groupName}`,
+        groupId
+      );
+    }
+  });
+
+  // ===================================
   // LISTENERS SOCKET.IO POUR DMS
   // ===================================
 
@@ -4405,6 +4454,7 @@ function displayMessages(messages) {
 
   container.innerHTML = messages.map(msg => {
     const translation = msg.translations[userLang] || msg.content;
+    const highlightedTranslation = highlightMentions(translation, msg.mentions);
     const isOwnMessage = msg.from === state.user.email;
 
     return `
@@ -4412,9 +4462,9 @@ function displayMessages(messages) {
         <div style="position: relative; display: inline-block; max-width: 70%;">
           <div style="background: ${isOwnMessage ? '#00ff9d' : 'rgba(255,255,255,0.1)'}; color: ${isOwnMessage ? '#000' : '#fff'}; padding: 10px 14px; border-radius: 12px; word-wrap: break-word;">
             <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${msg.fromDisplayName}</div>
-            ${msg.fileInfo ? '' : `<div>${translation}</div>`}
+            ${msg.fileInfo ? '' : `<div>${highlightedTranslation}</div>`}
             ${msg.fileInfo ? generateFileDisplay(msg.fileInfo) : ''}
-            ${msg.fileInfo && translation ? `<div style="margin-top: 8px;">${translation}</div>` : ''}
+            ${msg.fileInfo && translation ? `<div style="margin-top: 8px;">${highlightedTranslation}</div>` : ''}
             <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(msg.timestamp).toLocaleTimeString()}</div>
           </div>
           <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: ${isOwnMessage ? 'flex-end' : 'flex-start'}; flex-wrap: wrap;">
@@ -4440,6 +4490,7 @@ function appendMessage(message) {
   const container = document.getElementById('chatMessagesContent');
   const userLang = state.lang1;
   const translation = message.translations[userLang] || message.content;
+  const highlightedTranslation = highlightMentions(translation, message.mentions);
   const isOwnMessage = message.from === state.user.email;
 
   const messageHTML = `
@@ -4447,9 +4498,9 @@ function appendMessage(message) {
       <div style="position: relative; display: inline-block; max-width: 70%;">
         <div style="background: ${isOwnMessage ? '#00ff9d' : 'rgba(255,255,255,0.1)'}; color: ${isOwnMessage ? '#000' : '#fff'}; padding: 10px 14px; border-radius: 12px; word-wrap: break-word;">
           <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${message.fromDisplayName}</div>
-          ${message.fileInfo ? '' : `<div>${translation}</div>`}
+          ${message.fileInfo ? '' : `<div>${highlightedTranslation}</div>`}
           ${message.fileInfo ? generateFileDisplay(message.fileInfo) : ''}
-          ${message.fileInfo && translation ? `<div style="margin-top: 8px;">${translation}</div>` : ''}
+          ${message.fileInfo && highlightedTranslation ? `<div style="margin-top: 8px;">${highlightedTranslation}</div>` : ''}
           <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(message.timestamp).toLocaleTimeString()}</div>
         </div>
         <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: ${isOwnMessage ? 'flex-end' : 'flex-start'}; flex-wrap: wrap;">

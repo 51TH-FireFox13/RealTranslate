@@ -307,6 +307,30 @@ io.on('connection', (socket) => {
         message.fileInfo = fileInfo;
       }
 
+      // Détecter les mentions @utilisateur
+      const mentionRegex = /@(\w+)/g;
+      const mentions = [];
+      let match;
+
+      while ((match = mentionRegex.exec(content)) !== null) {
+        const mentionedName = match[1];
+
+        // Trouver l'utilisateur par displayName
+        const mentionedMember = group.members.find(m => {
+          const memberUser = authManager.users[m.email];
+          return memberUser && memberUser.displayName &&
+                 memberUser.displayName.toLowerCase() === mentionedName.toLowerCase();
+        });
+
+        if (mentionedMember && !mentions.includes(mentionedMember.email)) {
+          mentions.push(mentionedMember.email);
+        }
+      }
+
+      if (mentions.length > 0) {
+        message.mentions = mentions;
+      }
+
       // Traduire vers toutes les langues des membres du groupe
       const targetLangs = new Set();
       group.members.forEach(member => {
@@ -343,7 +367,23 @@ io.on('connection', (socket) => {
       // Diffuser à tous les membres du groupe
       io.to(groupId).emit('new_message', message);
 
-      logger.info(`Message sent in group ${groupId} by ${userEmail}`, { messageId });
+      // Notifier les utilisateurs mentionnés
+      if (mentions.length > 0) {
+        mentions.forEach(mentionedEmail => {
+          if (mentionedEmail !== userEmail && userSockets[mentionedEmail]) {
+            userSockets[mentionedEmail].forEach(socketId => {
+              io.to(socketId).emit('user_mentioned', {
+                groupId,
+                messageId,
+                mentionedBy: displayName,
+                groupName: group.name
+              });
+            });
+          }
+        });
+      }
+
+      logger.info(`Message sent in group ${groupId} by ${userEmail}`, { messageId, mentions: mentions.length });
 
     } catch (error) {
       logger.error('Error sending message', error);
