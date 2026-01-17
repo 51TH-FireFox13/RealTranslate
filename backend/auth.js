@@ -623,16 +623,18 @@ class AuthManager {
       return [];
     }
 
-    const exactMatch = Object.values(this.users).filter(user =>
-      user.displayName &&
-      user.displayName.toLowerCase() === searchTerm.trim().toLowerCase() &&
-      user.role !== ROLES.GUEST // Ne pas inclure les invités
-    );
+    const exactMatch = Object.values(this.users).filter(user => {
+      // Utiliser le même fallback que l'affichage
+      const displayName = user.displayName || user.email.split('@')[0];
+      return displayName &&
+        displayName.toLowerCase() === searchTerm.trim().toLowerCase() &&
+        user.role !== ROLES.GUEST; // Ne pas inclure les invités
+    });
 
     return exactMatch.map(user => ({
       id: user.id,
       email: user.email,
-      displayName: user.displayName
+      displayName: user.displayName || user.email.split('@')[0]
     }));
   }
 
@@ -668,7 +670,7 @@ class AuthManager {
     // Ajouter la demande
     toUser.friendRequests.push({
       from: fromEmail,
-      fromDisplayName: fromUser.displayName,
+      fromDisplayName: fromUser.displayName || fromUser.email.split('@')[0],
       sentAt: new Date().toISOString()
     });
 
@@ -774,7 +776,7 @@ class AuthManager {
       .map(friend => ({
         id: friend.id,
         email: friend.email,
-        displayName: friend.displayName
+        displayName: friend.displayName || friend.email.split('@')[0]
       }));
   }
 
