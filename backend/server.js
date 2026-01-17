@@ -1756,13 +1756,20 @@ app.post('/api/upload-avatar', authMiddleware, avatarUpload.single('avatar'), as
 app.get('/api/dms', authMiddleware, async (req, res) => {
   try {
     const userEmail = req.user.email;
+    const user = authManager.users[userEmail];
     const conversations = [];
+
+    // Filtrer les DMs archivés
+    const archivedDMs = user.archivedDMs || [];
 
     // Parcourir toutes les conversations pour trouver celles de l'utilisateur
     for (const [convId, msgs] of Object.entries(directMessages)) {
       const [email1, email2] = convId.split('_');
 
       if (email1 === userEmail || email2 === userEmail) {
+        // Exclure les conversations archivées
+        if (archivedDMs.includes(convId)) continue;
+
         const otherEmail = email1 === userEmail ? email2 : email1;
         const otherUser = authManager.users[otherEmail];
 
@@ -1962,7 +1969,11 @@ app.get('/api/groups', authMiddleware, async (req, res) => {
       return res.json({ groups: [] });
     }
 
+    // Filtrer les groupes archivés
+    const archivedGroups = user.archivedGroups || [];
+
     const userGroups = user.groups
+      .filter(groupId => !archivedGroups.includes(groupId)) // Exclure archivés
       .map(groupId => groups[groupId])
       .filter(g => g); // Filtrer les groupes supprimés
 
@@ -2193,6 +2204,127 @@ app.post('/api/groups/:groupId/join', authMiddleware, async (req, res) => {
 
   } catch (error) {
     logger.error('Error joining group', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Archiver/Désarchiver un groupe
+app.post('/api/groups/:groupId/archive', authMiddleware, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { archived } = req.body; // true pour archiver, false pour désarchiver
+    const userEmail = req.user.email;
+    const user = authManager.users[userEmail];
+
+    if (!user.archivedGroups) user.archivedGroups = [];
+
+    if (archived) {
+      // Archiver
+      if (!user.archivedGroups.includes(groupId)) {
+        user.archivedGroups.push(groupId);
+      }
+    } else {
+      // Désarchiver
+      user.archivedGroups = user.archivedGroups.filter(id => id !== groupId);
+    }
+
+    authManager.saveUsers();
+
+    logger.info(`Group ${archived ? 'archived' : 'unarchived'}: ${groupId} by ${userEmail}`);
+    res.json({ success: true });
+
+  } catch (error) {
+    logger.error('Error archiving group', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Obtenir les groupes archivés
+app.get('/api/groups/archived/list', authMiddleware, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const user = authManager.users[userEmail];
+
+    const archivedGroups = (user.archivedGroups || [])
+      .map(groupId => groups[groupId])
+      .filter(g => g); // Filtrer les groupes supprimés
+
+    res.json({ groups: archivedGroups });
+
+  } catch (error) {
+    logger.error('Error getting archived groups', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Archiver/Désarchiver une conversation DM
+app.post('/api/dms/:conversationId/archive', authMiddleware, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { archived } = req.body; // true pour archiver, false pour désarchiver
+    const userEmail = req.user.email;
+    const user = authManager.users[userEmail];
+
+    if (!user.archivedDMs) user.archivedDMs = [];
+
+    if (archived) {
+      // Archiver
+      if (!user.archivedDMs.includes(conversationId)) {
+        user.archivedDMs.push(conversationId);
+      }
+    } else {
+      // Désarchiver
+      user.archivedDMs = user.archivedDMs.filter(id => id !== conversationId);
+    }
+
+    authManager.saveUsers();
+
+    logger.info(`DM ${archived ? 'archived' : 'unarchived'}: ${conversationId} by ${userEmail}`);
+    res.json({ success: true });
+
+  } catch (error) {
+    logger.error('Error archiving DM', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Obtenir les conversations DM archivées
+app.get('/api/dms/archived/list', authMiddleware, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const user = authManager.users[userEmail];
+    const archivedConversations = [];
+
+    const archivedDMs = user.archivedDMs || [];
+
+    // Récupérer les conversations archivées
+    for (const convId of archivedDMs) {
+      const msgs = directMessages[convId];
+      if (!msgs) continue;
+
+      const [email1, email2] = convId.split('_');
+      const otherEmail = email1 === userEmail ? email2 : email1;
+      const otherUser = authManager.users[otherEmail];
+
+      if (otherUser) {
+        const lastMessage = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+        archivedConversations.push({
+          conversationId: convId,
+          otherUser: {
+            email: otherEmail,
+            displayName: otherUser.displayName || otherEmail.split('@')[0],
+            avatar: otherUser.avatar
+          },
+          lastMessage,
+          unreadCount: 0
+        });
+      }
+    }
+
+    res.json({ conversations: archivedConversations });
+
+  } catch (error) {
+    logger.error('Error getting archived DMs', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });

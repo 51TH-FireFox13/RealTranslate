@@ -4368,6 +4368,168 @@ async function joinPublicGroup(groupId) {
 }
 
 // ===================================
+// GESTION DE L'ARCHIVAGE
+// ===================================
+
+// Archiver/Désarchiver un groupe
+async function archiveGroup(groupId, archived = true) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/groups/${groupId}/archive`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({ archived })
+    });
+
+    if (response.ok) {
+      const action = archived ? 'archivé' : 'désarchivé';
+      showNotificationToast(`✅ Groupe ${action}`);
+
+      // Fermer le panel de chat et rafraîchir la liste
+      closeGroupChatPanel();
+      loadGroupsData();
+    } else {
+      alert('❌ Erreur lors de l\'archivage');
+    }
+  } catch (error) {
+    console.error('Error archiving group:', error);
+    alert('❌ Erreur lors de l\'archivage du groupe');
+  }
+}
+
+// Archiver/Désarchiver une conversation DM
+async function archiveDM(conversationId, archived = true) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/dms/${conversationId}/archive`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({ archived })
+    });
+
+    if (response.ok) {
+      const action = archived ? 'archivée' : 'désarchivée';
+      showNotificationToast(`✅ Conversation ${action}`);
+
+      // Fermer le panel de chat et rafraîchir la liste
+      closeDMChatPanel();
+      showDMsPanel();
+    } else {
+      alert('❌ Erreur lors de l\'archivage');
+    }
+  } catch (error) {
+    console.error('Error archiving DM:', error);
+    alert('❌ Erreur lors de l\'archivage de la conversation');
+  }
+}
+
+// Archiver la conversation DM actuelle
+function archiveCurrentDM() {
+  if (!currentDMUser) return;
+
+  // Générer le conversationId (même logique que le backend)
+  const emails = [state.user.email, currentDMUser.email].sort();
+  const conversationId = emails.join('_');
+
+  archiveDM(conversationId);
+}
+
+// Afficher les groupes archivés
+async function showArchivedGroups() {
+  const container = document.getElementById('archivedGroupsContainer');
+  const content = document.getElementById('archivedGroupsContent');
+
+  container.classList.remove('hidden');
+  content.innerHTML = '<p style="color: #888;">Chargement...</p>';
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/groups/archived/list`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+
+    if (!response.ok) throw new Error('Erreur');
+
+    const data = await response.json();
+    displayArchivedGroups(data.groups || []);
+  } catch (error) {
+    console.error('Error loading archived groups:', error);
+    content.innerHTML = '<p style="color: #ff6b6b;">❌ Erreur de chargement</p>';
+  }
+}
+
+// Afficher la liste des groupes archivés
+function displayArchivedGroups(groups) {
+  const content = document.getElementById('archivedGroupsContent');
+
+  if (groups.length === 0) {
+    content.innerHTML = '<p style="color: #888;">Aucun groupe archivé</p>';
+    return;
+  }
+
+  content.innerHTML = groups.map(group => `
+    <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div style="font-weight: bold; color: #fff; margin-bottom: 4px;">📦 ${group.name}</div>
+        <div style="color: #888; font-size: 0.85em;">${group.members.length} membre(s)</div>
+      </div>
+      <button onclick="archiveGroup('${group.id}', false)" style="background: #00ff9d; cursor: pointer; padding: 6px 12px; border: none; border-radius: 6px; color: #000; font-weight: bold; font-size: 0.85em;">↩️ Restaurer</button>
+    </div>
+  `).join('');
+}
+
+// Afficher les DMs archivés
+async function showArchivedDMs() {
+  const container = document.getElementById('archivedDMsContainer');
+  const content = document.getElementById('archivedDMsContent');
+
+  container.classList.remove('hidden');
+  content.innerHTML = '<p style="color: #888;">Chargement...</p>';
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/dms/archived/list`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+
+    if (!response.ok) throw new Error('Erreur');
+
+    const data = await response.json();
+    displayArchivedDMs(data.conversations || []);
+  } catch (error) {
+    console.error('Error loading archived DMs:', error);
+    content.innerHTML = '<p style="color: #ff6b6b;">❌ Erreur de chargement</p>';
+  }
+}
+
+// Afficher la liste des DMs archivés
+function displayArchivedDMs(conversations) {
+  const content = document.getElementById('archivedDMsContent');
+
+  if (conversations.length === 0) {
+    content.innerHTML = '<p style="color: #888;">Aucune conversation archivée</p>';
+    return;
+  }
+
+  content.innerHTML = conversations.map(conv => `
+    <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+        <div style="width: 40px; height: 40px;">
+          ${generateAvatarHTML(conv.otherUser, 40)}
+        </div>
+        <div>
+          <div style="font-weight: bold; color: #fff; margin-bottom: 4px;">📦 ${conv.otherUser.displayName}</div>
+          <div style="color: #888; font-size: 0.85em;">${conv.otherUser.email}</div>
+        </div>
+      </div>
+      <button onclick="archiveDM('${conv.conversationId}', false)" style="background: #00ff9d; cursor: pointer; padding: 6px 12px; border: none; border-radius: 6px; color: #000; font-weight: bold; font-size: 0.85em;">↩️ Restaurer</button>
+    </div>
+  `).join('');
+}
+
+// ===================================
 // SOCKET.IO ET CHAT EN TEMPS RÉEL
 // ===================================
 

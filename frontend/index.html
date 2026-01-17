@@ -2240,6 +2240,15 @@
           <div id="dmsListContent" style="color: #888;">Chargement...</div>
         </div>
       </div>
+
+      <!-- Archived DMs -->
+      <div class="admin-section">
+        <h3>📦 Conversations archivées</h3>
+        <button class="create-user-btn" onclick="showArchivedDMs()" style="margin-bottom: 15px;">Voir les conversations archivées</button>
+        <div id="archivedDMsContainer" class="hidden" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 400px; overflow-y: auto;">
+          <div id="archivedDMsContent" style="color: #888;">Cliquez sur le bouton ci-dessus</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2253,12 +2262,15 @@
 
       <!-- User Info -->
       <div class="admin-section" style="flex-shrink: 0;">
-        <div id="dmChatInfo" style="display: flex; align-items: center; gap: 10px;">
-          <div id="dmUserAvatar" style="width: 40px; height: 40px;"></div>
-          <div>
-            <div id="dmUserName" style="font-weight: bold; color: #fff;"></div>
-            <span id="dmUserEmail" style="color: #888; font-size: 0.85em;"></span>
+        <div id="dmChatInfo" style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div id="dmUserAvatar" style="width: 40px; height: 40px;"></div>
+            <div>
+              <div id="dmUserName" style="font-weight: bold; color: #fff;"></div>
+              <span id="dmUserEmail" style="color: #888; font-size: 0.85em;"></span>
+            </div>
           </div>
+          <button id="archiveDMBtn" onclick="archiveCurrentDM()" style="margin: 0; padding: 8px 16px; font-size: 0.9em; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 8px; cursor: pointer;">📦 Archiver</button>
         </div>
       </div>
 
@@ -2351,6 +2363,15 @@
           <div id="publicGroupsContent" style="color: #888;">Cliquez sur le bouton ci-dessus pour voir les groupes publics</div>
         </div>
       </div>
+
+      <!-- Archived Groups -->
+      <div class="admin-section">
+        <h3>📦 Groupes archivés</h3>
+        <button class="create-user-btn" onclick="showArchivedGroups()" style="margin-bottom: 15px;">Voir les groupes archivés</button>
+        <div id="archivedGroupsContainer" class="hidden" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 400px; overflow-y: auto;">
+          <div id="archivedGroupsContent" style="color: #888;">Cliquez sur le bouton ci-dessus pour voir les groupes archivés</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2368,7 +2389,10 @@
           <div>
             <span id="groupMembersCount" style="color: #888; font-size: 0.9em;">-</span>
           </div>
-          <button class="create-user-btn" onclick="showGroupDetails()" style="margin: 0; padding: 8px 16px; font-size: 0.9em;">⚙️ Détails</button>
+          <div style="display: flex; gap: 10px;">
+            <button onclick="archiveGroup(currentChatGroupId)" style="margin: 0; padding: 8px 16px; font-size: 0.9em; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 8px; cursor: pointer;">📦 Archiver</button>
+            <button class="create-user-btn" onclick="showGroupDetails()" style="margin: 0; padding: 8px 16px; font-size: 0.9em;">⚙️ Détails</button>
+          </div>
         </div>
       </div>
 
