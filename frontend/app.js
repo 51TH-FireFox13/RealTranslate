@@ -54,6 +54,55 @@ function updateThemeIcon(theme) {
   }
 }
 
+// ===================================
+// GESTION DES THÈMES DE COULEUR
+// ===================================
+
+// Initialiser le thème de couleur au démarrage
+function initColorTheme() {
+  const savedColorTheme = localStorage.getItem('colorTheme') || 'green';
+  applyColorTheme(savedColorTheme);
+}
+
+// Changer de thème de couleur
+function changeColorTheme(colorTheme) {
+  applyColorTheme(colorTheme);
+  localStorage.setItem('colorTheme', colorTheme);
+
+  // Fermer le menu
+  const menu = document.getElementById('colorThemeMenu');
+  if (menu) {
+    menu.style.display = 'none';
+  }
+}
+
+// Appliquer un thème de couleur
+function applyColorTheme(colorTheme) {
+  // Retirer tous les thèmes de couleur
+  document.body.classList.remove('theme-green', 'theme-blue', 'theme-purple', 'theme-pink', 'theme-orange');
+
+  // Appliquer le nouveau thème
+  document.body.classList.add(`theme-${colorTheme}`);
+}
+
+// Toggle le menu de sélection de couleur
+function toggleColorThemeMenu() {
+  const menu = document.getElementById('colorThemeMenu');
+  if (menu) {
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+// Fermer le menu quand on clique ailleurs
+document.addEventListener('click', (event) => {
+  const menu = document.getElementById('colorThemeMenu');
+  const btn = document.getElementById('colorThemeBtn');
+
+  if (menu && btn && !menu.contains(event.target) && !btn.contains(event.target)) {
+    menu.style.display = 'none';
+  }
+});
+
 // Configuration des langues
 const LANGUAGES = {
   fr: { name: 'Français', flag: '🇫🇷', nativeName: 'Français', code: 'fr', voice: 'onyx' },
@@ -4310,8 +4359,9 @@ async function copyMessage(text, messageId) {
   }
 }
 
-// Initialiser le thème au chargement de la page
+// Initialiser les thèmes au chargement de la page
 initTheme();
+initColorTheme();
 
 // Charger Socket.IO après connexion
 if (state.token) {
