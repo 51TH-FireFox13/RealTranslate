@@ -1887,13 +1887,16 @@ app.get('/api/statuses', authMiddleware, async (req, res) => {
 // Créer un groupe
 app.post('/api/groups', authMiddleware, async (req, res) => {
   try {
-    const { name, memberEmails } = req.body;
+    const { name, memberEmails, visibility } = req.body;
     const creatorEmail = req.user.email;
     const creator = authManager.users[creatorEmail];
 
     if (!name || !memberEmails || !Array.isArray(memberEmails)) {
       return res.status(400).json({ error: 'Nom et membres requis' });
     }
+
+    // Validation du paramètre visibility (par défaut: private)
+    const groupVisibility = visibility === 'public' ? 'public' : 'private';
 
     // Créer le groupe
     const groupId = `group-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
@@ -1927,6 +1930,7 @@ app.post('/api/groups', authMiddleware, async (req, res) => {
       name,
       creator: creatorEmail,
       members,
+      visibility: groupVisibility,
       createdAt: new Date().toISOString()
     };
 
@@ -2115,6 +2119,80 @@ app.delete('/api/groups/:groupId/members/:memberEmail', authMiddleware, async (r
 
   } catch (error) {
     logger.error('Error removing member', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Découvrir les groupes publics
+app.get('/api/groups/public', authMiddleware, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const user = authManager.users[userEmail];
+
+    // Filtrer les groupes publics
+    const publicGroups = Object.values(groups)
+      .filter(g => g.visibility === 'public')
+      .map(g => {
+        // Vérifier si l'utilisateur est déjà membre
+        const isMember = g.members.some(m => m.email === userEmail);
+        return {
+          id: g.id,
+          name: g.name,
+          creator: g.creator,
+          memberCount: g.members.length,
+          isMember,
+          createdAt: g.createdAt
+        };
+      });
+
+    res.json({ groups: publicGroups });
+
+  } catch (error) {
+    logger.error('Error fetching public groups', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Rejoindre un groupe public
+app.post('/api/groups/:groupId/join', authMiddleware, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const userEmail = req.user.email;
+    const user = authManager.users[userEmail];
+    const group = groups[groupId];
+
+    if (!group) {
+      return res.status(404).json({ error: 'Groupe introuvable' });
+    }
+
+    // Vérifier que le groupe est public
+    if (group.visibility !== 'public') {
+      return res.status(403).json({ error: 'Ce groupe est privé. Vous devez être invité par un admin.' });
+    }
+
+    // Vérifier si déjà membre
+    if (group.members.some(m => m.email === userEmail)) {
+      return res.status(400).json({ error: 'Vous êtes déjà membre de ce groupe' });
+    }
+
+    // Ajouter l'utilisateur au groupe
+    group.members.push({
+      email: userEmail,
+      displayName: user.displayName,
+      role: 'member'
+    });
+
+    if (!user.groups) user.groups = [];
+    user.groups.push(groupId);
+
+    await saveGroups();
+    authManager.saveUsers();
+
+    logger.info(`User joined public group: ${userEmail} -> ${groupId}`);
+    res.json({ success: true, group });
+
+  } catch (error) {
+    logger.error('Error joining group', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });

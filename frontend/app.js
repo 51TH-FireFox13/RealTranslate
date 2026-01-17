@@ -4208,10 +4208,16 @@ function displayGroupsList(groups) {
       </div>
     ` : '';
 
+    // Icône de visibilité
+    const visibilityIcon = group.visibility === 'public' ? '🌐' : '🔒';
+    const visibilityText = group.visibility === 'public' ? 'Public' : 'Privé';
+
     return `
       <div style="position: relative; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;" onclick="openGroupChat('${group.id}')" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
         ${badgeHTML}
-        <div style="color: #fff; font-weight: bold; margin-bottom: 4px;">${group.name}</div>
+        <div style="color: #fff; font-weight: bold; margin-bottom: 4px;">
+          <span title="${visibilityText}">${visibilityIcon}</span> ${group.name}
+        </div>
         <div style="color: #888; font-size: 0.85em;">${group.members.length} ${t('members')}</div>
         <div style="color: #666; font-size: 0.8em; margin-top: 4px;">${t('createdOn')} ${new Date(group.createdAt).toLocaleDateString()}</div>
       </div>
@@ -4229,6 +4235,10 @@ async function createGroup() {
     messageDiv.classList.remove('hidden');
     return;
   }
+
+  // Récupérer la visibilité sélectionnée
+  const visibilityRadio = document.querySelector('input[name="groupVisibility"]:checked');
+  const visibility = visibilityRadio ? visibilityRadio.value : 'private';
 
   // Récupérer les amis sélectionnés
   const checkboxes = document.querySelectorAll('#friendsSelectionList input[type="checkbox"]:checked');
@@ -4248,7 +4258,7 @@ async function createGroup() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${state.token}`
       },
-      body: JSON.stringify({ name: groupName, memberEmails })
+      body: JSON.stringify({ name: groupName, memberEmails, visibility })
     });
 
     const data = await response.json();
@@ -4276,6 +4286,84 @@ async function createGroup() {
     messageDiv.textContent = '❌ Erreur lors de la création du groupe';
     messageDiv.style.color = '#ff6b6b';
     messageDiv.classList.remove('hidden');
+  }
+}
+
+// Parcourir les groupes publics
+async function browsePublicGroups() {
+  const container = document.getElementById('publicGroupsContainer');
+  const content = document.getElementById('publicGroupsContent');
+
+  container.classList.remove('hidden');
+  content.innerHTML = '<p style="color: #888;">Chargement des groupes publics...</p>';
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/groups/public`, {
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors du chargement');
+    }
+
+    const data = await response.json();
+    displayPublicGroups(data.groups || []);
+  } catch (error) {
+    console.error('Error browsing public groups:', error);
+    content.innerHTML = '<p style="color: #ff6b6b;">❌ Erreur lors du chargement des groupes publics</p>';
+  }
+}
+
+// Afficher les groupes publics
+function displayPublicGroups(groups) {
+  const content = document.getElementById('publicGroupsContent');
+
+  if (groups.length === 0) {
+    content.innerHTML = '<p style="color: #888;">Aucun groupe public disponible pour le moment.</p>';
+    return;
+  }
+
+  content.innerHTML = groups.map(group => {
+    const buttonHtml = group.isMember
+      ? `<button disabled style="background: #888; cursor: not-allowed; padding: 6px 12px; border: none; border-radius: 6px; color: #fff; font-size: 0.85em;">✓ Déjà membre</button>`
+      : `<button onclick="joinPublicGroup('${group.id}')" style="background: #00ff9d; cursor: pointer; padding: 6px 12px; border: none; border-radius: 6px; color: #000; font-weight: bold; font-size: 0.85em;">➕ Rejoindre</button>`;
+
+    return `
+      <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: bold; color: #fff; margin-bottom: 4px;">🌐 ${group.name}</div>
+          <div style="color: #888; font-size: 0.85em;">${group.memberCount} membre(s)</div>
+        </div>
+        ${buttonHtml}
+      </div>
+    `;
+  }).join('');
+}
+
+// Rejoindre un groupe public
+async function joinPublicGroup(groupId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/groups/${groupId}/join`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      showNotificationToast(`✅ Vous avez rejoint le groupe "${data.group.name}"!`);
+      browsePublicGroups(); // Rafraîchir la liste
+      loadGroupsData(); // Rafraîchir mes groupes
+    } else {
+      alert(`❌ ${data.error}`);
+    }
+  } catch (error) {
+    console.error('Error joining group:', error);
+    alert('❌ Erreur lors de la tentative de rejoindre le groupe');
   }
 }
 
