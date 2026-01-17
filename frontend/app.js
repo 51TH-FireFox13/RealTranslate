@@ -3074,6 +3074,137 @@ function showGroupDetails() {
   alert(`📋 Détails du groupe:\n\nNom: ${group.name}\nMembres (${group.members.length}):\n${membersList}\n\nCréé le: ${new Date(group.createdAt).toLocaleString()}`);
 }
 
+// ===================================
+// PTT POUR CHAT DE GROUPE
+// ===================================
+
+let chatPTTState = {
+  isRecording: false,
+  mediaRecorder: null,
+  audioChunks: [],
+  stream: null
+};
+
+async function startChatPTT(event) {
+  if (event) event.preventDefault();
+
+  if (chatPTTState.isRecording) return;
+
+  const pttBtn = document.getElementById('chatPttBtn');
+  pttBtn.style.background = '#00ff9d';
+  pttBtn.textContent = '⏺️';
+
+  try {
+    // Réutiliser le stream audio existant ou en créer un nouveau
+    if (!chatPTTState.stream) {
+      chatPTTState.stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+    }
+
+    chatPTTState.audioChunks = [];
+    chatPTTState.mediaRecorder = new MediaRecorder(chatPTTState.stream);
+
+    chatPTTState.mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        chatPTTState.audioChunks.push(e.data);
+      }
+    };
+
+    chatPTTState.mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(chatPTTState.audioChunks, { type: 'audio/webm' });
+
+      // Vérifier la taille minimale
+      if (audioBlob.size > 1000) {
+        await processChatAudio(audioBlob);
+      } else {
+        console.log('⚠️ Audio trop court, ignoré');
+      }
+
+      // Reset du bouton
+      const pttBtn = document.getElementById('chatPttBtn');
+      if (pttBtn) {
+        pttBtn.style.background = '#ff6b6b';
+        pttBtn.textContent = '🎤';
+      }
+    };
+
+    chatPTTState.isRecording = true;
+    chatPTTState.mediaRecorder.start();
+    console.log('🎤 Enregistrement PTT chat démarré');
+
+  } catch (error) {
+    console.error('Erreur démarrage PTT chat:', error);
+    alert('❌ Impossible d\'accéder au microphone');
+
+    const pttBtn = document.getElementById('chatPttBtn');
+    if (pttBtn) {
+      pttBtn.style.background = '#ff6b6b';
+      pttBtn.textContent = '🎤';
+    }
+  }
+}
+
+function stopChatPTT(event) {
+  if (event) event.preventDefault();
+
+  if (!chatPTTState.isRecording) return;
+
+  chatPTTState.isRecording = false;
+
+  if (chatPTTState.mediaRecorder && chatPTTState.mediaRecorder.state === 'recording') {
+    chatPTTState.mediaRecorder.stop();
+    console.log('⏹️ Enregistrement PTT chat arrêté');
+  }
+}
+
+async function processChatAudio(audioBlob) {
+  const pttBtn = document.getElementById('chatPttBtn');
+  pttBtn.textContent = '⏳';
+  pttBtn.style.background = '#ffc107';
+
+  try {
+    // 1. Transcription avec Whisper
+    console.log('📝 Transcription de l\'audio...');
+    const transcription = await transcribeAudio(audioBlob);
+
+    if (!transcription || transcription.trim().length < 2) {
+      console.log('⚠️ Transcription vide ou trop courte');
+      pttBtn.textContent = '🎤';
+      pttBtn.style.background = '#ff6b6b';
+      return;
+    }
+
+    console.log('✅ Transcription:', transcription);
+
+    // 2. Envoyer le message transcrit
+    if (!socket || !socket.connected) {
+      alert('❌ Non connecté au serveur');
+      return;
+    }
+
+    socket.emit('send_message', {
+      groupId: currentChatGroupId,
+      content: transcription,
+      userLang: state.lang1 // Langue de l'utilisateur
+    });
+
+    console.log('📤 Message vocal envoyé:', transcription);
+
+  } catch (error) {
+    console.error('❌ Erreur traitement audio chat:', error);
+    alert('❌ Erreur lors de la transcription');
+  } finally {
+    // Reset du bouton
+    pttBtn.textContent = '🎤';
+    pttBtn.style.background = '#ff6b6b';
+  }
+}
+
 // Charger Socket.IO après connexion
 if (state.token) {
   setTimeout(() => {
