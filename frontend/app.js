@@ -1539,6 +1539,150 @@ function updateGroupBadges() {
 }
 
 // ===================================
+// RECHERCHE DANS L'HISTORIQUE
+// ===================================
+
+// Stocker tous les messages du groupe actuel
+let currentGroupMessages = [];
+
+// Rechercher dans les messages
+function searchMessages() {
+  const searchInput = document.getElementById('chatSearchInput');
+  const clearBtn = document.getElementById('clearSearchBtn');
+  const resultsCount = document.getElementById('searchResultsCount');
+
+  if (!searchInput) return;
+
+  const searchTerm = searchInput.value.trim().toLowerCase();
+
+  if (searchTerm.length === 0) {
+    // Afficher tous les messages
+    displayMessages(currentGroupMessages);
+    clearBtn.style.display = 'none';
+    resultsCount.style.display = 'none';
+    return;
+  }
+
+  // Afficher le bouton clear
+  clearBtn.style.display = 'block';
+
+  // Filtrer les messages
+  const userLang = state.lang1;
+  const filteredMessages = currentGroupMessages.filter(msg => {
+    const translation = msg.translations[userLang] || msg.content;
+    return translation.toLowerCase().includes(searchTerm) ||
+           msg.fromDisplayName.toLowerCase().includes(searchTerm);
+  });
+
+  // Afficher les résultats filtrés avec highlight
+  displaySearchResults(filteredMessages, searchTerm);
+
+  // Afficher le compteur
+  resultsCount.textContent = `${filteredMessages.length} résultat${filteredMessages.length > 1 ? 's' : ''}`;
+  resultsCount.style.display = 'block';
+}
+
+// Afficher les résultats de recherche avec highlight
+function displaySearchResults(messages, searchTerm) {
+  const container = document.getElementById('chatMessagesContent');
+  const userLang = state.lang1;
+
+  if (messages.length === 0) {
+    container.innerHTML = `<p style="color: #888; text-align: center;">Aucun message trouvé pour "${searchTerm}"</p>`;
+    return;
+  }
+
+  container.innerHTML = messages.map(msg => {
+    let translation = msg.translations[userLang] || msg.content;
+    const isOwnMessage = msg.from === state.user.email;
+
+    // Highlight le terme de recherche (case insensitive)
+    const regex = new RegExp(`(${searchTerm})`, 'gi');
+    const highlightedText = translation.replace(regex, '<mark style="background: #ffeb3b; color: #000; padding: 2px 4px; border-radius: 3px;">$1</mark>');
+
+    return `
+      <div style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: ${isOwnMessage ? 'flex-end' : 'flex-start'};" data-message-id="${msg.id}">
+        <div style="position: relative; display: inline-block; max-width: 70%;">
+          <div style="background: ${isOwnMessage ? '#00ff9d' : 'rgba(255,255,255,0.1)'}; color: ${isOwnMessage ? '#000' : '#fff'}; padding: 10px 14px; border-radius: 12px; word-wrap: break-word;">
+            <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${msg.fromDisplayName}</div>
+            <div>${highlightedText}</div>
+            <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(msg.timestamp).toLocaleTimeString()}</div>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: ${isOwnMessage ? 'flex-end' : 'flex-start'}; flex-wrap: wrap;">
+            <button onclick="playMessageAudio('${translation.replace(/'/g, "\\'")}', '${userLang}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('listen')}">🔊</button>
+            <button onclick="copyMessage('${translation.replace(/'/g, "\\'")}', '${msg.id || Date.now()}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('copy')}">📋</button>
+            ${generateReactionButtons(msg.id)}
+            ${isOwnMessage ? `<button onclick="deleteMessage('${msg.id}')" style="background: rgba(255,107,107,0.2); border: 1px solid #ff6b6b; color: #ff6b6b; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="Supprimer">🗑️</button>` : ''}
+          </div>
+          ${generateReactionsDisplay(msg.reactions, msg.id)}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Scroll vers le bas
+  container.scrollTop = container.scrollHeight;
+}
+
+// Effacer la recherche
+function clearSearch() {
+  const searchInput = document.getElementById('chatSearchInput');
+  const clearBtn = document.getElementById('clearSearchBtn');
+  const resultsCount = document.getElementById('searchResultsCount');
+
+  if (searchInput) {
+    searchInput.value = '';
+    clearBtn.style.display = 'none';
+    resultsCount.style.display = 'none';
+    displayMessages(currentGroupMessages);
+  }
+}
+
+// ===================================
+// SUPPRESSION DE MESSAGES
+// ===================================
+
+// Supprimer un message
+function deleteMessage(messageId) {
+  if (!confirm('Êtes-vous sûr de vouloir supprimer ce message ? Cette action est irréversible.')) {
+    return;
+  }
+
+  if (!socket || !socket.connected || !currentChatGroupId) {
+    alert('❌ Non connecté au serveur');
+    return;
+  }
+
+  socket.emit('delete_message', {
+    groupId: currentChatGroupId,
+    messageId: messageId
+  });
+}
+
+// Supprimer un message du DOM
+function removeMessageFromDOM(messageId) {
+  const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+  if (messageElement) {
+    messageElement.style.transition = 'opacity 0.3s, transform 0.3s';
+    messageElement.style.opacity = '0';
+    messageElement.style.transform = 'scale(0.8)';
+
+    setTimeout(() => {
+      messageElement.remove();
+
+      // Retirer aussi de currentGroupMessages
+      currentGroupMessages = currentGroupMessages.filter(m => m.id !== messageId);
+
+      // Si plus de messages, afficher le placeholder
+      const container = document.getElementById('chatMessagesContent');
+      if (container && container.children.length === 0) {
+        container.innerHTML = `<p style="color: #888; text-align: center;">${t('noMessages')}</p>`;
+      }
+    }, 300);
+  }
+}
+
+// ===================================
 // RÉACTIONS SUR LES MESSAGES
 // ===================================
 
@@ -3576,6 +3720,14 @@ function connectSocket() {
     }
   });
 
+  // Message supprimé
+  socket.on('message_deleted', ({ groupId, messageId }) => {
+    // Supprimer uniquement si c'est le groupe actuellement ouvert
+    if (groupId === currentChatGroupId) {
+      removeMessageFromDOM(messageId);
+    }
+  });
+
   socket.on('error', (error) => {
     console.error('Socket error:', error);
     alert(`❌ ${error.message}`);
@@ -3650,6 +3802,10 @@ function closeGroupChatPanel() {
   }
   hideTypingIndicator();
 
+  // Effacer la recherche
+  clearSearch();
+  currentGroupMessages = [];
+
   if (currentChatGroupId && socket) {
     socket.emit('leave_group', { groupId: currentChatGroupId });
   }
@@ -3658,6 +3814,9 @@ function closeGroupChatPanel() {
 }
 
 function displayMessages(messages) {
+  // Stocker les messages pour la recherche
+  currentGroupMessages = messages;
+
   const container = document.getElementById('chatMessagesContent');
   const userLang = state.lang1; // Langue préférée de l'utilisateur
 
@@ -3682,6 +3841,7 @@ function displayMessages(messages) {
             <button onclick="playMessageAudio('${translation.replace(/'/g, "\\'")}', '${userLang}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('listen')}">🔊</button>
             <button onclick="copyMessage('${translation.replace(/'/g, "\\'")}', '${msg.id || Date.now()}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('copy')}">📋</button>
             ${generateReactionButtons(msg.id)}
+            ${isOwnMessage ? `<button onclick="deleteMessage('${msg.id}')" style="background: rgba(255,107,107,0.2); border: 1px solid #ff6b6b; color: #ff6b6b; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="Supprimer">🗑️</button>` : ''}
           </div>
           ${generateReactionsDisplay(msg.reactions, msg.id)}
         </div>
@@ -3694,6 +3854,9 @@ function displayMessages(messages) {
 }
 
 function appendMessage(message) {
+  // Ajouter le message à la liste pour la recherche
+  currentGroupMessages.push(message);
+
   const container = document.getElementById('chatMessagesContent');
   const userLang = state.lang1;
   const translation = message.translations[userLang] || message.content;

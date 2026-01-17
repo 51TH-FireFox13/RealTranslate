@@ -2066,6 +2066,15 @@
         </div>
       </div>
 
+      <!-- Search Bar -->
+      <div class="admin-section" style="flex-shrink: 0; padding: 10px 0;">
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input type="text" id="chatSearchInput" placeholder="🔍 Rechercher dans les messages..." style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 0.9em;" oninput="searchMessages()">
+          <button id="clearSearchBtn" onclick="clearSearch()" style="display: none; background: rgba(255,107,107,0.2); border: 1px solid #ff6b6b; color: #ff6b6b; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9em;">✕</button>
+          <span id="searchResultsCount" style="color: #888; font-size: 0.85em; white-space: nowrap; display: none;"></span>
+        </div>
+      </div>
+
       <!-- Messages Container -->
       <div class="admin-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
         <div id="chatMessages" style="flex: 1; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px;">

@@ -393,6 +393,64 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Supprimer un message
+  socket.on('delete_message', async (data) => {
+    try {
+      const { groupId, messageId } = data;
+      const group = groups[groupId];
+
+      if (!group) {
+        socket.emit('error', { message: 'Groupe introuvable' });
+        return;
+      }
+
+      // Vérifier que l'utilisateur est membre
+      const isMember = group.members.some(m => m.email === userEmail);
+      if (!isMember) {
+        socket.emit('error', { message: 'Accès refusé' });
+        return;
+      }
+
+      // Trouver le message
+      const groupMessages = messages[groupId] || [];
+      const messageIndex = groupMessages.findIndex(m => m.id === messageId);
+
+      if (messageIndex === -1) {
+        socket.emit('error', { message: 'Message introuvable' });
+        return;
+      }
+
+      const message = groupMessages[messageIndex];
+
+      // Vérifier que l'utilisateur est l'auteur du message ou admin du groupe
+      const isAuthor = message.from === userEmail;
+      const isGroupAdmin = group.members.find(m => m.email === userEmail && m.role === 'admin');
+
+      if (!isAuthor && !isGroupAdmin) {
+        socket.emit('error', { message: 'Vous n\'avez pas la permission de supprimer ce message' });
+        return;
+      }
+
+      // Supprimer le message
+      messages[groupId].splice(messageIndex, 1);
+
+      // Sauvegarder
+      await saveMessages();
+
+      // Diffuser la suppression à tous les membres du groupe
+      io.to(groupId).emit('message_deleted', {
+        groupId,
+        messageId
+      });
+
+      logger.info(`Message ${messageId} deleted from group ${groupId} by ${userEmail}`);
+
+    } catch (error) {
+      logger.error('Error deleting message', error);
+      socket.emit('error', { message: 'Erreur lors de la suppression du message' });
+    }
+  });
+
   // Rejoindre un groupe
   socket.on('join_group', (data) => {
     const { groupId } = data;
