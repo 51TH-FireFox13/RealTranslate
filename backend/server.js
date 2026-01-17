@@ -409,21 +409,8 @@ io.on('connection', (socket) => {
         message.mentions = mentions;
       }
 
-      // Traduire vers toutes les langues des membres du groupe
-      const targetLangs = new Set();
-      group.members.forEach(member => {
-        const memberUser = authManager.users[member.email];
-        if (memberUser && memberUser.preferredLang) {
-          targetLangs.add(memberUser.preferredLang);
-        }
-      });
-
-      // Ajouter quelques langues communes si pas de préférences
-      if (targetLangs.size === 0) {
-        targetLangs.add('en');
-        targetLangs.add('fr');
-        targetLangs.add('zh');
-      }
+      // Traduire vers toutes les langues communes du système
+      const targetLangs = new Set(['en', 'fr', 'zh', 'de', 'es', 'it', 'pt']);
 
       // Traduire en parallèle
       const translationPromises = Array.from(targetLangs)
