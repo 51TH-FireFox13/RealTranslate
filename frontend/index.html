@@ -1167,6 +1167,344 @@
       background: linear-gradient(to top, #ff6b6b, #ff3d3d);
     }
 
+    /* Communication Home Styles */
+    .communication-home-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .comm-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+      gap: 20px;
+    }
+
+    .comm-title-section {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .comm-title {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      color: var(--text-primary);
+    }
+
+    .comm-subtitle {
+      color: #888;
+      font-size: 1em;
+    }
+
+    .comm-header-actions {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .comm-lang-badge {
+      background: rgba(255,255,255,0.05);
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .comm-lang-label {
+      color: #888;
+      font-size: 0.85em;
+      margin-bottom: 4px;
+    }
+
+    .comm-lang-value {
+      color: #00ff9d;
+      font-weight: bold;
+    }
+
+    .comm-btn {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+    }
+
+    .comm-btn:hover {
+      background: rgba(255,255,255,0.15);
+    }
+
+    .comm-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #00ff9d, #00a2ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000;
+      font-weight: bold;
+      font-size: 0.9em;
+    }
+
+    .comm-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    .comm-section {
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      padding: 30px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .comm-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      gap: 15px;
+    }
+
+    .comm-section-title {
+      font-size: 1.5em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-primary);
+    }
+
+    .comm-action-btn {
+      background: #00ff9d;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.3s;
+    }
+
+    .comm-action-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(0,255,157,0.3);
+    }
+
+    .comm-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .comm-empty-message {
+      color: #888;
+      text-align: center;
+      padding: 40px 0;
+    }
+
+    .comm-quick-actions {
+      margin-top: 30px;
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .comm-quick-btn {
+      padding: 12px 25px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+    }
+
+    .comm-quick-btn-primary {
+      background: rgba(100,180,255,0.2);
+      border: 2px solid rgba(100,180,255,0.5);
+      color: #64b4ff;
+    }
+
+    .comm-quick-btn-primary:hover {
+      background: rgba(100,180,255,0.3);
+      transform: scale(1.05);
+    }
+
+    .comm-quick-btn-secondary {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+    }
+
+    .comm-quick-btn-secondary:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    /* Responsive Communication Home - Tablet */
+    @media (max-width: 968px) {
+      .comm-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .comm-header-actions {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      .comm-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+    }
+
+    /* Responsive Communication Home - Mobile */
+    @media (max-width: 768px) {
+      .communication-home-container {
+        padding: 20px 15px;
+      }
+
+      .comm-header {
+        margin-bottom: 25px;
+      }
+
+      .comm-title {
+        font-size: 1.8em;
+        margin-bottom: 8px;
+      }
+
+      .comm-subtitle {
+        font-size: 0.9em;
+      }
+
+      .comm-header-actions {
+        gap: 10px;
+      }
+
+      .comm-lang-badge {
+        padding: 8px 12px;
+      }
+
+      .comm-user-name,
+      .comm-settings-text {
+        display: none;
+      }
+
+      .comm-btn {
+        padding: 10px;
+      }
+
+      .comm-section {
+        padding: 20px 15px;
+        border-radius: 15px;
+      }
+
+      .comm-section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .comm-section-title {
+        font-size: 1.2em;
+      }
+
+      .comm-section-title-text {
+        display: none;
+      }
+
+      .comm-action-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 20px;
+      }
+
+      .btn-text {
+        display: inline;
+      }
+
+      .comm-list {
+        max-height: 400px;
+      }
+
+      .comm-quick-actions {
+        gap: 10px;
+      }
+
+      .comm-quick-btn {
+        flex: 1;
+        min-width: 0;
+        padding: 12px 15px;
+        font-size: 0.9em;
+      }
+
+      .comm-quick-text {
+        display: none;
+      }
+    }
+
+    /* Very Small Mobile */
+    @media (max-width: 480px) {
+      .comm-title {
+        font-size: 1.4em;
+      }
+
+      .comm-header-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+      }
+
+      .comm-btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .comm-lang-badge {
+        width: 100%;
+        text-align: center;
+      }
+
+      .comm-section {
+        padding: 15px;
+      }
+
+      .comm-section-title {
+        font-size: 1.1em;
+      }
+
+      .comm-action-btn {
+        padding: 10px;
+        font-size: 0.9em;
+      }
+
+      .comm-quick-actions {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .comm-quick-btn {
+        width: 100%;
+      }
+    }
+
     /* Main Container */
     .container {
       flex: 1;
@@ -1768,66 +2106,66 @@
 
     <!-- Communication Interface (Home Page for Groups/DMs) -->
     <div id="communicationHome" class="language-selection hidden">
-      <div style="max-width: 1200px; margin: 0 auto; padding: 40px 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
-          <div>
-            <h2 style="font-size: 2.5em; margin-bottom: 10px;">💬 Communication Multilingue</h2>
-            <p style="color: #888;">Groupes de discussion et messages privés traduits automatiquement</p>
+      <div class="communication-home-container">
+        <div class="comm-header">
+          <div class="comm-title-section">
+            <h2 class="comm-title">💬 Communication Multilingue</h2>
+            <p class="comm-subtitle">Groupes de discussion et messages privés traduits automatiquement</p>
           </div>
-          <div style="display: flex; gap: 15px; align-items: center;">
-            <div style="background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
-              <div style="color: #888; font-size: 0.85em; margin-bottom: 4px;">Langue</div>
-              <div style="color: #00ff9d; font-weight: bold;" id="commLangDisplay">🇫🇷 Français</div>
+          <div class="comm-header-actions">
+            <div class="comm-lang-badge">
+              <div class="comm-lang-label">Langue</div>
+              <div class="comm-lang-value" id="commLangDisplay">🇫🇷 Français</div>
             </div>
-            <button onclick="showProfilePanel()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px 20px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-              <span id="commUserAvatar" style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #00ff9d, #00a2ff); display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; font-size: 0.9em;"></span>
-              <span id="commUserName">Profil</span>
+            <button onclick="showProfilePanel()" class="comm-btn comm-profile-btn">
+              <span id="commUserAvatar" class="comm-avatar"></span>
+              <span id="commUserName" class="comm-user-name">Profil</span>
             </button>
-            <button onclick="showCommunicationSettings()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px 20px; border-radius: 10px; cursor: pointer;">⚙️ Paramètres</button>
+            <button onclick="showCommunicationSettings()" class="comm-btn comm-settings-btn">⚙️ <span class="comm-settings-text">Paramètres</span></button>
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+        <div class="comm-grid">
           <!-- Groupes Section -->
-          <div style="background: rgba(255,255,255,0.05); border-radius: 20px; padding: 30px; border: 1px solid rgba(255,255,255,0.1);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-              <h3 style="font-size: 1.5em; display: flex; align-items: center; gap: 10px;">
-                <span>👥</span> Mes Groupes
+          <div class="comm-section">
+            <div class="comm-section-header">
+              <h3 class="comm-section-title">
+                <span>👥</span> <span class="comm-section-title-text">Mes Groupes</span>
               </h3>
-              <button onclick="showGroupsPanel()" style="background: #00ff9d; color: #000; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold;">
-                ➕ Nouveau Groupe
+              <button onclick="showGroupsPanel()" class="comm-action-btn">
+                <span class="btn-icon">➕</span> <span class="btn-text">Nouveau Groupe</span>
               </button>
             </div>
 
-            <div id="commGroupsList" style="display: flex; flex-direction: column; gap: 12px; max-height: 500px; overflow-y: auto;">
-              <p style="color: #888; text-align: center; padding: 40px 0;">Chargement de vos groupes...</p>
+            <div id="commGroupsList" class="comm-list">
+              <p class="comm-empty-message">Chargement de vos groupes...</p>
             </div>
           </div>
 
           <!-- Messages Privés Section -->
-          <div style="background: rgba(255,255,255,0.05); border-radius: 20px; padding: 30px; border: 1px solid rgba(255,255,255,0.1);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-              <h3 style="font-size: 1.5em; display: flex; align-items: center; gap: 10px;">
-                <span>💬</span> Messages Privés
+          <div class="comm-section">
+            <div class="comm-section-header">
+              <h3 class="comm-section-title">
+                <span>💬</span> <span class="comm-section-title-text">Messages Privés</span>
               </h3>
-              <button onclick="showDMsPanel()" style="background: #00ff9d; color: #000; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold;">
-                ✉️ Nouveau Message
+              <button onclick="showDMsPanel()" class="comm-action-btn">
+                <span class="btn-icon">✉️</span> <span class="btn-text">Nouveau Message</span>
               </button>
             </div>
 
-            <div id="commDMsList" style="display: flex; flex-direction: column; gap: 12px; max-height: 500px; overflow-y: auto;">
-              <p style="color: #888; text-align: center; padding: 40px 0;">Chargement de vos conversations...</p>
+            <div id="commDMsList" class="comm-list">
+              <p class="comm-empty-message">Chargement de vos conversations...</p>
             </div>
           </div>
         </div>
 
         <!-- Quick Actions -->
-        <div style="margin-top: 30px; display: flex; gap: 15px; justify-content: center;">
-          <button onclick="browsePublicGroups(); showGroupsPanel();" style="background: rgba(100,180,255,0.2); border: 2px solid rgba(100,180,255,0.5); color: #64b4ff; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold;">
-            🌐 Découvrir les groupes publics
+        <div class="comm-quick-actions">
+          <button onclick="browsePublicGroups(); showGroupsPanel();" class="comm-quick-btn comm-quick-btn-primary">
+            <span>🌐</span> <span class="comm-quick-text">Découvrir les groupes publics</span>
           </button>
-          <button onclick="resetInterfaceChoice()" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 12px 25px; border-radius: 10px; cursor: pointer;">
-            🔄 Changer de mode
+          <button onclick="resetInterfaceChoice()" class="comm-quick-btn comm-quick-btn-secondary">
+            <span>🔄</span> <span class="comm-quick-text">Changer de mode</span>
           </button>
         </div>
       </div>
