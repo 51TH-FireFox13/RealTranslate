@@ -26,36 +26,40 @@ const SUBSCRIPTION_TIERS = {
     name: 'free',
     displayName: 'Gratuit',
     price: 0,
+    billingPeriod: 'monthly',  // Quotas mensuels (non quotidiens)
     quotas: {
-      transcribe: 5,     // 5 transcriptions/jour (réduit pour viabilité)
-      translate: 25,     // 25 traductions/jour (réduit pour viabilité)
-      speak: 5           // 5 TTS/jour (réduit pour viabilité)
+      transcribe: 50,     // 50 transcriptions/mois (~1.7/jour) - Réduit pour viabilité
+      translate: 250,     // 250 traductions/mois (~8/jour) - Réduit pour viabilité
+      speak: 50           // 50 TTS/mois (~1.7/jour) - Réduit pour viabilité
     }
   },
   PREMIUM: {
     name: 'premium',
     displayName: 'Premium',
     price: 9.99,
+    billingPeriod: 'monthly',
     quotas: {
-      transcribe: 20,    // 20 transcriptions/jour (marge 77%)
-      translate: 100,    // 100 traductions/jour (marge 77%)
-      speak: 20          // 20 TTS/jour (marge 77%)
+      transcribe: 500,    // 500 transcriptions/mois (~17/jour) - Marge ~70%
+      translate: 2500,    // 2500 traductions/mois (~83/jour) - Marge ~70%
+      speak: 500          // 500 TTS/mois (~17/jour) - Marge ~70%
     }
   },
   ENTERPRISE: {
     name: 'enterprise',
     displayName: 'Enterprise',
     price: 49.99,
+    billingPeriod: 'monthly',
     quotas: {
-      transcribe: 200,   // 200 transcriptions/jour (quotas doublés, marge 55%)
-      translate: 1000,   // 1000 traductions/jour (quotas doublés, marge 55%)
-      speak: 200         // 200 TTS/jour (quotas doublés, marge 55%)
+      transcribe: 5000,   // 5000 transcriptions/mois (~167/jour) - Marge ~70%
+      translate: 25000,   // 25000 traductions/mois (~833/jour) - Marge ~70%
+      speak: 5000         // 5000 TTS/mois (~167/jour) - Marge ~70%
     }
   },
   ADMIN: {
     name: 'admin',
     displayName: 'Admin',
     price: 0,  // Non vendu publiquement
+    billingPeriod: 'monthly',
     quotas: {
       transcribe: -1,    // Illimité
       translate: -1,     // Illimité

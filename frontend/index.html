@@ -1106,6 +1106,67 @@
       50% { opacity: 0.5; transform: scale(1.2); }
     }
 
+    /* VU-Mètre Micro */
+    .vu-meter {
+      padding: 10px 20px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .vu-meter.hidden {
+      display: none;
+    }
+
+    .vu-meter-label {
+      font-size: 0.85em;
+      color: #888;
+      min-width: 100px;
+    }
+
+    .vu-meter-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 30px;
+    }
+
+    .vu-meter-bar {
+      width: 6px;
+      height: 0%;
+      background: linear-gradient(to top, #00ff9d, #00d4aa);
+      border-radius: 3px;
+      transition: height 0.1s ease;
+      opacity: 0.3;
+    }
+
+    .vu-meter-bar.active {
+      opacity: 1;
+    }
+
+    .vu-meter-bar[data-level="1"],
+    .vu-meter-bar[data-level="2"],
+    .vu-meter-bar[data-level="3"] {
+      background: linear-gradient(to top, #00ff9d, #00d4aa);
+    }
+
+    .vu-meter-bar[data-level="4"],
+    .vu-meter-bar[data-level="5"],
+    .vu-meter-bar[data-level="6"],
+    .vu-meter-bar[data-level="7"] {
+      background: linear-gradient(to top, #ffa500, #ff9d00);
+    }
+
+    .vu-meter-bar[data-level="8"],
+    .vu-meter-bar[data-level="9"],
+    .vu-meter-bar[data-level="10"] {
+      background: linear-gradient(to top, #ff6b6b, #ff3d3d);
+    }
+
     /* Main Container */
     .container {
       flex: 1;
@@ -1705,6 +1766,73 @@
       </div>
     </div>
 
+    <!-- Communication Interface (Home Page for Groups/DMs) -->
+    <div id="communicationHome" class="language-selection hidden">
+      <div style="max-width: 1200px; margin: 0 auto; padding: 40px 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+          <div>
+            <h2 style="font-size: 2.5em; margin-bottom: 10px;">💬 Communication Multilingue</h2>
+            <p style="color: #888;">Groupes de discussion et messages privés traduits automatiquement</p>
+          </div>
+          <div style="display: flex; gap: 15px; align-items: center;">
+            <div style="background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
+              <div style="color: #888; font-size: 0.85em; margin-bottom: 4px;">Langue</div>
+              <div style="color: #00ff9d; font-weight: bold;" id="commLangDisplay">🇫🇷 Français</div>
+            </div>
+            <button onclick="showProfilePanel()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px 20px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+              <span id="commUserAvatar" style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #00ff9d, #00a2ff); display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; font-size: 0.9em;"></span>
+              <span id="commUserName">Profil</span>
+            </button>
+            <button onclick="showCommunicationSettings()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px 20px; border-radius: 10px; cursor: pointer;">⚙️ Paramètres</button>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+          <!-- Groupes Section -->
+          <div style="background: rgba(255,255,255,0.05); border-radius: 20px; padding: 30px; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+              <h3 style="font-size: 1.5em; display: flex; align-items: center; gap: 10px;">
+                <span>👥</span> Mes Groupes
+              </h3>
+              <button onclick="showGroupsPanel()" style="background: #00ff9d; color: #000; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold;">
+                ➕ Nouveau Groupe
+              </button>
+            </div>
+
+            <div id="commGroupsList" style="display: flex; flex-direction: column; gap: 12px; max-height: 500px; overflow-y: auto;">
+              <p style="color: #888; text-align: center; padding: 40px 0;">Chargement de vos groupes...</p>
+            </div>
+          </div>
+
+          <!-- Messages Privés Section -->
+          <div style="background: rgba(255,255,255,0.05); border-radius: 20px; padding: 30px; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+              <h3 style="font-size: 1.5em; display: flex; align-items: center; gap: 10px;">
+                <span>💬</span> Messages Privés
+              </h3>
+              <button onclick="showDMsPanel()" style="background: #00ff9d; color: #000; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold;">
+                ✉️ Nouveau Message
+              </button>
+            </div>
+
+            <div id="commDMsList" style="display: flex; flex-direction: column; gap: 12px; max-height: 500px; overflow-y: auto;">
+              <p style="color: #888; text-align: center; padding: 40px 0;">Chargement de vos conversations...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div style="margin-top: 30px; display: flex; gap: 15px; justify-content: center;">
+          <button onclick="browsePublicGroups(); showGroupsPanel();" style="background: rgba(100,180,255,0.2); border: 2px solid rgba(100,180,255,0.5); color: #64b4ff; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold;">
+            🌐 Découvrir les groupes publics
+          </button>
+          <button onclick="resetInterfaceChoice()" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 12px 25px; border-radius: 10px; cursor: pointer;">
+            🔄 Changer de mode
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Pricing Page -->
     <div id="pricingPage" class="language-selection hidden">
       <div class="lang-box" style="max-width: 1000px;">
@@ -1729,15 +1857,15 @@
             <div style="color: #ccc; font-size: 0.95em; line-height: 2;">
               <div style="margin-bottom: 12px; display: flex; align-items: center;">
                 <span style="color: #00ff9d; margin-right: 10px;">✓</span>
-                <span><strong>5</strong> <span data-i18n="pricing-transcriptions">transcriptions</span>/jour</span>
+                <span><strong>50</strong> <span data-i18n="pricing-transcriptions">transcriptions</span>/mois</span>
               </div>
               <div style="margin-bottom: 12px; display: flex; align-items: center;">
                 <span style="color: #00ff9d; margin-right: 10px;">✓</span>
-                <span><strong>25</strong> <span data-i18n="pricing-translations">traductions</span>/jour</span>
+                <span><strong>250</strong> <span data-i18n="pricing-translations">traductions</span>/mois</span>
               </div>
               <div style="margin-bottom: 12px; display: flex; align-items: center;">
                 <span style="color: #00ff9d; margin-right: 10px;">✓</span>
-                <span><strong>5</strong> <span data-i18n="pricing-tts">synthèses vocales</span>/jour</span>
+                <span><strong>50</strong> <span data-i18n="pricing-tts">synthèses vocales</span>/mois</span>
               </div>
               <div style="margin-bottom: 12px; display: flex; align-items: center;">
                 <span style="color: #00ff9d; margin-right: 10px;">✓</span>
@@ -1758,15 +1886,15 @@
             <div style="color: #ccc; font-size: 0.95em; line-height: 2;">
               <div style="margin-bottom: 12px; display: flex; align-items: center;">
                 <span style="color: #ffd43b; margin-right: 10px;">✓</span>
-                <span><strong>20</strong> <span data-i18n="pricing-transcriptions">transcriptions</span>/jour</span>
+                <span><strong>500</strong> <span data-i18n="pricing-transcriptions">transcriptions</span>/mois</span>
               </div>
               <div style="margin-bottom: 12px; display: flex; align-items: center;">
                 <span style="color: #ffd43b; margin-right: 10px;">✓</span>
-                <span><strong>100</strong> <span data-i18n="pricing-translations">traductions</span>/jour</span>
+                <span><strong>2,500</strong> <span data-i18n="pricing-translations">traductions</span>/mois</span>
               </div>
               <div style="margin-bottom: 12px; display: flex; align-items: center;">
                 <span style="color: #ffd43b; margin-right: 10px;">✓</span>
-                <span><strong>20</strong> <span data-i18n="pricing-tts">synthèses vocales</span>/jour</span>
+                <span><strong>500</strong> <span data-i18n="pricing-tts">synthèses vocales</span>/mois</span>
               </div>
               <div style="margin-bottom: 12px; display: flex; align-items: center;">
                 <span style="color: #ffd43b; margin-right: 10px;">✓</span>
@@ -1793,15 +1921,15 @@
             <div style="color: #ccc; font-size: 0.95em; line-height: 2;">
               <div style="margin-bottom: 12px; display: flex; align-items: center;">
                 <span style="color: #00ff9d; margin-right: 10px;">✓</span>
-                <span><strong>200</strong> <span data-i18n="pricing-transcriptions">transcriptions</span>/jour</span>
+                <span><strong>5,000</strong> <span data-i18n="pricing-transcriptions">transcriptions</span>/mois</span>
               </div>
               <div style="margin-bottom: 12px; display: flex; align-items: center;">
                 <span style="color: #00ff9d; margin-right: 10px;">✓</span>
-                <span><strong>1000</strong> <span data-i18n="pricing-translations">traductions</span>/jour</span>
+                <span><strong>25,000</strong> <span data-i18n="pricing-translations">traductions</span>/mois</span>
               </div>
               <div style="margin-bottom: 12px; display: flex; align-items: center;">
                 <span style="color: #00ff9d; margin-right: 10px;">✓</span>
-                <span><strong>200</strong> <span data-i18n="pricing-tts">synthèses vocales</span>/jour</span>
+                <span><strong>5,000</strong> <span data-i18n="pricing-tts">synthèses vocales</span>/mois</span>
               </div>
               <div style="margin-bottom: 12px; display: flex; align-items: center;">
                 <span style="color: #00ff9d; margin-right: 10px;">✓</span>
@@ -1916,6 +2044,23 @@
   <div id="statusBar" class="status-bar idle">
     <div class="status-indicator"></div>
     <span id="statusText">Initialisation...</span>
+  </div>
+
+  <!-- VU-Mètre Micro (placé sous la status bar) -->
+  <div id="vuMeter" class="vu-meter hidden">
+    <div class="vu-meter-label">Niveau micro:</div>
+    <div class="vu-meter-bars">
+      <div class="vu-meter-bar" data-level="1"></div>
+      <div class="vu-meter-bar" data-level="2"></div>
+      <div class="vu-meter-bar" data-level="3"></div>
+      <div class="vu-meter-bar" data-level="4"></div>
+      <div class="vu-meter-bar" data-level="5"></div>
+      <div class="vu-meter-bar" data-level="6"></div>
+      <div class="vu-meter-bar" data-level="7"></div>
+      <div class="vu-meter-bar" data-level="8"></div>
+      <div class="vu-meter-bar" data-level="9"></div>
+      <div class="vu-meter-bar" data-level="10"></div>
+    </div>
   </div>
 
   <!-- Main Container -->
@@ -2154,111 +2299,136 @@
         <button class="close-admin-btn" onclick="closeProfilePanel()">✕ Fermer</button>
       </div>
 
-      <!-- Profile Info -->
-      <div class="admin-section">
-        <h3>👤 Informations du compte</h3>
-        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-          <div style="display: grid; gap: 10px;">
-            <div>
-              <span style="color: #888;">Email:</span>
-              <span id="profileEmail" style="color: #fff; margin-left: 10px; font-weight: bold;">-</span>
-            </div>
-            <div>
-              <span style="color: #888;">Nom d'affichage:</span>
-              <span id="profileDisplayName" style="color: #fff; margin-left: 10px; font-weight: bold;">-</span>
-            </div>
-            <div>
-              <span style="color: #888;">Abonnement:</span>
-              <span id="profileTier" style="color: #00ff9d; margin-left: 10px; font-weight: bold;">-</span>
-            </div>
-            <div id="profileQuotas" style="color: #888; font-size: 0.9em; margin-top: 5px;">
-              Chargement des quotas...
-            </div>
-          </div>
-        </div>
+      <!-- Profile Tabs -->
+      <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        <button id="profileTabAccount" onclick="switchProfileTab('account')" style="flex: 1; padding: 12px 20px; background: #00ff9d; color: #000; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-weight: bold; font-size: 1em;">
+          👤 Compte
+        </button>
+        <button id="profileTabPassword" onclick="switchProfileTab('password')" style="flex: 1; padding: 12px 20px; background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 1em;">
+          🔐 Mot de passe
+        </button>
+        <button id="profileTabHistory" onclick="switchProfileTab('history')" style="flex: 1; padding: 12px 20px; background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 1em;">
+          📜 Historique
+        </button>
+        <button id="profileTabDanger" onclick="switchProfileTab('danger')" style="flex: 1; padding: 12px 20px; background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 1em;">
+          ⚠️ Zone dangereuse
+        </button>
       </div>
 
-      <!-- Avatar Section -->
-      <div class="admin-section">
-        <h3>🖼️ Photo de profil</h3>
-        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-          <div style="display: flex; align-items: center; gap: 20px;">
-            <div id="profileAvatarPreview" style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); display: flex; align-items: center; justify-content: center; font-size: 2em; color: #fff; font-weight: bold; overflow: hidden;">
-              ?
-            </div>
-            <div style="flex: 1;">
-              <input type="file" id="avatarInput" accept="image/*" style="display: none;" onchange="handleAvatarSelection(event)">
-              <button class="create-user-btn" onclick="document.getElementById('avatarInput').click()" style="margin-bottom: 10px;">
-                📷 Choisir une photo
-              </button>
-              <div style="color: #888; font-size: 0.85em;">
-                JPG, PNG, GIF ou WebP • Max 5MB
+      <!-- TAB 1: COMPTE -->
+      <div id="profileTabAccountContent" style="display: block;">
+        <!-- Profile Info -->
+        <div class="admin-section">
+          <h3>👤 Informations du compte</h3>
+          <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+            <div style="display: grid; gap: 10px;">
+              <div>
+                <span style="color: #888;">Email:</span>
+                <span id="profileEmail" style="color: #fff; margin-left: 10px; font-weight: bold;">-</span>
               </div>
-              <div id="avatarMessage" class="hidden" style="margin-top: 10px;"></div>
+              <div>
+                <span style="color: #888;">Nom d'affichage:</span>
+                <span id="profileDisplayName" style="color: #fff; margin-left: 10px; font-weight: bold;">-</span>
+              </div>
+              <div>
+                <span style="color: #888;">Abonnement:</span>
+                <span id="profileTier" style="color: #00ff9d; margin-left: 10px; font-weight: bold;">-</span>
+              </div>
+              <div id="profileQuotas" style="color: #888; font-size: 0.9em; margin-top: 5px;">
+                Chargement des quotas...
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Update Display Name -->
-      <div class="admin-section">
-        <h3>✏️ Modifier le nom d'affichage</h3>
-        <div id="displayNameMessage" class="hidden" style="margin-bottom: 15px;"></div>
-        <form class="create-user-form" onsubmit="return false;">
-          <div class="input-group" style="margin-bottom: 0;">
-            <input type="text" id="newDisplayName" placeholder="Nouveau nom d'affichage" required minlength="2" maxlength="50">
-          </div>
-          <button class="create-user-btn" onclick="updateDisplayName()">Mettre à jour</button>
-        </form>
-      </div>
-
-      <!-- Change Password -->
-      <div class="admin-section">
-        <h3>🔐 Changer le mot de passe</h3>
-        <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #ffc107; font-size: 0.9em;">
-          ⚠️ <strong>Important:</strong> Changer votre mot de passe supprimera votre historique de traductions pour des raisons de sécurité (l'historique est crypté avec votre mot de passe).
-        </div>
-        <div id="changePasswordMessage" class="hidden" style="margin-bottom: 15px;"></div>
-        <form class="create-user-form" onsubmit="return false;">
-          <div class="input-group" style="margin-bottom: 0;">
-            <input type="password" id="currentPassword" placeholder="Mot de passe actuel" required>
-          </div>
-          <div class="input-group" style="margin-bottom: 0;">
-            <input type="password" id="newPassword" placeholder="Nouveau mot de passe" required>
-          </div>
-          <div class="input-group" style="margin-bottom: 0;">
-            <input type="password" id="confirmNewPassword" placeholder="Confirmer le nouveau mot de passe" required>
-          </div>
-          <button class="create-user-btn" onclick="changePassword()">Changer le mot de passe</button>
-        </form>
-      </div>
-
-      <!-- History Management -->
-      <div class="admin-section">
-        <h3>📜 Historique des traductions</h3>
-        <div style="margin-bottom: 15px;">
-          <p style="color: #888; font-size: 0.9em;">Votre historique est crypté et stocké de manière sécurisée.</p>
-          <div style="display: flex; gap: 10px; margin-top: 10px;">
-            <button class="create-user-btn" onclick="viewHistory()" style="margin: 0; flex: 1;">📖 Voir l'historique</button>
-            <button class="create-user-btn" onclick="deleteHistory()" style="margin: 0; flex: 1; background: #ff6b6b; color: #fff;">🗑️ Supprimer l'historique</button>
+        <!-- Avatar Section -->
+        <div class="admin-section">
+          <h3>🖼️ Photo de profil</h3>
+          <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+            <div style="display: flex; align-items: center; gap: 20px;">
+              <div id="profileAvatarPreview" style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); display: flex; align-items: center; justify-content: center; font-size: 2em; color: #fff; font-weight: bold; overflow: hidden;">
+                ?
+              </div>
+              <div style="flex: 1;">
+                <input type="file" id="avatarInput" accept="image/*" style="display: none;" onchange="handleAvatarSelection(event)">
+                <button class="create-user-btn" onclick="document.getElementById('avatarInput').click()" style="margin-bottom: 10px;">
+                  📷 Choisir une photo
+                </button>
+                <div style="color: #888; font-size: 0.85em;">
+                  JPG, PNG, GIF ou WebP • Max 5MB
+                </div>
+                <div id="avatarMessage" class="hidden" style="margin-top: 10px;"></div>
+              </div>
+            </div>
           </div>
         </div>
-        <div id="historyContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 300px; overflow-y: auto; display: none;">
-          <div id="historyContent"></div>
+
+        <!-- Update Display Name -->
+        <div class="admin-section">
+          <h3>✏️ Modifier le nom d'affichage</h3>
+          <div id="displayNameMessage" class="hidden" style="margin-bottom: 15px;"></div>
+          <form class="create-user-form" onsubmit="return false;">
+            <div class="input-group" style="margin-bottom: 0;">
+              <input type="text" id="newDisplayName" placeholder="Nouveau nom d'affichage" required minlength="2" maxlength="50">
+            </div>
+            <button class="create-user-btn" onclick="updateDisplayName()">Mettre à jour</button>
+          </form>
         </div>
       </div>
 
-      <!-- Delete Account -->
-      <div class="admin-section" style="border: 2px solid #ff6b6b; border-radius: 10px; padding: 20px;">
-        <h3 style="color: #ff6b6b;">⚠️ Zone dangereuse</h3>
-        <p style="color: #888; font-size: 0.9em; margin-bottom: 15px;">La suppression de votre compte est irréversible. Toutes vos données seront définitivement supprimées.</p>
-        <div id="deleteAccountMessage" class="hidden" style="margin-bottom: 15px;"></div>
-        <form class="create-user-form" onsubmit="return false;">
-          <div class="input-group" style="margin-bottom: 0;">
-            <input type="password" id="deleteAccountPassword" placeholder="Confirmer avec votre mot de passe" required>
+      <!-- TAB 2: MOT DE PASSE -->
+      <div id="profileTabPasswordContent" style="display: none;">
+        <div class="admin-section">
+          <h3>🔐 Changer le mot de passe</h3>
+          <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #ffc107; font-size: 0.9em;">
+            ⚠️ <strong>Important:</strong> Changer votre mot de passe supprimera votre historique de traductions pour des raisons de sécurité (l'historique est crypté avec votre mot de passe).
           </div>
-          <button class="create-user-btn" onclick="deleteAccount()" style="background: #ff6b6b; color: #fff;">🗑️ Supprimer mon compte</button>
-        </form>
+          <div id="changePasswordMessage" class="hidden" style="margin-bottom: 15px;"></div>
+          <form class="create-user-form" onsubmit="return false;">
+            <div class="input-group" style="margin-bottom: 0;">
+              <input type="password" id="currentPassword" placeholder="Mot de passe actuel" required>
+            </div>
+            <div class="input-group" style="margin-bottom: 0;">
+              <input type="password" id="newPassword" placeholder="Nouveau mot de passe" required>
+            </div>
+            <div class="input-group" style="margin-bottom: 0;">
+              <input type="password" id="confirmNewPassword" placeholder="Confirmer le nouveau mot de passe" required>
+            </div>
+            <button class="create-user-btn" onclick="changePassword()">Changer le mot de passe</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB 3: HISTORIQUE -->
+      <div id="profileTabHistoryContent" style="display: none;">
+        <div class="admin-section">
+          <h3>📜 Historique des traductions</h3>
+          <div style="margin-bottom: 15px;">
+            <p style="color: #888; font-size: 0.9em;">Votre historique est crypté et stocké de manière sécurisée.</p>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+              <button class="create-user-btn" onclick="viewHistory()" style="margin: 0; flex: 1;">📖 Voir l'historique</button>
+              <button class="create-user-btn" onclick="deleteHistory()" style="margin: 0; flex: 1; background: #ff6b6b; color: #fff;">🗑️ Supprimer l'historique</button>
+            </div>
+          </div>
+          <div id="historyContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 300px; overflow-y: auto; display: none;">
+            <div id="historyContent"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: ZONE DANGEREUSE -->
+      <div id="profileTabDangerContent" style="display: none;">
+        <div class="admin-section" style="border: 2px solid #ff6b6b; border-radius: 10px; padding: 20px;">
+          <h3 style="color: #ff6b6b;">⚠️ Zone dangereuse</h3>
+          <p style="color: #888; font-size: 0.9em; margin-bottom: 15px;">La suppression de votre compte est irréversible. Toutes vos données seront définitivement supprimées.</p>
+          <div id="deleteAccountMessage" class="hidden" style="margin-bottom: 15px;"></div>
+          <form class="create-user-form" onsubmit="return false;">
+            <div class="input-group" style="margin-bottom: 0;">
+              <input type="password" id="deleteAccountPassword" placeholder="Confirmer avec votre mot de passe" required>
+            </div>
+            <button class="create-user-btn" onclick="deleteAccount()" style="background: #ff6b6b; color: #fff;">🗑️ Supprimer mon compte</button>
+          </form>
+        </div>
       </div>
     </div>
   </div>

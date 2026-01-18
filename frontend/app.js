@@ -139,7 +139,7 @@ async function handleAvatarSelection(event) {
     const response = await fetch(`${API_BASE_URL}/api/upload-avatar`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${state.token}`
       },
       body: formData
     });
@@ -1209,6 +1209,49 @@ function switchAdminTab(tab) {
   }
 }
 
+// Changer d'onglet dans le profil
+function switchProfileTab(tab) {
+  // Masquer tous les onglets
+  document.getElementById('profileTabAccountContent').style.display = 'none';
+  document.getElementById('profileTabPasswordContent').style.display = 'none';
+  document.getElementById('profileTabHistoryContent').style.display = 'none';
+  document.getElementById('profileTabDangerContent').style.display = 'none';
+
+  // Réinitialiser les styles des boutons
+  const buttons = ['profileTabAccount', 'profileTabPassword', 'profileTabHistory', 'profileTabDanger'];
+  buttons.forEach(btnId => {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      btn.style.background = 'rgba(255,255,255,0.1)';
+      btn.style.color = '#fff';
+      btn.style.fontWeight = 'normal';
+    }
+  });
+
+  // Afficher l'onglet sélectionné et mettre en surbrillance le bouton
+  if (tab === 'account') {
+    document.getElementById('profileTabAccountContent').style.display = 'block';
+    document.getElementById('profileTabAccount').style.background = '#00ff9d';
+    document.getElementById('profileTabAccount').style.color = '#000';
+    document.getElementById('profileTabAccount').style.fontWeight = 'bold';
+  } else if (tab === 'password') {
+    document.getElementById('profileTabPasswordContent').style.display = 'block';
+    document.getElementById('profileTabPassword').style.background = '#00ff9d';
+    document.getElementById('profileTabPassword').style.color = '#000';
+    document.getElementById('profileTabPassword').style.fontWeight = 'bold';
+  } else if (tab === 'history') {
+    document.getElementById('profileTabHistoryContent').style.display = 'block';
+    document.getElementById('profileTabHistory').style.background = '#00ff9d';
+    document.getElementById('profileTabHistory').style.color = '#000';
+    document.getElementById('profileTabHistory').style.fontWeight = 'bold';
+  } else if (tab === 'danger') {
+    document.getElementById('profileTabDangerContent').style.display = 'block';
+    document.getElementById('profileTabDanger').style.background = '#00ff9d';
+    document.getElementById('profileTabDanger').style.color = '#000';
+    document.getElementById('profileTabDanger').style.fontWeight = 'bold';
+  }
+}
+
 // ===================================
 // VISUALISATION DES LOGS
 // ===================================
@@ -2225,7 +2268,7 @@ async function uploadFile(file) {
     const response = await fetch(`${API_BASE_URL}/api/upload-file`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${state.token}`
       },
       body: formData
     });
@@ -2454,17 +2497,180 @@ function startCommunication() {
   // Masquer le choix d'interface
   document.getElementById('interfaceChoice').classList.add('hidden');
 
+  // Afficher l'interface Communication Home
+  document.getElementById('communicationHome').classList.remove('hidden');
+
   // Appliquer les paramètres de langue (basique, juste pour les messages)
   applyLanguageSettings();
+
+  // Mettre à jour l'en-tête avec les infos utilisateur
+  updateCommunicationHomeHeader();
 
   // Initialiser Socket.IO pour la communication
   initializeSocket();
 
-  // Charger les groupes et conversations
-  loadGroupsData();
+  // Charger les groupes et conversations pour la page d'accueil
+  loadCommunicationData();
 
   // Ne pas demander la permission micro pour l'instant (pas besoin en mode chat)
   console.log('🚀 Mode Communication activé');
+}
+
+// Mettre à jour l'en-tête de l'interface Communication Home
+function updateCommunicationHomeHeader() {
+  // Mettre à jour la langue affichée
+  const lang = LANGUAGES[state.lang1];
+  if (lang) {
+    const langDisplay = document.getElementById('commLangDisplay');
+    if (langDisplay) {
+      langDisplay.innerHTML = `${lang.flag} ${lang.nativeName}`;
+    }
+  }
+
+  // Mettre à jour les informations utilisateur
+  if (state.user) {
+    const userNameEl = document.getElementById('commUserName');
+    const userAvatarEl = document.getElementById('commUserAvatar');
+
+    if (userNameEl) {
+      userNameEl.textContent = state.user.displayName || 'Utilisateur';
+    }
+
+    if (userAvatarEl) {
+      userAvatarEl.innerHTML = generateAvatarHTML(state.user, 32);
+    }
+  }
+}
+
+// Charger les données pour l'interface Communication Home
+async function loadCommunicationData() {
+  try {
+    // Charger les groupes
+    const groupsResponse = await fetch(`${API_BASE_URL}/api/groups`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    const groupsData = await groupsResponse.json();
+    displayCommunicationGroups(groupsData.groups || []);
+
+    // Charger les conversations DM
+    const dmsResponse = await fetch(`${API_BASE_URL}/api/dms`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    const dmsData = await dmsResponse.json();
+    displayCommunicationDMs(dmsData.conversations || []);
+  } catch (error) {
+    console.error('Error loading communication data:', error);
+    document.getElementById('commGroupsList').innerHTML = '<p style="color: #ff6b6b;">❌ Erreur de chargement</p>';
+    document.getElementById('commDMsList').innerHTML = '<p style="color: #ff6b6b;">❌ Erreur de chargement</p>';
+  }
+}
+
+// Afficher les groupes dans l'interface Communication Home
+function displayCommunicationGroups(groups) {
+  const container = document.getElementById('commGroupsList');
+
+  if (groups.length === 0) {
+    container.innerHTML = '<p style="color: #888; padding: 20px 0;">Aucun groupe pour le moment.<br>Créez votre premier groupe ou rejoignez-en un !</p>';
+    return;
+  }
+
+  container.innerHTML = groups.map(group => {
+    const unreadCount = unreadMessages[group.id] || 0;
+    const badgeHTML = unreadCount > 0 ? `
+      <div style="position: absolute; top: 8px; right: 8px; background: linear-gradient(135deg, #ff6b6b, #ff9d00); color: #fff; border-radius: 12px; padding: 4px 10px; font-size: 0.75em; font-weight: bold; box-shadow: 0 2px 8px rgba(255,107,107,0.4);">
+        ${unreadCount > 99 ? '99+' : unreadCount}
+      </div>
+    ` : '';
+
+    const visibilityIcon = group.visibility === 'public' ? '🌐' : '🔒';
+    const visibilityText = group.visibility === 'public' ? 'Public' : 'Privé';
+
+    return `
+      <div style="position: relative; background: rgba(255,255,255,0.08); padding: 16px; border-radius: 12px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1);" onclick="openGroupChat('${group.id}')" onmouseover="this.style.background='rgba(255,255,255,0.15)'; this.style.borderColor='rgba(0,255,157,0.3)';" onmouseout="this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.1)';">
+        ${badgeHTML}
+        <div style="color: #fff; font-weight: bold; font-size: 1.1em; margin-bottom: 8px;">
+          <span title="${visibilityText}">${visibilityIcon}</span> ${group.name}
+        </div>
+        <div style="color: #888; font-size: 0.9em; margin-bottom: 4px;">
+          👥 ${group.members.length} membre${group.members.length > 1 ? 's' : ''}
+        </div>
+        <div style="color: #666; font-size: 0.85em;">
+          📅 Créé le ${new Date(group.createdAt).toLocaleDateString()}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Afficher les conversations DM dans l'interface Communication Home
+function displayCommunicationDMs(conversations) {
+  const container = document.getElementById('commDMsList');
+
+  if (conversations.length === 0) {
+    container.innerHTML = '<p style="color: #888; padding: 20px 0;">Aucune conversation.<br>Envoyez un message à un ami pour démarrer !</p>';
+    return;
+  }
+
+  container.innerHTML = conversations.map(conv => {
+    const lastMsg = conv.lastMessage;
+    const lastMsgText = lastMsg ? (lastMsg.content.substring(0, 40) + (lastMsg.content.length > 40 ? '...' : '')) : 'Nouvelle conversation';
+    const lastMsgTime = lastMsg ? new Date(lastMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const onlineIndicator = getOnlineIndicator(conv.otherUser.email);
+
+    return `
+      <div onclick="openDMChat('${conv.otherUser.email}')" style="padding: 16px; background: rgba(255,255,255,0.08); border-radius: 12px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1);" onmouseover="this.style.background='rgba(255,255,255,0.15)'; this.style.borderColor='rgba(100,180,255,0.3)';" onmouseout="this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.1)';">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 50px; height: 50px; position: relative; flex-shrink: 0;">
+            ${generateAvatarHTML(conv.otherUser, 50)}
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: bold; color: #fff; margin-bottom: 4px; display: flex; align-items: center; font-size: 1.05em;">
+              ${onlineIndicator}${conv.otherUser.displayName}
+            </div>
+            <div style="color: #888; font-size: 0.9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lastMsgText}</div>
+          </div>
+          <div style="color: #888; font-size: 0.85em; white-space: nowrap;">${lastMsgTime}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Afficher les paramètres de communication
+function showCommunicationSettings() {
+  // Afficher le panneau des paramètres (réutilise le panneau existant)
+  showSettingsPanel();
+}
+
+// Réinitialiser le choix d'interface (retour à l'écran de sélection)
+function resetInterfaceChoice() {
+  // Masquer l'interface Communication Home
+  document.getElementById('communicationHome').classList.add('hidden');
+
+  // Effacer le choix d'interface du localStorage
+  localStorage.removeItem('interface_mode');
+
+  // Retourner à l'écran de choix d'interface
+  document.getElementById('interfaceChoice').classList.remove('hidden');
+
+  console.log('↩️ Retour au choix d\'interface');
+}
+
+// Retourner à la page d'accueil Communication
+function backToCommunicationHome() {
+  // Masquer tous les panneaux de chat
+  document.getElementById('groupChatPanel').classList.add('hidden');
+  document.getElementById('dmChatPanel').classList.add('hidden');
+  document.getElementById('groupsPanel').classList.add('hidden');
+  document.getElementById('dmsPanel').classList.add('hidden');
+
+  // Afficher la page d'accueil Communication
+  document.getElementById('communicationHome').classList.remove('hidden');
+
+  // Recharger les données pour avoir les infos à jour
+  loadCommunicationData();
+
+  console.log('🏠 Retour à la page d\'accueil Communication');
 }
 
 // Initialiser l'interface du mode (PTT/Temps Réel)
@@ -2728,6 +2934,10 @@ function toggleMicrophone() {
     if (micIconMobile) micIconMobile.textContent = '🎤';
 
     updateStatus('listening', '🎧 Prêt à écouter...');
+
+    // Afficher le VU-mètre
+    const vuMeter = document.getElementById('vuMeter');
+    if (vuMeter) vuMeter.classList.remove('hidden');
   } else {
     // Desktop
     if (micBtn) {
@@ -2745,6 +2955,10 @@ function toggleMicrophone() {
     if (micIconMobile) micIconMobile.textContent = '🎤';
 
     updateStatus('idle', '🔇 Microphone désactivé');
+
+    // Masquer le VU-mètre
+    const vuMeter = document.getElementById('vuMeter');
+    if (vuMeter) vuMeter.classList.add('hidden');
 
     // Arrêter l'enregistrement en cours si nécessaire
     if (state.isRecording) {
@@ -2950,7 +3164,32 @@ function analyzeVolume() {
     elements.volumeBar.style.width = `${volumePercent}%`;
   }
 
+  // Mettre à jour le VU-mètre
+  updateVUMeter(rms);
+
   return rms;
+}
+
+// Mettre à jour le VU-mètre visuel
+function updateVUMeter(volume) {
+  const vuMeter = document.getElementById('vuMeter');
+  if (!vuMeter) return;
+
+  // Convertir le volume (0-1) en niveau de barres (0-10)
+  const level = Math.min(10, Math.floor(volume * 1000));
+
+  // Mettre à jour chaque barre
+  const bars = vuMeter.querySelectorAll('.vu-meter-bar');
+  bars.forEach((bar, index) => {
+    const barLevel = index + 1;
+    if (barLevel <= level) {
+      bar.classList.add('active');
+      bar.style.height = '100%';
+    } else {
+      bar.classList.remove('active');
+      bar.style.height = '0%';
+    }
+  });
 }
 
 // Détection automatique de la voix (VAD Loop)
@@ -3334,6 +3573,12 @@ async function initializeAudio() {
     elements.permissionModal.classList.add('hidden');
     updateStatus('listening', '🎧 Prêt à écouter...');
 
+    // Afficher le VU-mètre
+    const vuMeter = document.getElementById('vuMeter');
+    if (vuMeter) {
+      vuMeter.classList.remove('hidden');
+    }
+
     // Démarrer la boucle VAD
     vadLoop();
 
@@ -3693,6 +3938,10 @@ async function deleteAccount() {
 window.addEventListener('load', () => {
   console.log('🚀 RealTranslate chargé');
 
+  // Détecter la langue du navigateur pour l'interface
+  detectBrowserLanguage();
+  console.log(`🌐 Langue détectée: ${currentUILang}`);
+
   // Vérifier si l'utilisateur est déjà connecté
   if (!checkAuth()) {
     // Afficher l'écran de connexion
@@ -3998,6 +4247,14 @@ let groupsData = {
 };
 
 function showGroupsPanel() {
+  // Si en mode Communication, retourner à la page d'accueil Communication
+  const interfaceMode = localStorage.getItem('interface_mode');
+  if (interfaceMode === 'communication') {
+    backToCommunicationHome();
+    return;
+  }
+
+  // Sinon, afficher le panneau latéral traditionnel
   document.getElementById('groupsPanel').classList.remove('hidden');
   loadGroupsData();
 }
@@ -4016,6 +4273,14 @@ let currentDMMessages = [];
 
 // Afficher le panneau des DMs
 function showDMsPanel() {
+  // Si en mode Communication, retourner à la page d'accueil Communication
+  const interfaceMode = localStorage.getItem('interface_mode');
+  if (interfaceMode === 'communication') {
+    backToCommunicationHome();
+    return;
+  }
+
+  // Sinon, afficher le panneau latéral traditionnel
   document.getElementById('dmsPanel').classList.remove('hidden');
   loadDMConversations();
 }
@@ -4097,6 +4362,7 @@ async function openDMChat(userEmail) {
     // Afficher le panel de chat DM
     document.getElementById('dmChatPanel').classList.remove('hidden');
     document.getElementById('dmsPanel').classList.add('hidden');
+    document.getElementById('communicationHome').classList.add('hidden');
 
     // Mise à jour de l'UI
     const onlineIndicator = getOnlineIndicator(currentDMUser.email);
@@ -4842,6 +5108,7 @@ async function openGroupChat(groupId) {
     // Afficher le panneau de chat
     document.getElementById('groupChatPanel').classList.remove('hidden');
     document.getElementById('groupsPanel').classList.add('hidden');
+    document.getElementById('communicationHome').classList.add('hidden');
 
     document.getElementById('groupChatTitle').textContent = `💬 ${data.group.name}`;
     document.getElementById('groupMembersCount').textContent = `${data.group.members.length} ${t('members')}`;
