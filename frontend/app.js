@@ -823,43 +823,82 @@ function showApp() {
   fetchUserStatuses();
 }
 
-// Connexion
-// Mode de connexion actuel
-let loginMode = 'email';
+// ===================================
+// CONNEXION ET OAUTH
+// ===================================
 
-// Changer le mode de connexion
+// OAuth Login Functions (stubs pour l'instant, à implémenter avec les clés API)
+function loginWithGoogle() {
+  // TODO: Implémenter OAuth Google
+  // window.location.href = `${API_BASE_URL}/api/auth/google`;
+  alert('🚧 Connexion Google à venir\nUtilisez l\'email/mot de passe pour le moment.');
+}
+
+function loginWithApple() {
+  // TODO: Implémenter OAuth Apple
+  // window.location.href = `${API_BASE_URL}/api/auth/apple`;
+  alert('🚧 Connexion Apple à venir\nUtilisez l\'email/mot de passe pour le moment.');
+}
+
+function loginWithWeChat() {
+  // TODO: Implémenter OAuth WeChat
+  // window.location.href = `${API_BASE_URL}/api/auth/wechat`;
+  alert('🚧 Connexion WeChat à venir\nUtilisez l\'email/mot de passe pour le moment.');
+}
+
+// Ouvrir la modal de login par token
 function switchLoginMode(mode) {
-  loginMode = mode;
+  if (mode === 'token') {
+    document.getElementById('tokenLoginModal').classList.remove('hidden');
+  }
+}
 
-  const emailTab = document.getElementById('emailLoginTab');
-  const tokenTab = document.getElementById('tokenLoginTab');
-  const emailFields = document.getElementById('emailLoginFields');
-  const tokenFields = document.getElementById('tokenLoginFields');
+// Fermer la modal de login par token
+function closeTokenModal() {
+  document.getElementById('tokenLoginModal').classList.add('hidden');
+  document.getElementById('accessTokenInput').value = '';
+}
 
-  if (mode === 'email') {
-    emailTab.style.background = '#00ff9d';
-    emailTab.style.color = '#000';
-    emailTab.style.border = 'none';
-    tokenTab.style.background = 'rgba(255,255,255,0.1)';
-    tokenTab.style.color = '#fff';
-    tokenTab.style.border = '1px solid rgba(255,255,255,0.2)';
+// Login avec token depuis la modal
+async function loginWithToken() {
+  const tokenInput = document.getElementById('accessTokenInput');
+  const token = tokenInput.value.trim();
 
-    emailFields.style.display = 'block';
-    tokenFields.style.display = 'none';
-  } else {
-    tokenTab.style.background = '#00ff9d';
-    tokenTab.style.color = '#000';
-    tokenTab.style.border = 'none';
-    emailTab.style.background = 'rgba(255,255,255,0.1)';
-    emailTab.style.color = '#fff';
-    emailTab.style.border = '1px solid rgba(255,255,255,0.2)';
-
-    emailFields.style.display = 'none';
-    tokenFields.style.display = 'block';
+  if (!token) {
+    alert('Veuillez entrer un jeton d\'accès');
+    return;
   }
 
-  // Effacer les erreurs
-  elements.loginError.classList.add('hidden');
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ accessToken: token })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Erreur de connexion');
+    }
+
+    // Sauvegarder le token et l'utilisateur
+    localStorage.setItem('auth_token', data.token);
+    localStorage.setItem('auth_user', JSON.stringify(data.user));
+
+    state.token = data.token;
+    state.user = data.user;
+
+    // Fermer la modal et afficher l'app
+    closeTokenModal();
+    showApp();
+
+  } catch (error) {
+    console.error('Erreur login token:', error);
+    alert('❌ ' + error.message);
+  }
 }
 
 async function login(email, password, accessToken) {
@@ -2250,12 +2289,24 @@ function initLanguageSelection() {
   // Vérifier si les langues sont déjà sélectionnées (localStorage)
   const savedLang1 = localStorage.getItem('lang1');
   const savedLang2 = localStorage.getItem('lang2');
+  const savedInterfaceMode = localStorage.getItem('interface_mode');
 
   if (savedLang1 && savedLang2 && LANGUAGES[savedLang1] && LANGUAGES[savedLang2]) {
     state.lang1 = savedLang1;
     state.lang2 = savedLang2;
-    applyLanguageSettings();
-    return;
+
+    // Si un mode d'interface est sauvegardé, aller directement à ce mode
+    if (savedInterfaceMode === 'translation') {
+      startTranslation();
+      return;
+    } else if (savedInterfaceMode === 'communication') {
+      startCommunication();
+      return;
+    } else {
+      // Sinon, afficher le choix d'interface
+      showInterfaceChoice();
+      return;
+    }
   }
 
   // Détecter la langue du navigateur
@@ -2341,16 +2392,47 @@ function selectLang2(langCode) {
   document.getElementById('langContinueBtn').disabled = false;
 }
 
-// Démarrer la traduction avec les langues sélectionnées
-function startTranslation() {
+// ===================================
+// NAVIGATION ENTRE LES ÉCRANS (Étapes B et C)
+// ===================================
+
+// Afficher l'écran de choix d'interface (Étape C)
+function showInterfaceChoice() {
   if (!state.lang1 || !state.lang2) return;
 
   // Sauvegarder les langues dans localStorage
   localStorage.setItem('lang1', state.lang1);
   localStorage.setItem('lang2', state.lang2);
 
-  // Masquer l'écran de sélection
+  // Masquer la sélection de langues et afficher le choix d'interface
   document.getElementById('languageSelection').classList.add('hidden');
+  document.getElementById('interfaceChoice').classList.remove('hidden');
+}
+
+// Retour vers la sélection de langues
+function backToLanguageSelection() {
+  document.getElementById('interfaceChoice').classList.add('hidden');
+  document.getElementById('languageSelection').classList.remove('hidden');
+}
+
+// Sélectionner un mode d'interface
+function selectInterfaceMode(mode) {
+  // Sauvegarder le mode choisi
+  localStorage.setItem('interface_mode', mode);
+
+  if (mode === 'translation') {
+    // Mode Traduction Simple
+    startTranslation();
+  } else if (mode === 'communication') {
+    // Mode Communication (Groupes/DMs)
+    startCommunication();
+  }
+}
+
+// Démarrer l'interface de traduction simple
+function startTranslation() {
+  // Masquer le choix d'interface
+  document.getElementById('interfaceChoice').classList.add('hidden');
 
   // Appliquer les paramètres de langue
   applyLanguageSettings();
@@ -2365,6 +2447,24 @@ function startTranslation() {
   setTimeout(() => {
     elements.permissionModal.classList.remove('hidden');
   }, 500);
+}
+
+// Démarrer l'interface de communication
+function startCommunication() {
+  // Masquer le choix d'interface
+  document.getElementById('interfaceChoice').classList.add('hidden');
+
+  // Appliquer les paramètres de langue (basique, juste pour les messages)
+  applyLanguageSettings();
+
+  // Initialiser Socket.IO pour la communication
+  initializeSocket();
+
+  // Charger les groupes et conversations
+  loadGroupsData();
+
+  // Ne pas demander la permission micro pour l'instant (pas besoin en mode chat)
+  console.log('🚀 Mode Communication activé');
 }
 
 // Initialiser l'interface du mode (PTT/Temps Réel)
