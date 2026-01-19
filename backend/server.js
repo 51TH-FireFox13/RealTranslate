@@ -881,6 +881,53 @@ app.post('/api/auth/login', (req, res) => {
   }
 });
 
+// Inscription publique (nouveau compte)
+app.post('/api/auth/register', (req, res) => {
+  try {
+    const { email, password, displayName } = req.body;
+
+    // Validation des champs
+    if (!email || !password || !displayName) {
+      return res.status(400).json({ error: 'Email, mot de passe et nom d\'affichage requis' });
+    }
+
+    // Validation de l'email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Format d\'email invalide' });
+    }
+
+    // Validation du mot de passe
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' });
+    }
+
+    // Créer l'utilisateur avec le rôle USER et le tier FREE par défaut
+    const result = authManager.createUser(email, password, ROLES.USER, 'free', displayName);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    // Pour l'instant, on marque l'utilisateur comme non vérifié
+    // TODO: Envoyer un email de validation
+    if (result.user) {
+      result.user.emailVerified = false;
+    }
+
+    logger.info(`Nouvel utilisateur inscrit: ${email}`);
+
+    res.json({
+      success: true,
+      message: 'Inscription réussie ! Vous pouvez maintenant vous connecter.',
+      user: result.user
+    });
+  } catch (error) {
+    logger.error('Register error', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 // Créer un utilisateur (admin uniquement)
 app.post('/api/auth/users', authMiddleware, requireAdmin, (req, res) => {
   try {

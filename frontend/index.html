@@ -1961,6 +1961,121 @@
           🎫 Se connecter avec un jeton d'accès
         </button>
       </div>
+
+      <div style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <button onclick="showRegisterForm()" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 0.95em; padding: 8px 16px; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'">
+          ✨ Créer un compte
+        </button>
+        <span style="color: #444;">•</span>
+        <button onclick="showPricing()" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 0.95em; padding: 8px 16px; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'">
+          💳 Voir les tarifs
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Register Screen -->
+  <div id="registerContainer" class="login-container hidden">
+    <div class="login-box" style="max-width: 450px;">
+      <h2 style="font-size: 2.2em; margin-bottom: 10px;">✨ Créer un compte</h2>
+      <p style="color: #888; margin-bottom: 30px;">Rejoignez RealTranslate et commencez à traduire</p>
+
+      <div id="registerError" class="error-message hidden"></div>
+      <div id="registerSuccess" class="success-message hidden"></div>
+
+      <form id="registerForm" onsubmit="return false;">
+        <div class="input-group">
+          <label for="registerName">Nom d'affichage</label>
+          <input type="text" id="registerName" placeholder="Votre nom" required>
+        </div>
+
+        <div class="input-group">
+          <label for="registerEmail">Email</label>
+          <input type="email" id="registerEmail" placeholder="votre@email.com" autocomplete="email" required>
+        </div>
+
+        <div class="input-group">
+          <label for="registerPassword">Mot de passe</label>
+          <input type="password" id="registerPassword" placeholder="••••••••" autocomplete="new-password" minlength="6" required>
+        </div>
+
+        <div class="input-group">
+          <label for="registerPasswordConfirm">Confirmer le mot de passe</label>
+          <input type="password" id="registerPasswordConfirm" placeholder="••••••••" autocomplete="new-password" minlength="6" required>
+        </div>
+
+        <button type="submit" class="login-btn" id="registerBtn" style="width: 100%; margin-top: 10px;">S'inscrire</button>
+      </form>
+
+      <div style="text-align: center; margin-top: 20px;">
+        <button onclick="backToLogin()" style="background: none; border: none; color: #00ff9d; cursor: pointer; text-decoration: underline; font-size: 0.9em;">
+          ← Retour à la connexion
+        </button>
+      </div>
+
+      <div style="text-align: center; margin-top: 15px;">
+        <button onclick="showPricing()" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 0.9em; padding: 8px 16px; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'">
+          💳 Voir les tarifs
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pricing Screen -->
+  <div id="pricingContainer" class="login-container hidden">
+    <div class="login-box" style="max-width: 900px;">
+      <h2 style="font-size: 2.2em; margin-bottom: 10px;">💳 Nos Tarifs</h2>
+      <p style="color: #888; margin-bottom: 40px;">Choisissez l'abonnement qui vous convient</p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
+        <!-- Plan FREE -->
+        <div style="background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 30px; text-align: center;">
+          <h3 style="font-size: 1.5em; margin-bottom: 10px;">🆓 Gratuit</h3>
+          <div style="font-size: 2.5em; font-weight: bold; margin: 20px 0;">0€</div>
+          <div style="color: #888; margin-bottom: 20px;">par mois</div>
+          <ul style="text-align: left; list-style: none; padding: 0; margin: 20px 0;">
+            <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">✅ 50 transcriptions/mois</li>
+            <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">✅ 250 traductions/mois</li>
+            <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">✅ 50 synthèses vocales/mois</li>
+            <li style="padding: 8px 0;">✅ Communication de base</li>
+          </ul>
+        </div>
+
+        <!-- Plan PREMIUM -->
+        <div style="background: linear-gradient(135deg, rgba(0,255,157,0.2), rgba(0,200,255,0.2)); border: 2px solid #00ff9d; border-radius: 16px; padding: 30px; text-align: center; position: relative;">
+          <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #00ff9d; color: #000; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.8em;">POPULAIRE</div>
+          <h3 style="font-size: 1.5em; margin-bottom: 10px;">⭐ Premium</h3>
+          <div style="font-size: 2.5em; font-weight: bold; margin: 20px 0;">9.99€</div>
+          <div style="color: #888; margin-bottom: 20px;">par mois</div>
+          <ul style="text-align: left; list-style: none; padding: 0; margin: 20px 0;">
+            <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">✅ 500 transcriptions/mois</li>
+            <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">✅ 2500 traductions/mois</li>
+            <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">✅ 500 synthèses vocales/mois</li>
+            <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">✅ Groupes illimités</li>
+            <li style="padding: 8px 0;">✅ Support prioritaire</li>
+          </ul>
+        </div>
+
+        <!-- Plan ENTERPRISE -->
+        <div style="background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 30px; text-align: center;">
+          <h3 style="font-size: 1.5em; margin-bottom: 10px;">🏢 Entreprise</h3>
+          <div style="font-size: 2.5em; font-weight: bold; margin: 20px 0;">49.99€</div>
+          <div style="color: #888; margin-bottom: 20px;">par mois</div>
+          <ul style="text-align: left; list-style: none; padding: 0; margin: 20px 0;">
+            <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">✅ 5000 transcriptions/mois</li>
+            <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">✅ 25000 traductions/mois</li>
+            <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">✅ 5000 synthèses vocales/mois</li>
+            <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">✅ Fonctionnalités avancées</li>
+            <li style="padding: 8px 0;">✅ Support dédié 24/7</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 30px;">
+        <button onclick="backFromPricing()" class="login-btn" style="max-width: 300px;">
+          ← Retour
+        </button>
+      </div>
     </div>
   </div>
 

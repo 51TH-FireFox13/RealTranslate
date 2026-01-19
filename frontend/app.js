@@ -21,6 +21,9 @@ const unreadMessages = {};
 // Tracker des statuts en ligne/hors ligne des utilisateurs
 const userStatuses = {}; // email -> { online: boolean, lastSeen: timestamp }
 
+// Mode de connexion actuel ('email' ou 'token')
+let loginMode = 'email';
+
 // ===================================
 // GESTION DU THÈME (DARK/LIGHT MODE)
 // ===================================
@@ -848,8 +851,15 @@ function loginWithWeChat() {
 
 // Ouvrir la modal de login par token
 function switchLoginMode(mode) {
+  loginMode = mode;
   if (mode === 'token') {
     document.getElementById('tokenLoginModal').classList.remove('hidden');
+  } else if (mode === 'email') {
+    // Retour au formulaire email
+    loginMode = 'email';
+  } else if (mode === 'register') {
+    // Basculer vers le formulaire d'inscription
+    showRegisterForm();
   }
 }
 
@@ -942,6 +952,91 @@ async function login(email, password, accessToken) {
     elements.loginError.classList.remove('hidden');
     elements.loginBtn.disabled = false;
     elements.loginBtn.textContent = 'Se connecter';
+  }
+}
+
+// Afficher le formulaire d'inscription
+function showRegisterForm() {
+  // Cacher le container de login, afficher celui d'inscription
+  document.getElementById('loginContainer').classList.add('hidden');
+  document.getElementById('registerContainer').classList.remove('hidden');
+}
+
+// Retour au formulaire de login
+function backToLogin() {
+  document.getElementById('registerContainer').classList.add('hidden');
+  document.getElementById('loginContainer').classList.remove('hidden');
+  loginMode = 'email';
+}
+
+// Inscription d'un nouvel utilisateur
+async function register(email, password, displayName) {
+  try {
+    const registerBtn = document.getElementById('registerBtn');
+    const registerError = document.getElementById('registerError');
+    const registerSuccess = document.getElementById('registerSuccess');
+
+    registerBtn.disabled = true;
+    registerBtn.textContent = 'Inscription...';
+    registerError.classList.add('hidden');
+    registerSuccess.classList.add('hidden');
+
+    const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password, displayName })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Erreur lors de l\'inscription');
+    }
+
+    // Afficher message de succès
+    registerSuccess.textContent = '✅ Inscription réussie ! Veuillez vérifier votre email pour valider votre compte.';
+    registerSuccess.classList.remove('hidden');
+
+    // Réinitialiser le formulaire
+    document.getElementById('registerForm').reset();
+
+    registerBtn.disabled = false;
+    registerBtn.textContent = 'S\'inscrire';
+
+    // Retour au login après 3 secondes
+    setTimeout(() => {
+      backToLogin();
+      registerSuccess.classList.add('hidden');
+    }, 3000);
+
+  } catch (error) {
+    console.error('Erreur inscription:', error);
+    const registerError = document.getElementById('registerError');
+    const registerBtn = document.getElementById('registerBtn');
+
+    registerError.textContent = error.message;
+    registerError.classList.remove('hidden');
+    registerBtn.disabled = false;
+    registerBtn.textContent = 'S\'inscrire';
+  }
+}
+
+// Afficher la page des tarifs
+function showPricing() {
+  document.getElementById('loginContainer').classList.add('hidden');
+  document.getElementById('registerContainer').classList.add('hidden');
+  document.getElementById('pricingContainer').classList.remove('hidden');
+}
+
+// Retour depuis les tarifs
+function backFromPricing() {
+  document.getElementById('pricingContainer').classList.add('hidden');
+  if (loginMode === 'register' || document.getElementById('registerContainer').classList.contains('hidden') === false) {
+    document.getElementById('registerContainer').classList.remove('hidden');
+  } else {
+    document.getElementById('loginContainer').classList.remove('hidden');
   }
 }
 
@@ -1645,6 +1740,38 @@ elements.loginForm.addEventListener('submit', (e) => {
     }
     login(null, null, accessToken);
   }
+});
+
+// Gestionnaire de formulaire d'inscription
+document.getElementById('registerForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+
+  const displayName = document.getElementById('registerName').value.trim();
+  const email = document.getElementById('registerEmail').value.trim();
+  const password = document.getElementById('registerPassword').value;
+  const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+
+  // Validation
+  if (!displayName || !email || !password || !passwordConfirm) {
+    document.getElementById('registerError').textContent = 'Tous les champs sont requis';
+    document.getElementById('registerError').classList.remove('hidden');
+    return;
+  }
+
+  if (password.length < 6) {
+    document.getElementById('registerError').textContent = 'Le mot de passe doit contenir au moins 6 caractères';
+    document.getElementById('registerError').classList.remove('hidden');
+    return;
+  }
+
+  if (password !== passwordConfirm) {
+    document.getElementById('registerError').textContent = 'Les mots de passe ne correspondent pas';
+    document.getElementById('registerError').classList.remove('hidden');
+    return;
+  }
+
+  // Appeler la fonction d'inscription
+  register(email, password, displayName);
 });
 
 // ===================================
