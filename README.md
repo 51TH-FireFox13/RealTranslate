@@ -1,8 +1,8 @@
 # RealTranslate 🌐
 
-**Traduction en temps réel Français ↔ Chinois** avec détection automatique de la voix
+**Traduction en temps réel multilingue** avec détection automatique de la voix
 
-Application web de traduction instantanée entre le français et le chinois, utilisant la reconnaissance vocale, la traduction automatique et la synthèse vocale.
+Application web de traduction instantanée multilingue, utilisant la reconnaissance vocale, la traduction automatique et la synthèse vocale.
 
 ## ✨ Fonctionnalités
 

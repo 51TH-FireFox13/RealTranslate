@@ -3,7 +3,11 @@ node_modules/
 *.log
 .DS_Store
 backend/uploads/
+
+# Fichiers de données (ne pas versionner)
 backend/users.json
 backend/tokens.json
 backend/access-tokens.json
+backend/groups.json
+backend/messages.json
 *.bundle
