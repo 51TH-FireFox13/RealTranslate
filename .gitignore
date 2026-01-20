@@ -4,3 +4,5 @@ node_modules/
 .DS_Store
 backend/uploads/
 backend/users.json
+backend/tokens.json
+backend/access-tokens.json
