@@ -6,3 +6,4 @@ backend/uploads/
 backend/users.json
 backend/tokens.json
 backend/access-tokens.json
+*.bundle
