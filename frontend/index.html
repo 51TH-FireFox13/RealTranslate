@@ -1305,21 +1305,122 @@
     .comm-list {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       max-height: 500px;
       overflow-y: auto;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 255, 157, 0.3) rgba(255, 255, 255, 0.05);
+    }
+
+    .comm-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .comm-list::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .comm-list::-webkit-scrollbar-thumb {
+      background: rgba(0, 255, 157, 0.3);
+      border-radius: 3px;
+    }
+
+    .comm-list::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 255, 157, 0.5);
     }
 
     .comm-empty-message {
       color: #888;
       text-align: center;
-      padding: 40px 0;
+      padding: 20px 0;
+      font-size: 0.95em;
+      line-height: 1.5;
+    }
+
+    /* Styles pour les items de groupes et DMs */
+    .comm-group-item,
+    .comm-dm-item {
+      position: relative;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .comm-group-item:hover,
+    .comm-dm-item:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(0, 255, 157, 0.3);
+    }
+
+    .comm-group-item .group-name {
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.1em;
+      margin-bottom: 8px;
+    }
+
+    .comm-group-item .group-info {
+      color: #888;
+      font-size: 0.9em;
+      margin-bottom: 4px;
+    }
+
+    .comm-group-item .group-date {
+      color: #666;
+      font-size: 0.85em;
+    }
+
+    .comm-dm-item .dm-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .comm-dm-item .dm-avatar {
+      width: 50px;
+      height: 50px;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .comm-dm-item .dm-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .comm-dm-item .dm-name {
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      font-size: 1.05em;
+    }
+
+    .comm-dm-item .dm-message {
+      color: #888;
+      font-size: 0.9em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .comm-dm-item .dm-time {
+      color: #888;
+      font-size: 0.85em;
+      white-space: nowrap;
     }
 
     .comm-quick-actions {
-      margin-top: 30px;
+      margin-top: 20px;
       display: flex;
-      gap: 15px;
+      gap: 12px;
       justify-content: center;
       flex-wrap: wrap;
     }
@@ -1378,28 +1479,33 @@
     /* Responsive Communication Home - Mobile */
     @media (max-width: 768px) {
       .communication-home-container {
-        padding: 20px 15px;
+        padding: 12px 10px;
       }
 
       .comm-header {
-        margin-bottom: 25px;
+        margin-bottom: 15px;
       }
 
       .comm-title {
-        font-size: 1.8em;
-        margin-bottom: 8px;
+        font-size: 1.5em;
+        margin-bottom: 4px;
       }
 
       .comm-subtitle {
-        font-size: 0.9em;
+        display: none; /* Masquer le sous-titre sur mobile */
       }
 
       .comm-header-actions {
-        gap: 10px;
+        gap: 8px;
       }
 
       .comm-lang-badge {
-        padding: 8px 12px;
+        padding: 6px 10px;
+        font-size: 0.9em;
+      }
+
+      .comm-lang-label {
+        display: none; /* Masquer le label "Langue" */
       }
 
       .comm-user-name,
@@ -1408,32 +1514,43 @@
       }
 
       .comm-btn {
-        padding: 10px;
+        padding: 8px;
+        min-width: 40px;
+      }
+
+      .comm-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8em;
       }
 
       .comm-section {
-        padding: 20px 15px;
-        border-radius: 15px;
+        padding: 12px 10px;
+        border-radius: 12px;
       }
 
       .comm-section-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 12px;
       }
 
       .comm-section-title {
-        font-size: 1.2em;
+        font-size: 1.1em;
       }
 
       .comm-section-title-text {
-        display: none;
+        display: inline; /* Garder le texte visible pour clarté */
+        font-size: 0.9em;
       }
 
       .comm-action-btn {
-        width: 100%;
-        justify-content: center;
-        padding: 12px 20px;
+        width: auto;
+        padding: 8px 12px;
+        font-size: 0.85em;
+        white-space: nowrap;
       }
 
       .btn-text {
@@ -1441,18 +1558,64 @@
       }
 
       .comm-list {
-        max-height: 400px;
+        max-height: calc(100vh - 420px); /* Hauteur dynamique basée sur viewport */
+        min-height: 150px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch; /* Scroll fluide sur iOS */
+        gap: 8px;
+      }
+
+      /* Optimisation des items de groupes et DMs sur mobile */
+      .comm-group-item,
+      .comm-dm-item {
+        padding: 12px;
+        border-radius: 10px;
+      }
+
+      .comm-group-item .group-name {
+        font-size: 1em;
+        margin-bottom: 6px;
+      }
+
+      .comm-group-item .group-info {
+        font-size: 0.85em;
+      }
+
+      .comm-group-item .group-date {
+        font-size: 0.8em;
+      }
+
+      .comm-dm-item .dm-container {
+        gap: 10px;
+      }
+
+      .comm-dm-item .dm-avatar {
+        width: 40px;
+        height: 40px;
+      }
+
+      .comm-dm-item .dm-name {
+        font-size: 0.95em;
+      }
+
+      .comm-dm-item .dm-message {
+        font-size: 0.85em;
+      }
+
+      .comm-dm-item .dm-time {
+        font-size: 0.8em;
       }
 
       .comm-quick-actions {
-        gap: 10px;
+        gap: 8px;
+        margin-top: 15px;
       }
 
       .comm-quick-btn {
         flex: 1;
         min-width: 0;
-        padding: 12px 15px;
-        font-size: 0.9em;
+        padding: 10px 12px;
+        font-size: 0.85em;
       }
 
       .comm-quick-text {
@@ -1462,46 +1625,135 @@
 
     /* Very Small Mobile */
     @media (max-width: 480px) {
+      .communication-home-container {
+        padding: 10px 8px;
+      }
+
+      .comm-header {
+        margin-bottom: 12px;
+      }
+
       .comm-title {
-        font-size: 1.4em;
+        font-size: 1.3em;
+        margin-bottom: 0;
+      }
+
+      .comm-title-section {
+        margin-bottom: 8px;
       }
 
       .comm-header-actions {
-        flex-direction: column;
+        flex-direction: row;
         width: 100%;
-        gap: 8px;
+        gap: 6px;
+        flex-wrap: wrap;
       }
 
       .comm-btn {
-        width: 100%;
-        justify-content: center;
+        padding: 6px;
+        min-width: 36px;
+      }
+
+      .comm-avatar {
+        width: 24px;
+        height: 24px;
+        font-size: 0.75em;
       }
 
       .comm-lang-badge {
-        width: 100%;
-        text-align: center;
+        padding: 6px 8px;
+        font-size: 0.85em;
+        flex: 0 0 auto;
       }
 
       .comm-section {
-        padding: 15px;
+        padding: 10px 8px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+      }
+
+      .comm-grid {
+        gap: 10px;
+      }
+
+      .comm-section-header {
+        margin-bottom: 10px;
+        gap: 6px;
       }
 
       .comm-section-title {
-        font-size: 1.1em;
+        font-size: 1em;
+      }
+
+      .comm-section-title-text {
+        font-size: 0.85em;
       }
 
       .comm-action-btn {
+        padding: 6px 10px;
+        font-size: 0.8em;
+      }
+
+      .comm-list {
+        max-height: calc(100vh - 380px);
+        min-height: 120px;
+        gap: 6px;
+      }
+
+      /* Optimisation des items pour très petits écrans */
+      .comm-group-item,
+      .comm-dm-item {
         padding: 10px;
+        border-radius: 8px;
+      }
+
+      .comm-group-item .group-name {
+        font-size: 0.95em;
+        margin-bottom: 5px;
+      }
+
+      .comm-group-item .group-info {
+        font-size: 0.8em;
+        margin-bottom: 3px;
+      }
+
+      .comm-group-item .group-date {
+        font-size: 0.75em;
+      }
+
+      .comm-dm-item .dm-container {
+        gap: 8px;
+      }
+
+      .comm-dm-item .dm-avatar {
+        width: 36px;
+        height: 36px;
+      }
+
+      .comm-dm-item .dm-name {
         font-size: 0.9em;
+        margin-bottom: 3px;
+      }
+
+      .comm-dm-item .dm-message {
+        font-size: 0.8em;
+      }
+
+      .comm-dm-item .dm-time {
+        font-size: 0.75em;
       }
 
       .comm-quick-actions {
-        flex-direction: column;
+        flex-direction: row;
         width: 100%;
+        gap: 6px;
+        margin-top: 12px;
       }
 
       .comm-quick-btn {
-        width: 100%;
+        flex: 1;
+        padding: 8px 10px;
+        font-size: 0.8em;
       }
     }
 
@@ -1827,9 +2079,47 @@
       }
 
       /* Admin Panel */
+      .admin-panel {
+        padding: 10px;
+      }
+
       .admin-content {
-        padding: 20px;
+        padding: 20px 15px;
         max-height: 85vh;
+      }
+
+      .admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+      }
+
+      .admin-header h2 {
+        font-size: 1.5em;
+      }
+
+      .admin-section {
+        margin-bottom: 20px;
+      }
+
+      .admin-section h3 {
+        font-size: 1.1em;
+      }
+
+      .users-table {
+        font-size: 0.9em;
+      }
+
+      .users-table th,
+      .users-table td {
+        padding: 8px;
+      }
+
+      .create-user-form {
+        grid-template-columns: 1fr;
+        gap: 8px;
       }
 
       /* Language Selection */
@@ -1882,6 +2172,54 @@
         width: 140px;
         height: 140px;
         bottom: 120px;
+      }
+
+      /* Admin Panel pour très petits écrans */
+      .admin-panel {
+        padding: 5px;
+      }
+
+      .admin-content {
+        padding: 15px 10px;
+        border-radius: 15px;
+      }
+
+      .admin-header h2 {
+        font-size: 1.3em;
+      }
+
+      .admin-section h3 {
+        font-size: 1em;
+      }
+
+      .users-table {
+        font-size: 0.8em;
+      }
+
+      .users-table th,
+      .users-table td {
+        padding: 6px;
+      }
+
+      .close-admin-btn {
+        padding: 8px 15px;
+        font-size: 0.9em;
+      }
+
+      /* Modal responsive */
+      .modal-content {
+        padding: 25px 20px;
+        max-width: 90%;
+      }
+
+      .modal-content h2 {
+        font-size: 1.3em;
+        margin-bottom: 15px;
+      }
+
+      .modal-content button {
+        padding: 12px 30px;
+        font-size: 1em;
       }
     }
 
