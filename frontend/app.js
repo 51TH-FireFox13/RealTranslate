@@ -4926,7 +4926,7 @@ function archiveCurrentDM() {
 
   // Générer le conversationId (même logique que le backend)
   const emails = [state.user.email, currentDMUser.email].sort();
-  const conversationId = emails.join('_');
+  const conversationId = emails.join('|||');
 
   archiveDM(conversationId);
 }

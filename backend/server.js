@@ -191,7 +191,35 @@ async function saveDirectMessages() {
 
 // Générer un ID de conversation entre 2 utilisateurs (toujours dans le même ordre)
 function getConversationId(email1, email2) {
-  return [email1, email2].sort().join('_');
+  return [email1, email2].sort().join('|||');
+}
+
+// Parser un ID de conversation (supporte ancien format avec _ et nouveau avec |||)
+function parseConversationId(convId) {
+  // Nouveau format avec |||
+  if (convId.includes('|||')) {
+    return convId.split('|||');
+  }
+
+  // Ancien format avec _ - gérer le cas où l'email contient des underscores
+  const parts = convId.split('_');
+
+  if (parts.length === 2) {
+    return parts; // Cas simple: pas d'underscore dans les emails
+  }
+
+  // Cas complexe: il y a des underscores dans les emails
+  // Stratégie: trouver où le premier email se termine (premier @ trouvé)
+  let firstEmailEndIndex = parts.findIndex(p => p.includes('@'));
+  if (firstEmailEndIndex === -1) {
+    logger.warn(`Invalid conversation ID format: ${convId}`);
+    return [convId, '']; // Fallback en cas d'erreur
+  }
+
+  const email1 = parts.slice(0, firstEmailEndIndex + 1).join('_');
+  const email2 = parts.slice(firstEmailEndIndex + 1).join('_');
+
+  return [email1, email2];
 }
 
 async function loadStatuses() {
@@ -348,7 +376,7 @@ io.on('connection', (socket) => {
 
     // Ajouter les contacts DM
     Object.keys(directMessages).forEach(convId => {
-      const [email1, email2] = convId.split('_');
+      const [email1, email2] = parseConversationId(convId);
       if (email1 === userEmail) {
         notifiedUsers.add(email2);
       } else if (email2 === userEmail) {
@@ -743,6 +771,14 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // Vérifier que le groupe n'est pas archivé
+    const user = authManager.users[userEmail];
+    const archivedGroups = user.archivedGroups || [];
+    if (archivedGroups.includes(groupId)) {
+      socket.emit('error', { message: 'Ce groupe est archivé' });
+      return;
+    }
+
     socket.join(groupId);
     logger.info(`${userEmail} joined group ${groupId}`);
 
@@ -798,7 +834,7 @@ io.on('connection', (socket) => {
 
         // Ajouter les contacts DM
         Object.keys(directMessages).forEach(convId => {
-          const [email1, email2] = convId.split('_');
+          const [email1, email2] = parseConversationId(convId);
           if (email1 === userEmail) {
             notifiedUsers.add(email2);
           } else if (email2 === userEmail) {
@@ -2045,7 +2081,7 @@ app.get('/api/dms', authMiddleware, async (req, res) => {
 
     // Parcourir toutes les conversations pour trouver celles de l'utilisateur
     for (const [convId, msgs] of Object.entries(directMessages)) {
-      const [email1, email2] = convId.split('_');
+      const [email1, email2] = parseConversationId(convId);
 
       if (email1 === userEmail || email2 === userEmail) {
         // Exclure les conversations archivées
@@ -2103,6 +2139,13 @@ app.get('/api/dms/:otherUserEmail', authMiddleware, async (req, res) => {
     }
 
     const convId = getConversationId(userEmail, otherUserEmail);
+
+    // Vérifier que la conversation n'est pas archivée
+    const archivedDMs = user.archivedDMs || [];
+    if (archivedDMs.includes(convId)) {
+      return res.status(403).json({ error: 'Cette conversation est archivée' });
+    }
+
     const msgs = directMessages[convId] || [];
 
     res.json({
@@ -2255,8 +2298,27 @@ app.get('/api/groups', authMiddleware, async (req, res) => {
 
     const userGroups = user.groups
       .filter(groupId => !archivedGroups.includes(groupId)) // Exclure archivés
-      .map(groupId => groups[groupId])
+      .map(groupId => {
+        const group = groups[groupId];
+        if (!group) return null;
+
+        // Ajouter le dernier message pour le tri
+        const groupMessages = messages[groupId] || [];
+        const lastMessage = groupMessages.length > 0 ? groupMessages[groupMessages.length - 1] : null;
+
+        return {
+          ...group,
+          lastMessage
+        };
+      })
       .filter(g => g); // Filtrer les groupes supprimés
+
+    // Trier par dernier message (comme les DMs)
+    userGroups.sort((a, b) => {
+      if (!a.lastMessage) return 1;
+      if (!b.lastMessage) return 1;
+      return new Date(b.lastMessage.timestamp) - new Date(a.lastMessage.timestamp);
+    });
 
     res.json({ groups: userGroups });
 
@@ -2583,7 +2645,7 @@ app.get('/api/dms/archived/list', authMiddleware, async (req, res) => {
       const msgs = directMessages[convId];
       if (!msgs) continue;
 
-      const [email1, email2] = convId.split('_');
+      const [email1, email2] = parseConversationId(convId);
       const otherEmail = email1 === userEmail ? email2 : email1;
       const otherUser = authManager.users[otherEmail];
 
