@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import logger from './logger.js';
+import { logger } from './logger.js';
 
 // Initialisation de Stripe avec la clé secrète
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
