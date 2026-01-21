@@ -18,6 +18,7 @@ import {
   ROLES,
   SUBSCRIPTION_TIERS
 } from './auth.js';
+import stripePayment from './stripe-payment.js';
 import crypto from 'crypto';
 
 dotenv.config();
@@ -1653,6 +1654,160 @@ app.post('/api/webhook/wechat', express.raw({ type: 'application/json' }), async
   } catch (error) {
     logger.error('WeChat Pay webhook error', error);
     res.status(500).json({ error: 'Webhook processing failed' });
+  }
+});
+
+// ===================================
+// STRIPE CHECKOUT & WEBHOOKS
+// ===================================
+
+// Créer une session Stripe Checkout
+app.post('/api/create-checkout-session', authMiddleware, async (req, res) => {
+  try {
+    const { tier } = req.body;
+    const userEmail = req.user.email;
+
+    // Valider le tier
+    if (!tier || (tier !== 'premium' && tier !== 'enterprise')) {
+      return res.status(400).json({ error: 'Invalid subscription tier' });
+    }
+
+    // Vérifier que les clés Stripe sont configurées
+    if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
+      logger.error('Stripe not configured - missing API keys');
+      return res.status(500).json({ error: 'Payment system not configured' });
+    }
+
+    // URLs de redirection
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.headers['x-forwarded-host'] || req.get('host');
+    const baseUrl = `${protocol}://${host}`;
+
+    const successUrl = `${baseUrl}/?payment=success`;
+    const cancelUrl = `${baseUrl}/?payment=cancelled`;
+
+    // Créer la session Checkout
+    const session = await stripePayment.createCheckoutSession(
+      userEmail,
+      tier,
+      successUrl,
+      cancelUrl
+    );
+
+    logger.info('Checkout session created', {
+      userEmail,
+      tier,
+      sessionId: session.sessionId,
+    });
+
+    res.json({
+      success: true,
+      sessionId: session.sessionId,
+      url: session.url,
+    });
+  } catch (error) {
+    logger.error('Error creating checkout session', {
+      error: error.message,
+      user: req.user?.email,
+    });
+    res.status(500).json({ error: 'Failed to create checkout session' });
+  }
+});
+
+// Webhook Stripe (doit être AVANT express.json() pour le raw body)
+// Note: Ce endpoint doit être déplacé avant app.use(express.json()) pour fonctionner correctement
+// Pour l'instant on va gérer le raw body manuellement
+app.post('/api/webhook/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+  const signature = req.headers['stripe-signature'];
+
+  if (!signature) {
+    logger.warn('Stripe webhook missing signature');
+    return res.status(400).send('Missing signature');
+  }
+
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    logger.error('Stripe webhook secret not configured');
+    return res.status(500).send('Webhook not configured');
+  }
+
+  try {
+    // Vérifier la signature du webhook
+    const event = stripePayment.constructWebhookEvent(
+      req.body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+
+    logger.info('Stripe webhook received', { type: event.type, id: event.id });
+
+    // Traiter l'événement
+    await stripePayment.handleStripeWebhook(event, authManager);
+
+    res.json({ received: true });
+  } catch (error) {
+    logger.error('Stripe webhook error', {
+      error: error.message,
+      signature: signature?.substring(0, 20),
+    });
+    res.status(400).send(`Webhook Error: ${error.message}`);
+  }
+});
+
+// Créer une session de portail client Stripe (pour gérer l'abonnement)
+app.post('/api/create-portal-session', authMiddleware, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+
+    // Récupérer le client Stripe
+    const customer = await stripePayment.getCustomerByEmail(userEmail);
+
+    if (!customer) {
+      return res.status(404).json({ error: 'No active subscription found' });
+    }
+
+    // URL de retour après le portail
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.headers['x-forwarded-host'] || req.get('host');
+    const returnUrl = `${protocol}://${host}/`;
+
+    // Créer la session du portail
+    const portalUrl = await stripePayment.createBillingPortalSession(
+      customer.id,
+      returnUrl
+    );
+
+    logger.info('Portal session created', { userEmail, customerId: customer.id });
+
+    res.json({
+      success: true,
+      url: portalUrl,
+    });
+  } catch (error) {
+    logger.error('Error creating portal session', {
+      error: error.message,
+      user: req.user?.email,
+    });
+    res.status(500).json({ error: 'Failed to create portal session' });
+  }
+});
+
+// Vérifier le statut d'une session Checkout
+app.get('/api/checkout-session/:sessionId', authMiddleware, async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const session = await stripePayment.getCheckoutSession(sessionId);
+
+    res.json({
+      success: true,
+      status: session.payment_status,
+      customerEmail: session.customer_details?.email,
+    });
+  } catch (error) {
+    logger.error('Error retrieving checkout session', {
+      error: error.message,
+      sessionId: req.params.sessionId,
+    });
+    res.status(500).json({ error: 'Failed to retrieve session' });
   }
 });
 

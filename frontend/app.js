@@ -2862,14 +2862,49 @@ function hidePricingPage() {
   document.getElementById('languageSelection').classList.remove('hidden');
 }
 
-function subscribePlan(tier) {
-  // Rediriger vers la page de paiement appropriée
-  const region = detectUserRegion();
+async function subscribePlan(tier) {
+  // Vérifier que l'utilisateur est connecté
+  if (!currentUser) {
+    alert('Veuillez vous connecter pour souscrire à un abonnement.');
+    return;
+  }
 
-  if (region === 'asia') {
-    alert('WeChat Pay: Fonctionnalité en cours d\'implémentation.\nVeuillez contacter l\'administrateur.');
-  } else {
-    alert('PayPal: Fonctionnalité en cours d\'implémentation.\nVeuillez contacter l\'administrateur.');
+  try {
+    // Afficher un indicateur de chargement
+    const button = event?.target;
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Chargement...';
+    }
+
+    // Créer une session Checkout Stripe
+    const response = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ tier })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.url) {
+      // Rediriger vers Stripe Checkout
+      window.location.href = data.url;
+    } else {
+      throw new Error(data.error || 'Échec de la création de la session de paiement');
+    }
+  } catch (error) {
+    console.error('Erreur lors de la souscription:', error);
+    alert('Erreur: ' + error.message);
+
+    // Réinitialiser le bouton
+    const button = event?.target;
+    if (button) {
+      button.disabled = false;
+      button.textContent = 'S\'abonner';
+    }
   }
 }
 
@@ -5702,3 +5737,49 @@ window.addEventListener('beforeinstallprompt', (e) => {
   console.log('💡 Installation PWA disponible');
   // On pourrait afficher un bouton "Installer l'app" ici
 });
+
+// ===================================
+// GESTION DU RETOUR STRIPE CHECKOUT
+// ===================================
+
+// Vérifier les paramètres URL pour les retours Stripe
+function checkStripePaymentStatus() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const paymentStatus = urlParams.get('payment');
+  const sessionId = urlParams.get('session_id');
+
+  if (paymentStatus === 'success' && sessionId) {
+    // Paiement réussi
+    console.log('✅ Paiement Stripe réussi, session:', sessionId);
+
+    // Afficher un message de succès
+    setTimeout(() => {
+      alert('✅ Paiement réussi ! Votre abonnement a été activé.\n\nMerci de votre confiance ! 🎉');
+
+      // Nettoyer l'URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      // Recharger les informations utilisateur
+      if (currentUser) {
+        loadUserInfo();
+      }
+    }, 500);
+  } else if (paymentStatus === 'cancelled') {
+    // Paiement annulé
+    console.log('❌ Paiement Stripe annulé');
+
+    setTimeout(() => {
+      alert('❌ Paiement annulé.\n\nVous pouvez réessayer à tout moment depuis la page des tarifs.');
+
+      // Nettoyer l'URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }, 500);
+  }
+}
+
+// Appeler au chargement de la page
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', checkStripePaymentStatus);
+} else {
+  checkStripePaymentStatus();
+}
