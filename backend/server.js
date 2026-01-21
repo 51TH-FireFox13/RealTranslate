@@ -1,5 +1,4 @@
 import express from 'express';
-import cors from 'cors';
 import dotenv from 'dotenv';
 import multer from 'multer';
 import fetch from 'node-fetch';
@@ -19,6 +18,38 @@ import {
   SUBSCRIPTION_TIERS
 } from './auth.js';
 import crypto from 'crypto';
+// Nouveaux modules pour Stripe, RGPD et sécurité
+import {
+  createCheckoutSession,
+  verifyWebhookSignature,
+  processSuccessfulPayment,
+  getCheckoutSession,
+  getPublishableKey,
+  getPaymentHistory,
+  SUBSCRIPTION_TIERS as STRIPE_TIERS
+} from './stripe-payment.js';
+import {
+  configureHelmet,
+  configureCORS,
+  globalRateLimiter,
+  authRateLimiter,
+  sensitiveOperationsLimiter,
+  translationRateLimiter,
+  uploadRateLimiter,
+  webhookRateLimiter,
+  sanitizeInput,
+  enforceHTTPS
+} from './security.js';
+import {
+  updateUserConsent,
+  getUserConsent,
+  hasConsent,
+  exportUserData,
+  createDeletionRequest,
+  processDeletionRequest,
+  generateComplianceReport,
+  CONSENT_TYPES
+} from './gdpr-compliance.js';
 
 dotenv.config();
 
@@ -70,9 +101,13 @@ const fileUpload = multer({
   }
 });
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Middleware de sécurité
+app.use(enforceHTTPS); // Forcer HTTPS en production
+app.use(configureHelmet()); // Sécuriser les en-têtes HTTP
+app.use(configureCORS()); // CORS sécurisé avec whitelist
+app.use(globalRateLimiter); // Rate limiting global
+app.use(express.json({ limit: '10mb' })); // Limiter la taille du JSON
+app.use(sanitizeInput); // Sanitiser les inputs
 app.use(accessLoggerMiddleware); // Logger toutes les requêtes
 app.use(express.static(join(__dirname, '../frontend')));
 app.use('/uploads', express.static(join(__dirname, 'uploads'))); // Servir les fichiers uploadés
@@ -840,7 +875,7 @@ function decryptHistory(encryptedData, passwordHash) {
 // ===================================
 
 // Login (email/password ou access token)
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', authRateLimiter, (req, res) => {
   try {
     const { email, password, accessToken } = req.body;
 
@@ -882,7 +917,7 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 // Inscription publique (nouveau compte)
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', authRateLimiter, (req, res) => {
   try {
     const { email, password, displayName } = req.body;
 
@@ -1004,7 +1039,7 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
 });
 
 // Changer le mot de passe
-app.post('/api/auth/change-password', authMiddleware, (req, res) => {
+app.post('/api/auth/change-password', authMiddleware, sensitiveOperationsLimiter, (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     const userEmail = req.user.email;
@@ -1351,7 +1386,7 @@ app.get('/api/detect-region', (req, res) => {
 });
 
 // Endpoint de transcription (Whisper) - Nécessite authentification
-app.post('/api/transcribe', authMiddleware, requirePermission('transcribe'), upload.single('audio'), async (req, res) => {
+app.post('/api/transcribe', authMiddleware, translationRateLimiter, requirePermission('transcribe'), upload.single('audio'), async (req, res) => {
   try {
     // Vérifier le quota
     const quotaCheck = authManager.consumeQuota(req.user.email, 'transcribe');
@@ -1409,7 +1444,7 @@ app.post('/api/transcribe', authMiddleware, requirePermission('transcribe'), upl
 });
 
 // Endpoint de traduction - Nécessite authentification
-app.post('/api/translate', authMiddleware, requirePermission('translate'), async (req, res) => {
+app.post('/api/translate', authMiddleware, translationRateLimiter, requirePermission('translate'), async (req, res) => {
   try {
     // Vérifier le quota
     const quotaCheck = authManager.consumeQuota(req.user.email, 'translate');
@@ -1519,7 +1554,7 @@ Réponds UNIQUEMENT avec la traduction, sans explications.`;
 });
 
 // Endpoint TTS (Text-to-Speech) - Nécessite authentification
-app.post('/api/speak', authMiddleware, requirePermission('speak'), async (req, res) => {
+app.post('/api/speak', authMiddleware, translationRateLimiter, requirePermission('speak'), async (req, res) => {
   try {
     // Vérifier le quota
     const quotaCheck = authManager.consumeQuota(req.user.email, 'speak');
@@ -1583,76 +1618,288 @@ app.get('/api/health', (req, res) => {
 });
 
 // ===================================
-// WEBHOOKS PAIEMENT
+// ENDPOINTS PAIEMENT STRIPE
 // ===================================
 
-// Webhook PayPal
-app.post('/api/webhook/paypal', express.raw({ type: 'application/json' }), async (req, res) => {
+// Récupérer la clé publique Stripe (pour le frontend)
+app.get('/api/payment/stripe-key', (req, res) => {
   try {
-    // TODO: Vérifier la signature PayPal IPN
-    const event = JSON.parse(req.body.toString());
-
-    logger.info('PayPal webhook received', event);
-
-    if (event.event_type === 'PAYMENT.SALE.COMPLETED') {
-      const email = event.resource.custom; // Email passé en custom field
-      const amount = parseFloat(event.resource.amount.total);
-
-      // Déterminer le tier en fonction du montant
-      let tier = 'free';
-      if (amount >= 49.99) tier = 'enterprise';
-      else if (amount >= 9.99) tier = 'premium';
-
-      // Activer l'abonnement pour 30 jours
-      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-      const result = authManager.updateSubscription(email, tier, expiresAt);
-
-      if (result.success) {
-        logger.info('Subscription activated via PayPal', { email, tier, amount });
-      } else {
-        logger.error('Failed to activate subscription', { email, error: result.message });
-      }
-    }
-
-    res.status(200).send('OK');
+    const publishableKey = getPublishableKey();
+    res.json({ publishableKey });
   } catch (error) {
-    logger.error('PayPal webhook error', error);
-    res.status(500).json({ error: 'Webhook processing failed' });
+    logger.error('Error getting Stripe key', error);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
-// Webhook WeChat Pay
-app.post('/api/webhook/wechat', express.raw({ type: 'application/json' }), async (req, res) => {
+// Créer une session de paiement Stripe
+app.post('/api/payment/create-session', authMiddleware, async (req, res) => {
   try {
-    // TODO: Vérifier la signature WeChat Pay
-    const event = JSON.parse(req.body.toString());
+    const { tier } = req.body;
+    const userEmail = req.user.email;
 
-    logger.info('WeChat Pay webhook received', event);
-
-    if (event.event_type === 'TRANSACTION.SUCCESS') {
-      const email = event.out_trade_no; // Email passé dans out_trade_no
-      const amount = parseFloat(event.amount.total) / 100; // WeChat en centimes
-
-      // Déterminer le tier en fonction du montant
-      let tier = 'free';
-      if (amount >= 49.99) tier = 'enterprise';
-      else if (amount >= 9.99) tier = 'premium';
-
-      // Activer l'abonnement pour 30 jours
-      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-      const result = authManager.updateSubscription(email, tier, expiresAt);
-
-      if (result.success) {
-        logger.info('Subscription activated via WeChat Pay', { email, tier, amount });
-      } else {
-        logger.error('Failed to activate subscription', { email, error: result.message });
-      }
+    if (!tier || !['premium', 'enterprise'].includes(tier)) {
+      return res.status(400).json({ error: 'Tier invalide' });
     }
 
-    res.status(200).send('OK');
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const successUrl = `${appUrl}/?payment=success&session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${appUrl}/?payment=cancelled`;
+
+    const session = await createCheckoutSession(userEmail, tier, successUrl, cancelUrl);
+
+    logger.info('Stripe checkout session created', {
+      userEmail,
+      tier,
+      sessionId: session.sessionId
+    });
+
+    res.json(session);
   } catch (error) {
-    logger.error('WeChat Pay webhook error', error);
-    res.status(500).json({ error: 'Webhook processing failed' });
+    logger.error('Error creating checkout session', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Vérifier une session de paiement
+app.get('/api/payment/session/:sessionId', authMiddleware, async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const session = await getCheckoutSession(sessionId);
+
+    // Vérifier que la session appartient bien à l'utilisateur
+    if (session.customer_email !== req.user.email) {
+      return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    res.json({
+      status: session.payment_status,
+      amount: session.amount_total / 100,
+      currency: session.currency.toUpperCase(),
+    });
+  } catch (error) {
+    logger.error('Error getting session', error);
+    res.status(500).json({ error: 'Session introuvable' });
+  }
+});
+
+// Historique des paiements
+app.get('/api/payment/history', authMiddleware, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const history = await getPaymentHistory(userEmail, 20);
+
+    res.json({ history });
+  } catch (error) {
+    logger.error('Error getting payment history', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Récupérer les tiers d'abonnement disponibles
+app.get('/api/payment/tiers', (req, res) => {
+  res.json({ tiers: STRIPE_TIERS });
+});
+
+// ===================================
+// ENDPOINTS RGPD
+// ===================================
+
+// Récupérer les consentements d'un utilisateur
+app.get('/api/gdpr/consent', authMiddleware, (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const consent = getUserConsent(userEmail);
+
+    res.json({
+      consent: consent || {
+        consents: {
+          essential: true,
+          analytics: false,
+          marketing: false,
+          personalization: false,
+          third_party: false,
+        },
+        updatedAt: null,
+      },
+      consentTypes: CONSENT_TYPES,
+    });
+  } catch (error) {
+    logger.error('Error getting consent', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Mettre à jour les consentements
+app.post('/api/gdpr/consent', authMiddleware, (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const { consents } = req.body;
+
+    if (!consents || typeof consents !== 'object') {
+      return res.status(400).json({ error: 'Consentements invalides' });
+    }
+
+    const updatedConsent = updateUserConsent(userEmail, consents);
+
+    logger.info('User consent updated', { userEmail, consents });
+
+    res.json({ success: true, consent: updatedConsent });
+  } catch (error) {
+    logger.error('Error updating consent', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Exporter toutes les données personnelles (Droit d'accès - Article 15 RGPD)
+app.get('/api/gdpr/export', authMiddleware, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+
+    // Récupérer toutes les données de l'utilisateur
+    const userData = authManager.getUser(userEmail);
+    if (!userData) {
+      return res.status(404).json({ error: 'Utilisateur introuvable' });
+    }
+
+    // Récupérer les messages de groupe
+    const userMessages = [];
+    Object.keys(messages).forEach((groupId) => {
+      const groupMessages = messages[groupId].filter((msg) => msg.from === userEmail);
+      userMessages.push(...groupMessages);
+    });
+
+    // Récupérer les messages privés
+    const userDMs = [];
+    Object.keys(directMessages).forEach((convId) => {
+      const convMessages = directMessages[convId].filter(
+        (msg) => msg.from === userEmail || msg.to === userEmail
+      );
+      userDMs.push(...convMessages);
+    });
+
+    const exportData = exportUserData(userEmail, userData, userMessages, userDMs);
+
+    logger.info('User data exported', { userEmail });
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="realtranslate-data-${userEmail}-${Date.now()}.json"`);
+    res.json(exportData);
+  } catch (error) {
+    logger.error('Error exporting user data', error);
+    res.status(500).json({ error: 'Erreur lors de l\'export' });
+  }
+});
+
+// Demander la suppression de compte (Droit à l'effacement - Article 17 RGPD)
+app.post('/api/gdpr/delete-request', authMiddleware, sensitiveOperationsLimiter, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const { reason } = req.body;
+
+    const deletionRequest = createDeletionRequest(userEmail, reason || 'User request');
+
+    logger.info('Deletion request created', { userEmail, requestId: deletionRequest.requestId });
+
+    res.json({
+      success: true,
+      message: 'Demande de suppression enregistrée. Vos données seront supprimées dans 30 jours.',
+      request: deletionRequest,
+    });
+  } catch (error) {
+    logger.error('Error creating deletion request', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Rapport de conformité RGPD (Admin uniquement)
+app.get('/api/gdpr/compliance-report', authMiddleware, requireAdmin, (req, res) => {
+  try {
+    const report = generateComplianceReport();
+
+    logger.info('GDPR compliance report generated', { admin: req.user.email });
+
+    res.json(report);
+  } catch (error) {
+    logger.error('Error generating compliance report', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ===================================
+// WEBHOOKS PAIEMENT STRIPE
+// ===================================
+
+// Webhook Stripe (avec vérification de signature)
+app.post('/api/webhook/stripe', webhookRateLimiter, express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    const signature = req.headers['stripe-signature'];
+
+    if (!signature) {
+      logger.warn('Stripe webhook sans signature');
+      return res.status(400).json({ error: 'Missing stripe-signature header' });
+    }
+
+    // Vérifier la signature du webhook (sécurité)
+    const event = await verifyWebhookSignature(req.body, signature);
+
+    logger.info('Stripe webhook received', { type: event.type, id: event.id });
+
+    // Traiter les différents types d'événements Stripe
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        // Paiement réussi
+        const session = event.data.object;
+        const paymentInfo = processSuccessfulPayment(session);
+
+        // Mettre à jour l'abonnement utilisateur
+        const result = authManager.updateSubscription(
+          paymentInfo.userEmail,
+          paymentInfo.tier,
+          paymentInfo.expiresAt
+        );
+
+        if (result.success) {
+          logger.info('Subscription activated via Stripe', {
+            email: paymentInfo.userEmail,
+            tier: paymentInfo.tier,
+            amount: paymentInfo.amount,
+            currency: paymentInfo.currency
+          });
+        } else {
+          logger.error('Failed to activate subscription', {
+            email: paymentInfo.userEmail,
+            error: result.message
+          });
+        }
+        break;
+      }
+
+      case 'payment_intent.payment_failed': {
+        // Paiement échoué
+        const paymentIntent = event.data.object;
+        logger.warn('Payment failed', {
+          email: paymentIntent.receipt_email,
+          error: paymentIntent.last_payment_error?.message
+        });
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        // Abonnement annulé
+        const subscription = event.data.object;
+        logger.info('Subscription cancelled', { customerId: subscription.customer });
+        break;
+      }
+
+      default:
+        logger.info('Unhandled Stripe event type', { type: event.type });
+    }
+
+    res.status(200).json({ received: true });
+  } catch (error) {
+    logger.error('Stripe webhook error', { error: error.message });
+    res.status(400).json({ error: 'Webhook signature verification failed' });
   }
 });
 
@@ -1691,7 +1938,7 @@ checkExpiredSubscriptions();
 // ===================================
 
 // Upload de fichier pour le chat
-app.post('/api/upload-file', authMiddleware, fileUpload.single('file'), async (req, res) => {
+app.post('/api/upload-file', authMiddleware, uploadRateLimiter, fileUpload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Aucun fichier fourni' });
@@ -1748,7 +1995,7 @@ const avatarUpload = multer({
 });
 
 // Upload d'avatar
-app.post('/api/upload-avatar', authMiddleware, avatarUpload.single('avatar'), async (req, res) => {
+app.post('/api/upload-avatar', authMiddleware, uploadRateLimiter, avatarUpload.single('avatar'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Aucune image fournie' });
