@@ -2624,6 +2624,13 @@ function startTranslation() {
   // Initialiser le mode switch UI pour refléter le mode par défaut (PTT)
   initializeModeUI();
 
+  // Initialiser les dots indicateurs (mobile)
+  setTimeout(() => {
+    if (typeof initPageIndicators === 'function') {
+      initPageIndicators();
+    }
+  }, 100);
+
   // Demander la permission microphone
   setTimeout(() => {
     elements.permissionModal.classList.remove('hidden');
@@ -5809,4 +5816,54 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', checkStripePaymentStatus);
 } else {
   checkStripePaymentStatus();
+}
+
+// ===================================
+// GESTION DES DOTS INDICATEURS (MOBILE)
+// ===================================
+
+// Initialiser la gestion des dots pour le scroll horizontal mobile
+function initPageIndicators() {
+  const container = document.querySelector('.container');
+  const dots = document.querySelectorAll('.page-dot');
+
+  if (!container || !dots.length) return;
+
+  // Mettre à jour les dots en fonction du scroll
+  function updateDots() {
+    const scrollLeft = container.scrollLeft;
+    const containerWidth = container.offsetWidth;
+    const currentPage = Math.round(scrollLeft / containerWidth);
+
+    dots.forEach((dot, index) => {
+      if (index === currentPage) {
+        dot.classList.add('active');
+      } else {
+        dot.classList.remove('active');
+      }
+    });
+  }
+
+  // Écouter le scroll
+  container.addEventListener('scroll', updateDots);
+
+  // Permettre de cliquer sur les dots pour naviguer
+  dots.forEach((dot, index) => {
+    dot.addEventListener('click', () => {
+      const containerWidth = container.offsetWidth;
+      container.scrollTo({
+        left: index * containerWidth,
+        behavior: 'smooth'
+      });
+    });
+  });
+}
+
+// Initialiser au chargement et après connexion
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(initPageIndicators, 100);
+  });
+} else {
+  setTimeout(initPageIndicators, 100);
 }
