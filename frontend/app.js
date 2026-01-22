@@ -2577,6 +2577,14 @@ function showInterfaceChoice() {
   localStorage.setItem('lang1', state.lang1);
   localStorage.setItem('lang2', state.lang2);
 
+  // Afficher le bouton Admin uniquement pour les admins
+  const adminBtn = document.getElementById('adminAccessBtn');
+  if (adminBtn && state.user && state.user.role === 'admin') {
+    adminBtn.style.display = 'inline-block';
+  } else if (adminBtn) {
+    adminBtn.style.display = 'none';
+  }
+
   // Masquer la sélection de langues et afficher le choix d'interface
   document.getElementById('languageSelection').classList.add('hidden');
   document.getElementById('interfaceChoice').classList.remove('hidden');
@@ -2878,7 +2886,7 @@ function showPricingPage() {
 
 function hidePricingPage() {
   document.getElementById('pricingPage').classList.add('hidden');
-  document.getElementById('languageSelection').classList.remove('hidden');
+  document.getElementById('interfaceChoice').classList.remove('hidden');
 }
 
 async function subscribePlan(tier) {

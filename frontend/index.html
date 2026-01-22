@@ -916,9 +916,10 @@
       background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
       z-index: 9999;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       padding: 20px;
+      overflow-y: auto;
     }
 
     .lang-box {
@@ -1833,8 +1834,14 @@
       }
 
       /* Language Selection */
+      .language-selection {
+        padding: 10px;
+      }
+
       .lang-box {
         padding: 30px 20px;
+        margin-top: 0;
+        margin-bottom: 0;
       }
 
       .lang-grid {
@@ -1882,6 +1889,13 @@
         width: 140px;
         height: 140px;
         bottom: 120px;
+      }
+    }
+
+    /* Desktop - Centre le contenu verticalement */
+    @media (min-width: 769px) {
+      .language-selection {
+        align-items: center;
       }
     }
 
@@ -2222,6 +2236,9 @@
           <button onclick="showPricingPage()" style="padding: 12px 24px; background: linear-gradient(135deg, rgba(255,212,59,0.2), rgba(255,152,0,0.2)); color: #ffd43b; border: 2px solid rgba(255,212,59,0.3); border-radius: 10px; cursor: pointer; font-size: 1em; font-weight: bold; transition: all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
             💎 Voir les Tarifs
           </button>
+          <button id="adminAccessBtn" onclick="showAdminPanel()" style="padding: 12px 24px; background: linear-gradient(135deg, rgba(255,59,59,0.2), rgba(200,0,0,0.2)); color: #ff6b6b; border: 2px solid rgba(255,59,59,0.3); border-radius: 10px; cursor: pointer; font-size: 1em; font-weight: bold; transition: all 0.2s; display: none;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            🔧 Administration
+          </button>
         </div>
 
         <div style="text-align: center;">
@@ -2289,7 +2306,7 @@
             <span>🌐</span> <span class="comm-quick-text">Découvrir les groupes publics</span>
           </button>
           <button onclick="resetInterfaceChoice()" class="comm-quick-btn comm-quick-btn-secondary">
-            <span>🔄</span> <span class="comm-quick-text">Changer de mode</span>
+            <span>←</span> <span class="comm-quick-text">Retour au menu</span>
           </button>
         </div>
       </div>
@@ -2499,7 +2516,7 @@
         </div>
         <span class="user-info" id="userInfo"></span>
         <button class="admin-btn hidden" id="adminBtn" onclick="showAdminPanel()">👤 Admin</button>
-        <button class="profile-btn" id="changeModeBtn" onclick="resetInterfaceChoice()" title="Revenir au choix d'activité et accéder au profil">🔄 Changer de mode</button>
+        <button class="profile-btn" id="changeModeBtn" onclick="resetInterfaceChoice()" title="Revenir au menu principal">← Retour</button>
         <button class="logout-btn" onclick="logout()">↗ Déconnexion</button>
       </div>
     </header>
