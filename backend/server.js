@@ -1707,8 +1707,11 @@ app.post('/api/create-checkout-session', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     logger.error('Error creating checkout session', {
-      error: error.message,
+      errorMessage: error.message,
+      errorStack: error.stack,
+      errorType: error.type || error.name,
       user: req.user?.email,
+      tier: req.body?.tier,
     });
     res.status(500).json({ error: 'Failed to create checkout session' });
   }

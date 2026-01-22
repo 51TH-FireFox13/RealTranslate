@@ -106,9 +106,13 @@ export async function createCheckoutSession(userEmail, tier, successUrl, cancelU
     };
   } catch (error) {
     logger.error('Error creating Stripe Checkout session', {
-      error: error.message,
+      errorMessage: error.message,
+      errorStack: error.stack,
+      errorName: error.type || error.name,
       userEmail,
       tier,
+      priceId: SUBSCRIPTION_TIERS[tier]?.priceId,
+      hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
     });
     throw error;
   }
