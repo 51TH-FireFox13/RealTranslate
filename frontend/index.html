@@ -2214,6 +2214,16 @@
           </div>
         </div>
 
+        <!-- Boutons d'action -->
+        <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+          <button onclick="showProfilePanel()" style="padding: 12px 24px; background: linear-gradient(135deg, rgba(0,255,157,0.2), rgba(0,200,120,0.2)); color: #00ff9d; border: 2px solid rgba(0,255,157,0.3); border-radius: 10px; cursor: pointer; font-size: 1em; font-weight: bold; transition: all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            ⚙️ Mon Profil
+          </button>
+          <button onclick="showPricingPage()" style="padding: 12px 24px; background: linear-gradient(135deg, rgba(255,212,59,0.2), rgba(255,152,0,0.2)); color: #ffd43b; border: 2px solid rgba(255,212,59,0.3); border-radius: 10px; cursor: pointer; font-size: 1em; font-weight: bold; transition: all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            💎 Voir les Tarifs
+          </button>
+        </div>
+
         <div style="text-align: center;">
           <button onclick="backToLanguageSelection()" style="padding: 12px 30px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; cursor: pointer; font-size: 1em;">
             ← Retour
@@ -2235,10 +2245,6 @@
               <div class="comm-lang-label">Langue</div>
               <div class="comm-lang-value" id="commLangDisplay">🇫🇷 Français</div>
             </div>
-            <button onclick="showProfilePanel()" class="comm-btn comm-profile-btn">
-              <span id="commUserAvatar" class="comm-avatar"></span>
-              <span id="commUserName" class="comm-user-name">Profil</span>
-            </button>
             <button onclick="showCommunicationSettings()" class="comm-btn comm-settings-btn">⚙️ <span class="comm-settings-text">Paramètres</span></button>
           </div>
         </div>
@@ -2493,11 +2499,8 @@
         </div>
         <span class="user-info" id="userInfo"></span>
         <button class="admin-btn hidden" id="adminBtn" onclick="showAdminPanel()">👤 Admin</button>
-        <button class="profile-btn" id="friendsBtn" onclick="showFriendsPanel()">👥 Amis</button>
-        <button class="profile-btn" id="dmsBtn" onclick="showDMsPanel()">💬 Messages</button>
-        <button class="profile-btn" id="groupsBtn" onclick="showGroupsPanel()">👨‍👩‍👧‍👦 Groupes</button>
-        <button class="profile-btn" id="profileBtn" onclick="showProfilePanel()">⚙️ Profil</button>
-        <button class="logout-btn" onclick="logout()">↗ Logout</button>
+        <button class="profile-btn" id="changeModeBtn" onclick="resetInterfaceChoice()" title="Revenir au choix d'activité et accéder au profil">🔄 Changer de mode</button>
+        <button class="logout-btn" onclick="logout()">↗ Déconnexion</button>
       </div>
     </header>
 

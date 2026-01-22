@@ -2777,6 +2777,22 @@ function resetInterfaceChoice() {
   // Masquer l'interface Communication Home
   document.getElementById('communicationHome').classList.add('hidden');
 
+  // Masquer tous les panneaux et modales de l'interface de traduction
+  const panelsToHide = [
+    'groupChatPanel', 'dmChatPanel', 'groupsPanel', 'dmsPanel',
+    'friendsPanel', 'profilePanel', 'adminPanel', 'settingsPanel',
+    'permissionModal'
+  ];
+  panelsToHide.forEach(panelId => {
+    const panel = document.getElementById(panelId);
+    if (panel) panel.classList.add('hidden');
+  });
+
+  // Arrêter l'enregistrement audio si actif
+  if (state.isRecording) {
+    stopRecording();
+  }
+
   // Effacer le choix d'interface du localStorage
   localStorage.removeItem('interface_mode');
 
