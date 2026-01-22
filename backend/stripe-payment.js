@@ -105,15 +105,10 @@ export async function createCheckoutSession(userEmail, tier, successUrl, cancelU
       url: session.url,
     };
   } catch (error) {
-    logger.error('Error creating Stripe Checkout session', {
-      errorMessage: error.message,
-      errorStack: error.stack,
-      errorName: error.type || error.name,
-      userEmail,
-      tier,
-      priceId: SUBSCRIPTION_TIERS[tier]?.priceId,
-      hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
-    });
+    logger.error(`Error creating Stripe Checkout session: ${error.message}`);
+    logger.error(`Tier: ${tier}, Email: ${userEmail}, PriceID: ${SUBSCRIPTION_TIERS[tier]?.priceId}`);
+    logger.error(`Has Stripe Key: ${!!process.env.STRIPE_SECRET_KEY}`);
+    console.error('Full error:', error); // Log complet dans console
     throw error;
   }
 }
