@@ -1134,16 +1134,14 @@
       50% { opacity: 0.5; transform: scale(1.2); }
     }
 
-    /* VU-Mètre Micro */
+    /* VU-Mètre Micro - Ligne horizontale simple */
     .vu-meter {
-      padding: 10px 20px;
-      text-align: center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
-      background: rgba(0, 0, 0, 0.3);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0;
+      height: 3px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
     }
 
     .vu-meter.hidden {
@@ -1151,48 +1149,36 @@
     }
 
     .vu-meter-label {
-      font-size: 0.85em;
-      color: #888;
-      min-width: 100px;
+      display: none;
     }
 
     .vu-meter-bars {
-      display: flex;
-      align-items: flex-end;
-      gap: 4px;
-      height: 30px;
+      display: none;
     }
 
     .vu-meter-bar {
-      width: 6px;
-      height: 0%;
-      background: linear-gradient(to top, #00ff9d, #00d4aa);
-      border-radius: 3px;
-      transition: height 0.1s ease;
-      opacity: 0.3;
+      display: none;
     }
 
-    .vu-meter-bar.active {
-      opacity: 1;
+    /* Nouvelle barre de progression pour vu-mètre horizontal */
+    .vu-meter::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: var(--vu-width, 0%);
+      background: var(--accent-primary);
+      transition: width 0.1s ease;
     }
 
-    .vu-meter-bar[data-level="1"],
-    .vu-meter-bar[data-level="2"],
-    .vu-meter-bar[data-level="3"] {
-      background: linear-gradient(to top, #00ff9d, #00d4aa);
+    .vu-meter.active::before {
+      animation: vuPulse 0.3s ease-in-out;
     }
 
-    .vu-meter-bar[data-level="4"],
-    .vu-meter-bar[data-level="5"],
-    .vu-meter-bar[data-level="6"],
-    .vu-meter-bar[data-level="7"] {
-      background: linear-gradient(to top, #ffa500, #ff9d00);
-    }
-
-    .vu-meter-bar[data-level="8"],
-    .vu-meter-bar[data-level="9"],
-    .vu-meter-bar[data-level="10"] {
-      background: linear-gradient(to top, #ff6b6b, #ff3d3d);
+    @keyframes vuPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
     }
 
     /* Communication Home Styles */
@@ -1786,6 +1772,18 @@
         border-radius: 0;
         padding: 20px;
         margin: 0;
+        height: 100%;
+        max-height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Panel content avec scroll interne */
+      .panel-content {
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
       }
 
       /* Cacher contrôles centraux */
@@ -1804,10 +1802,10 @@
 
       /* Header */
       header {
-        padding: 15px 10px;
+        padding: 10px 15px;
         display: flex;
-        flex-direction: column;
-        gap: 10px;
+        flex-direction: row;
+        justify-content: space-between;
         align-items: center;
       }
 
@@ -1816,26 +1814,26 @@
       }
 
       .header-content {
-        text-align: center;
+        display: none;
       }
 
       .user-menu {
         width: 100%;
-        justify-content: center;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
       }
 
-      h1 {
-        font-size: 1.5em;
+      /* Montrer uniquement provider badge et bouton retour */
+      .user-info,
+      .admin-btn,
+      .logout-btn {
+        display: none !important;
       }
 
-      .subtitle {
-        font-size: 0.85em;
-      }
-
-      .user-menu {
-        font-size: 0.85em;
-        gap: 8px;
-        flex-wrap: wrap;
+      .profile-btn {
+        padding: 8px 16px;
+        font-size: 0.9em;
       }
 
       /* Panels */
@@ -1862,8 +1860,8 @@
 
       /* Status Bar */
       .status-bar {
-        font-size: 1.1em;
-        padding: 15px;
+        font-size: 0.9em;
+        padding: 8px 15px;
       }
 
       /* Volume Indicator - Plus haut pour ne pas cacher les controls */
@@ -2284,6 +2282,9 @@
           <button id="adminAccessBtn" onclick="showAdminPanel()" style="padding: 12px 24px; background: linear-gradient(135deg, rgba(255,59,59,0.2), rgba(200,0,0,0.2)); color: #ff6b6b; border: 2px solid rgba(255,59,59,0.3); border-radius: 10px; cursor: pointer; font-size: 1em; font-weight: bold; transition: all 0.2s; display: none;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
             🔧 Administration
           </button>
+          <button onclick="logout()" style="padding: 12px 24px; background: linear-gradient(135deg, rgba(255,107,107,0.2), rgba(255,59,59,0.2)); color: #ff6b6b; border: 2px solid rgba(255,107,107,0.3); border-radius: 10px; cursor: pointer; font-size: 1em; font-weight: bold; transition: all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            ↗ Déconnexion
+          </button>
         </div>
 
         <div style="text-align: center;">
@@ -2572,22 +2573,8 @@
     <span id="statusText">Initialisation...</span>
   </div>
 
-  <!-- VU-Mètre Micro (placé sous la status bar) -->
-  <div id="vuMeter" class="vu-meter hidden">
-    <div class="vu-meter-label">Niveau micro:</div>
-    <div class="vu-meter-bars">
-      <div class="vu-meter-bar" data-level="1"></div>
-      <div class="vu-meter-bar" data-level="2"></div>
-      <div class="vu-meter-bar" data-level="3"></div>
-      <div class="vu-meter-bar" data-level="4"></div>
-      <div class="vu-meter-bar" data-level="5"></div>
-      <div class="vu-meter-bar" data-level="6"></div>
-      <div class="vu-meter-bar" data-level="7"></div>
-      <div class="vu-meter-bar" data-level="8"></div>
-      <div class="vu-meter-bar" data-level="9"></div>
-      <div class="vu-meter-bar" data-level="10"></div>
-    </div>
-  </div>
+  <!-- VU-Mètre Micro - Ligne horizontale simple -->
+  <div id="vuMeter" class="vu-meter hidden"></div>
 
   <!-- Main Container -->
   <div class="container">

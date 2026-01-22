@@ -3366,26 +3366,23 @@ function analyzeVolume() {
   return rms;
 }
 
-// Mettre à jour le VU-mètre visuel
+// Mettre à jour le VU-mètre visuel (ligne horizontale)
 function updateVUMeter(volume) {
   const vuMeter = document.getElementById('vuMeter');
   if (!vuMeter) return;
 
-  // Convertir le volume (0-1) en niveau de barres (0-10)
-  const level = Math.min(10, Math.floor(volume * 1000));
+  // Convertir le volume (0-1) en pourcentage (0-100%)
+  const volumePercent = Math.min(100, volume * 1000);
 
-  // Mettre à jour chaque barre
-  const bars = vuMeter.querySelectorAll('.vu-meter-bar');
-  bars.forEach((bar, index) => {
-    const barLevel = index + 1;
-    if (barLevel <= level) {
-      bar.classList.add('active');
-      bar.style.height = '100%';
-    } else {
-      bar.classList.remove('active');
-      bar.style.height = '0%';
-    }
-  });
+  // Mettre à jour la largeur de la barre via une variable CSS
+  vuMeter.style.setProperty('--vu-width', `${volumePercent}%`);
+
+  // Animer si le volume est détecté
+  if (volumePercent > 10) {
+    vuMeter.classList.add('active');
+  } else {
+    vuMeter.classList.remove('active');
+  }
 }
 
 // Détection automatique de la voix (VAD Loop)
