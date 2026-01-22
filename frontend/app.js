@@ -804,7 +804,10 @@ function checkAuth() {
 // Afficher l'application
 function showApp() {
   elements.loginContainer.classList.add('hidden');
-  elements.mainApp.classList.remove('hidden');
+
+  // NE PAS afficher mainApp directement - laisser initLanguageSelection() gérer le flow
+  // elements.mainApp.classList.remove('hidden');
+
   elements.userInfo.textContent = state.user.email;
 
   // Afficher le bouton admin si c'est un admin
@@ -819,7 +822,7 @@ function showApp() {
   // Demander la permission pour les notifications
   requestNotificationPermission();
 
-  // Initialiser la sélection de langues
+  // Initialiser la sélection de langues (affichera le bon écran selon l'état)
   initLanguageSelection();
 
   // Charger les statuts des utilisateurs
@@ -2864,7 +2867,7 @@ function hidePricingPage() {
 
 async function subscribePlan(tier) {
   // Vérifier que l'utilisateur est connecté
-  if (!currentUser) {
+  if (!state.user) {
     alert('Veuillez vous connecter pour souscrire à un abonnement.');
     return;
   }
@@ -2882,7 +2885,7 @@ async function subscribePlan(tier) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
       },
       body: JSON.stringify({ tier })
     });
