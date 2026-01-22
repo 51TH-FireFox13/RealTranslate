@@ -1,8 +1,19 @@
 import Stripe from 'stripe';
 import { logger } from './logger.js';
 
-// Initialisation de Stripe avec la clé secrète
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+// Initialisation lazy de Stripe (au premier appel)
+let stripe = null;
+
+function getStripe() {
+  if (!stripe) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY not configured in environment variables');
+    }
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    logger.info('✅ Stripe initialized successfully');
+  }
+  return stripe;
+}
 
 // Configuration des tiers d'abonnement
 // À synchroniser avec les prix créés dans le Dashboard Stripe
@@ -41,7 +52,7 @@ export async function createCheckoutSession(userEmail, tier, successUrl, cancelU
 
     // Créer ou récupérer le client Stripe
     let customer;
-    const existingCustomers = await stripe.customers.list({
+    const existingCustomers = await getStripe().customers.list({
       email: userEmail,
       limit: 1,
     });
@@ -49,7 +60,7 @@ export async function createCheckoutSession(userEmail, tier, successUrl, cancelU
     if (existingCustomers.data.length > 0) {
       customer = existingCustomers.data[0];
     } else {
-      customer = await stripe.customers.create({
+      customer = await getStripe().customers.create({
         email: userEmail,
         metadata: {
           tier,
@@ -58,7 +69,7 @@ export async function createCheckoutSession(userEmail, tier, successUrl, cancelU
     }
 
     // Créer la session Checkout
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       customer: customer.id,
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -110,7 +121,7 @@ export async function createCheckoutSession(userEmail, tier, successUrl, cancelU
  */
 export async function getCheckoutSession(sessionId) {
   try {
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const session = await getStripe().checkout.sessions.retrieve(sessionId);
     return session;
   } catch (error) {
     logger.error('Error retrieving Checkout session', {
@@ -129,7 +140,7 @@ export async function getCheckoutSession(sessionId) {
  */
 export async function createBillingPortalSession(customerId, returnUrl) {
   try {
-    const session = await stripe.billingPortal.sessions.create({
+    const session = await getStripe().billingPortal.sessions.create({
       customer: customerId,
       return_url: returnUrl,
     });
@@ -153,7 +164,7 @@ export async function createBillingPortalSession(customerId, returnUrl) {
  */
 export async function getCustomerByEmail(email) {
   try {
-    const customers = await stripe.customers.list({
+    const customers = await getStripe().customers.list({
       email,
       limit: 1,
     });
@@ -175,7 +186,7 @@ export async function getCustomerByEmail(email) {
  */
 export async function getActiveSubscription(customerId) {
   try {
-    const subscriptions = await stripe.subscriptions.list({
+    const subscriptions = await getStripe().subscriptions.list({
       customer: customerId,
       status: 'active',
       limit: 1,
@@ -215,7 +226,7 @@ export async function handleStripeWebhook(event, authManager) {
 
         // Récupérer l'abonnement associé
         if (session.subscription) {
-          const subscription = await stripe.subscriptions.retrieve(session.subscription);
+          const subscription = await getStripe().subscriptions.retrieve(session.subscription);
           const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
 
           // Activer l'abonnement dans la base de données
@@ -285,7 +296,7 @@ export async function handleStripeWebhook(event, authManager) {
       // Paiement de facture échoué
       case 'invoice.payment_failed': {
         const invoice = event.data.object;
-        const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+        const subscription = await getStripe().subscriptions.retrieve(invoice.subscription);
         const userEmail = subscription.metadata.userEmail;
 
         logger.warn('Invoice payment failed', {
@@ -303,7 +314,7 @@ export async function handleStripeWebhook(event, authManager) {
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object;
         if (invoice.subscription) {
-          const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+          const subscription = await getStripe().subscriptions.retrieve(invoice.subscription);
           const userEmail = subscription.metadata.userEmail;
           const tier = subscription.metadata.tier;
           const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
@@ -341,7 +352,7 @@ export async function handleStripeWebhook(event, authManager) {
  */
 export function constructWebhookEvent(payload, signature, webhookSecret) {
   try {
-    const event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+    const event = getStripe().webhooks.constructEvent(payload, signature, webhookSecret);
     return event;
   } catch (error) {
     logger.error('Webhook signature verification failed', {
