@@ -2995,8 +2995,8 @@ function displayCommunicationDMs(conversations) {
 
 // Afficher les paramètres de communication
 function showCommunicationSettings() {
-  // Afficher le panneau des paramètres (réutilise le panneau existant)
-  showSettingsPanel();
+  // Afficher le panneau de profil qui contient les paramètres
+  showProfilePanel();
 }
 
 // Réinitialiser le choix d'interface (retour à l'écran de sélection)
