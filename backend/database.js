@@ -6,18 +6,20 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const DB_FILE = join(__dirname, 'realtranslate.db');
+// Support for test database via environment variable
+const DB_FILE = process.env.DB_FILE || join(__dirname, 'realtranslate.db');
 
 // Connexion SQLite
 let db;
 
-export function initDatabase() {
+export function initDatabase(dbPath = null) {
+  const finalPath = dbPath || DB_FILE;
   try {
-    db = new Database(DB_FILE);
+    db = new Database(finalPath);
     db.pragma('journal_mode = WAL'); // Write-Ahead Logging pour meilleures perfs
     db.pragma('foreign_keys = ON'); // Intégrité référentielle
 
-    logger.info('SQLite database connected', { file: DB_FILE });
+    logger.info('SQLite database connected', { file: finalPath });
 
     // Créer les tables
     createTables();
@@ -522,3 +524,9 @@ export default {
   archivedDB,
   statusesDB
 };
+
+// Auto-initialize database on module load
+// This ensures db is ready when auth-sqlite.js or other modules import it
+if (!db) {
+  initDatabase();
+}

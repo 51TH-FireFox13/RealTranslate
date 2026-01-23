@@ -77,11 +77,15 @@ class AuthManagerSQLite {
     this.tokens = {}; // Tokens de session (en mémoire uniquement)
     this.accessTokens = this.createAccessTokensProxy();
 
+    // Quotas usage en mémoire (pas encore persisté en DB)
+    this.quotaUsageStore = new Map(); // email -> { transcribe, translate, speak }
+
     // Créer admin par défaut si absent
     this.ensureDefaultAdmin();
   }
 
   createUsersProxy() {
+    const self = this;
     return new Proxy({}, {
       get(target, email) {
         if (typeof email === 'symbol' || email === 'inspect' || email === 'constructor') {
@@ -89,6 +93,9 @@ class AuthManagerSQLite {
         }
         const user = usersDB.getByEmail(email);
         if (!user) return undefined;
+
+        // Récupérer quotaUsage depuis le store en mémoire
+        const quotaUsage = self.quotaUsageStore.get(email) || { transcribe: 0, translate: 0, speak: 0 };
 
         // Convertir format DB → format legacy
         return {
@@ -111,7 +118,7 @@ class AuthManagerSQLite {
           archivedGroups: user.archivedGroups || [],
           archivedDMs: user.archivedDMs || [],
           lastQuotaReset: user.lastQuotaReset,
-          quotaUsage: user.quotaUsage || { transcribe: 0, translate: 0, speak: 0 }
+          quotaUsage: quotaUsage
         };
       },
 
@@ -382,14 +389,17 @@ class AuthManagerSQLite {
 
   incrementQuota(email, action) {
     // Note: quotaUsage n'est pas encore dans la DB
-    // Pour l'instant on garde en mémoire comme avant
-    const user = this.users[email];
+    // Utiliser le store en mémoire
+    const user = usersDB.getByEmail(email);
     if (!user) return;
 
-    if (!user.quotaUsage) {
-      user.quotaUsage = { transcribe: 0, translate: 0, speak: 0 };
+    let quotaUsage = this.quotaUsageStore.get(email);
+    if (!quotaUsage) {
+      quotaUsage = { transcribe: 0, translate: 0, speak: 0 };
+      this.quotaUsageStore.set(email, quotaUsage);
     }
-    user.quotaUsage[action] = (user.quotaUsage[action] || 0) + 1;
+
+    quotaUsage[action] = (quotaUsage[action] || 0) + 1;
   }
 }
 
@@ -437,7 +447,6 @@ export {
   authMiddleware,
   requirePermission,
   requireAdmin,
-  SUBSCRIPTION_TIERS,
   PERMISSIONS
 };
 

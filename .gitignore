@@ -19,3 +19,11 @@ backend/statuses.json
 backend/realtranslate.db
 backend/realtranslate.db-shm
 backend/realtranslate.db-wal
+
+# Bases de test
+backend/test-*.db
+backend/test-*.db-shm
+backend/test-*.db-wal
+
+# Coverage
+backend/coverage/
