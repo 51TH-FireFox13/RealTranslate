@@ -70,6 +70,7 @@ export function getGroupMessages(groupId, limit = 100) {
     content: m.content,
     originalLang: m.original_lang,
     translations: m.translations ? JSON.parse(m.translations) : {},
+    reactions: m.reactions ? JSON.parse(m.reactions) : {},
     fileInfo: m.file_info ? JSON.parse(m.file_info) : null,
     timestamp: m.timestamp
   }));
@@ -87,6 +88,7 @@ export function addGroupMessage(groupId, message) {
     content: message.content,
     originalLang: message.originalLang,
     translations: message.translations,
+    reactions: message.reactions,
     fileInfo: message.fileInfo,
     timestamp: message.timestamp
   });

@@ -86,6 +86,7 @@ function createTables() {
       content TEXT NOT NULL,
       original_lang TEXT NOT NULL,
       translations TEXT, -- JSON: {lang: text}
+      reactions TEXT, -- JSON: {emoji: [{email, displayName, timestamp}]}
       file_info TEXT, -- JSON: {filename, size, url}
       timestamp INTEGER DEFAULT (strftime('%s', 'now') * 1000),
       FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
@@ -118,6 +119,17 @@ function createTables() {
   // Index pour DMs
   db.exec(`CREATE INDEX IF NOT EXISTS idx_dm_conversation ON direct_messages(conversation_id, timestamp DESC)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_dm_users ON direct_messages(from_email, to_email)`);
+
+  // Migration: Ajouter reactions column si elle n'existe pas
+  try {
+    db.exec(`ALTER TABLE messages ADD COLUMN reactions TEXT`);
+    logger.info('Migration: reactions column added to messages table');
+  } catch (error) {
+    // Column already exists, ignore
+    if (!error.message.includes('duplicate column')) {
+      logger.warn('Migration warning', { error: error.message });
+    }
+  }
 
   // Table access_tokens
   db.exec(`
@@ -319,8 +331,8 @@ export const messagesDB = {
 
   create(message) {
     const stmt = db.prepare(`
-      INSERT INTO messages (id, group_id, from_email, from_display_name, content, original_lang, translations, file_info, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO messages (id, group_id, from_email, from_display_name, content, original_lang, translations, reactions, file_info, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     return stmt.run(
       message.id,
@@ -330,16 +342,31 @@ export const messagesDB = {
       message.content,
       message.originalLang,
       JSON.stringify(message.translations || {}),
+      JSON.stringify(message.reactions || {}),
       message.fileInfo ? JSON.stringify(message.fileInfo) : null,
       message.timestamp || Date.now()
     );
   },
 
   update(messageId, fields) {
+    const updates = [];
+    const values = [];
+
     if (fields.translations) {
-      const stmt = db.prepare('UPDATE messages SET translations = ? WHERE id = ?');
-      return stmt.run(JSON.stringify(fields.translations), messageId);
+      updates.push('translations = ?');
+      values.push(JSON.stringify(fields.translations));
     }
+
+    if (fields.reactions !== undefined) {
+      updates.push('reactions = ?');
+      values.push(JSON.stringify(fields.reactions));
+    }
+
+    if (updates.length === 0) return;
+
+    values.push(messageId);
+    const stmt = db.prepare(`UPDATE messages SET ${updates.join(', ')} WHERE id = ?`);
+    return stmt.run(...values);
   },
 
   delete(messageId) {

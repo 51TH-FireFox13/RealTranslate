@@ -549,8 +549,11 @@ io.on('connection', (socket) => {
         });
       }
 
-      // Sauvegarder les messages
-      // Auto-saved via proxy
+      // Sauvegarder les reactions dans la DB
+      messagesDB.update(messageId, { reactions: message.reactions });
+
+      // Vider le cache pour forcer le rechargement
+      clearMessagesCache();
 
       // Diffuser la mise à jour à tous les membres du groupe
       io.to(groupId).emit('message_reaction_updated', {
@@ -605,11 +608,11 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Supprimer le message
-      messages[groupId].splice(messageIndex, 1);
+      // Supprimer le message de la DB
+      messagesDB.delete(messageId);
 
-      // Sauvegarder
-      // Auto-saved via proxy
+      // Vider le cache pour forcer le rechargement
+      clearMessagesCache();
 
       // Diffuser la suppression à tous les membres du groupe
       io.to(groupId).emit('message_deleted', {
@@ -1008,7 +1011,7 @@ app.delete('/api/auth/me', authMiddleware, (req, res) => {
     }
 
     // Supprimer l'utilisateur de l'objet
-    delete authManager.users[user.id];
+    delete authManager.users[userEmail];
     authManager.saveUsers();
 
     // Révoquer tous les tokens de cet utilisateur
@@ -2228,8 +2231,8 @@ app.post('/api/groups/:groupId/members', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Déjà membre du groupe' });
     }
 
-    // Ajouter le membre
-    group.members.push({
+    // Ajouter le membre à la DB
+    groupsDB.addMember(groupId, {
       email: memberEmail,
       displayName: newMember.displayName,
       role: 'member'
@@ -2238,7 +2241,6 @@ app.post('/api/groups/:groupId/members', authMiddleware, async (req, res) => {
     if (!newMember.groups) newMember.groups = [];
     newMember.groups.push(groupId);
 
-    // Auto-saved via proxy
     authManager.saveUsers();
 
     logger.info(`Member added to group: ${memberEmail} -> ${groupId}`);
@@ -2272,15 +2274,14 @@ app.delete('/api/groups/:groupId/members/:memberEmail', authMiddleware, async (r
       return res.status(400).json({ error: 'Impossible de retirer le créateur' });
     }
 
-    // Retirer le membre
-    group.members = group.members.filter(m => m.email !== memberEmail);
+    // Retirer le membre de la DB
+    groupsDB.removeMember(groupId, memberEmail);
 
     const member = authManager.users[memberEmail];
     if (member && member.groups) {
       member.groups = member.groups.filter(g => g !== groupId);
     }
 
-    // Auto-saved via proxy
     authManager.saveUsers();
 
     logger.info(`Member removed from group: ${memberEmail} <- ${groupId}`);
