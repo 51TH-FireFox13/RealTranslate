@@ -226,13 +226,9 @@ io.on('connection', (socket) => {
   }
   userSockets[userEmail].add(socket.id);
 
-  // Mettre à jour le statut en ligne
+  // Mettre à jour le statut en ligne (SQLite)
   if (wasOffline) {
-    userStatuses[userEmail] = {
-      online: true,
-      lastSeen: new Date().toISOString()
-    };
-    saveStatuses();
+    statusesDB.setOnline(userEmail);
 
     // Notifier tous les utilisateurs concernés (groupes + DMs)
     const user = authManager.users[userEmail];
@@ -252,8 +248,9 @@ io.on('connection', (socket) => {
       });
     }
 
-    // Ajouter les contacts DM
-    Object.keys(directMessages).forEach(convId => {
+    // Ajouter les contacts DM (depuis SQLite)
+    const userConvs = getUserConversations(userEmail);
+    userConvs.forEach(convId => {
       const [email1, email2] = convId.split('_');
       if (email1 === userEmail) {
         notifiedUsers.add(email2);
@@ -266,11 +263,12 @@ io.on('connection', (socket) => {
     notifiedUsers.forEach(targetEmail => {
       if (userSockets[targetEmail]) {
         userSockets[targetEmail].forEach(socketId => {
+          const status = statusesDB.get(userEmail) || {};
           io.to(socketId).emit('user_status_changed', {
             email: userEmail,
             displayName: displayName,
             online: true,
-            lastSeen: userStatuses[userEmail].lastSeen
+            lastSeen: status.last_seen || Date.now()
           });
         });
       }
@@ -672,12 +670,8 @@ io.on('connection', (socket) => {
       if (userSockets[userEmail].size === 0) {
         delete userSockets[userEmail];
 
-        const lastSeenTime = new Date().toISOString();
-        userStatuses[userEmail] = {
-          online: false,
-          lastSeen: lastSeenTime
-        };
-        saveStatuses();
+        // Mettre à jour le statut offline (SQLite)
+        statusesDB.setOffline(userEmail);
 
         // Notifier tous les utilisateurs concernés (groupes + DMs)
         const user = authManager.users[userEmail];
@@ -698,7 +692,7 @@ io.on('connection', (socket) => {
         }
 
         // Ajouter les contacts DM
-        Object.keys(directMessages).forEach(convId => {
+        getUserConversations(userEmail).forEach(convId => {
           const [email1, email2] = convId.split('_');
           if (email1 === userEmail) {
             notifiedUsers.add(email2);
@@ -1925,30 +1919,30 @@ app.get('/api/dms', authMiddleware, async (req, res) => {
     // Filtrer les DMs archivés
     const archivedDMs = user.archivedDMs || [];
 
-    // Parcourir toutes les conversations pour trouver celles de l'utilisateur
-    for (const [convId, msgs] of Object.entries(directMessages)) {
+    // Récupérer les conversations de l'utilisateur depuis SQLite
+    const userConvs = getUserConversations(userEmail);
+
+    for (const convId of userConvs) {
+      // Exclure les conversations archivées
+      if (archivedDMs.includes(convId)) continue;
+
       const [email1, email2] = convId.split('_');
+      const otherEmail = email1 === userEmail ? email2 : email1;
+      const otherUser = authManager.users[otherEmail];
 
-      if (email1 === userEmail || email2 === userEmail) {
-        // Exclure les conversations archivées
-        if (archivedDMs.includes(convId)) continue;
-
-        const otherEmail = email1 === userEmail ? email2 : email1;
-        const otherUser = authManager.users[otherEmail];
-
-        if (otherUser) {
-          const lastMessage = msgs.length > 0 ? msgs[msgs.length - 1] : null;
-          conversations.push({
-            conversationId: convId,
-            otherUser: {
-              email: otherEmail,
-              displayName: otherUser.displayName || otherEmail.split('@')[0],
-              avatar: otherUser.avatar
-            },
-            lastMessage,
-            unreadCount: 0 // À implémenter plus tard
-          });
-        }
+      if (otherUser) {
+        const msgs = getConversationMessages(convId, 100);
+        const lastMessage = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+        conversations.push({
+          conversationId: convId,
+          otherUser: {
+            email: otherEmail,
+            displayName: otherUser.displayName || otherEmail.split('@')[0],
+            avatar: otherUser.avatar
+          },
+          lastMessage,
+          unreadCount: 0 // À implémenter plus tard
+        });
       }
     }
 
@@ -2025,12 +2019,15 @@ app.get('/api/statuses', authMiddleware, async (req, res) => {
       });
     }
 
-    // Récupérer les statuts
+    // Récupérer les statuts depuis SQLite
     const statuses = {};
     relevantUsers.forEach(email => {
-      const status = userStatuses[email];
+      const status = statusesDB.get(email);
       if (status) {
-        statuses[email] = status;
+        statuses[email] = {
+          online: status.status === 'online',
+          lastSeen: status.last_seen
+        };
       } else {
         // Par défaut, considérer comme hors ligne
         statuses[email] = {
@@ -2301,21 +2298,20 @@ app.get('/api/groups/public', authMiddleware, async (req, res) => {
     const userEmail = req.user.email;
     const user = authManager.users[userEmail];
 
-    // Filtrer les groupes publics
-    const publicGroups = Object.values(groups)
-      .filter(g => g.visibility === 'public')
-      .map(g => {
-        // Vérifier si l'utilisateur est déjà membre
-        const isMember = g.members.some(m => m.email === userEmail);
-        return {
-          id: g.id,
-          name: g.name,
-          creator: g.creator,
-          memberCount: g.members.length,
-          isMember,
-          createdAt: g.createdAt
-        };
-      });
+    // Récupérer les groupes publics depuis SQLite
+    const publicGroupsRaw = groupsDB.getPublic();
+    const publicGroups = publicGroupsRaw.map(g => {
+      const members = groupsDB.getMembers(g.id);
+      const isMember = members.some(m => m.user_email === userEmail);
+      return {
+        id: g.id,
+        name: g.name,
+        creator: g.creator,
+        memberCount: members.length,
+        isMember,
+        createdAt: g.created_at
+      };
+    });
 
     res.json({ groups: publicGroups });
 
@@ -2433,17 +2429,22 @@ const adminMiddleware = (req, res, next) => {
 // Lister tous les groupes (admin only)
 app.get('/api/admin/groups', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const allGroups = Object.values(groups).map(g => ({
-      id: g.id,
-      name: g.name,
-      creator: g.creator,
-      visibility: g.visibility,
-      memberCount: g.members.length,
-      createdAt: g.createdAt
-    }));
+    // Récupérer tous les groupes depuis SQLite
+    const allGroupsRaw = groupsDB.getAll();
+    const allGroups = allGroupsRaw.map(g => {
+      const members = groupsDB.getMembers(g.id);
+      return {
+        id: g.id,
+        name: g.name,
+        creator: g.creator,
+        visibility: g.visibility,
+        memberCount: members.length,
+        createdAt: g.created_at
+      };
+    });
 
     // Trier par date de création (plus récent en premier)
-    allGroups.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    allGroups.sort((a, b) => b.createdAt - a.createdAt);
 
     res.json({ groups: allGroups });
 
