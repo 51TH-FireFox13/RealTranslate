@@ -470,12 +470,7 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Vérifier qu'ils sont amis
-      const fromUser = authManager.users[fromEmail];
-      if (!fromUser.friends || !fromUser.friends.includes(toEmail)) {
-        socket.emit('error', { message: 'Vous devez être amis pour échanger des messages' });
-        return;
-      }
+      // Note: Pas de vérification d'amitié - permet d'envoyer des DMs à tout utilisateur
 
       // Créer le message
       const messageId = `dm-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
@@ -1941,6 +1936,42 @@ app.post('/api/upload-avatar', authMiddleware, avatarUpload.single('avatar'), as
 });
 
 // ===================================
+// ROUTES API - UTILISATEURS
+// ===================================
+
+// Liste des utilisateurs (pour sélection DM)
+app.get('/api/users/list', authMiddleware, async (req, res) => {
+  try {
+    const currentUserEmail = req.user.email;
+    const usersList = [];
+
+    // Parcourir tous les utilisateurs et retourner uniquement les infos publiques
+    for (const [email, userData] of Object.entries(authManager.users)) {
+      // Ne pas inclure l'utilisateur courant dans la liste
+      if (email !== currentUserEmail) {
+        usersList.push({
+          email: userData.email,
+          name: userData.name,
+          avatar: userData.avatar || null,
+          role: userData.role
+        });
+      }
+    }
+
+    // Trier par nom
+    usersList.sort((a, b) => a.name.localeCompare(b.name));
+
+    res.json({
+      success: true,
+      users: usersList
+    });
+  } catch (error) {
+    logger.error('Error listing users', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des utilisateurs' });
+  }
+});
+
+// ===================================
 // ROUTES API - MESSAGES PRIVÉS (DM)
 // ===================================
 
@@ -2007,11 +2038,8 @@ app.get('/api/dms/:otherUserEmail', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Utilisateur introuvable' });
     }
 
-    // Vérifier qu'ils sont amis
-    const user = authManager.users[userEmail];
-    if (!user.friends || !user.friends.includes(otherUserEmail)) {
-      return res.status(403).json({ error: 'Vous devez être amis pour échanger des messages' });
-    }
+    // Note: Pas de vérification d'amitié - permet d'envoyer des DMs à tout utilisateur
+    // (Système de blocage peut être ajouté plus tard si nécessaire)
 
     const convId = getConversationId(userEmail, otherUserEmail);
     const msgs = directMessages[convId] || [];

@@ -4515,10 +4515,10 @@ let currentDMMessages = [];
 
 // Afficher le panneau des DMs
 function showDMsPanel() {
-  // Si en mode Communication, retourner à la page d'accueil Communication
+  // Si en mode Communication, ouvrir la modal de sélection d'utilisateur
   const interfaceMode = localStorage.getItem('interface_mode');
   if (interfaceMode === 'communication') {
-    backToCommunicationHome();
+    showNewDMModal();
     return;
   }
 
@@ -4530,6 +4530,85 @@ function showDMsPanel() {
 // Fermer le panneau des DMs
 function closeDMsPanel() {
   document.getElementById('dmsPanel').classList.add('hidden');
+}
+
+// Afficher la modal de sélection d'utilisateur pour nouveau DM
+function showNewDMModal() {
+  document.getElementById('newDMModal').classList.remove('hidden');
+  loadUsersList();
+}
+
+// Fermer la modal de sélection d'utilisateur
+function closeNewDMModal() {
+  document.getElementById('newDMModal').classList.add('hidden');
+}
+
+// Charger la liste des utilisateurs pour nouveau DM
+async function loadUsersList() {
+  const content = document.getElementById('userSelectionContent');
+
+  try {
+    content.innerHTML = '<div style="text-align: center; padding: 20px;">Chargement...</div>';
+
+    const response = await fetch(`${API_BASE_URL}/api/users/list`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to load users');
+    }
+
+    const data = await response.json();
+
+    if (data.users.length === 0) {
+      content.innerHTML = '<div style="text-align: center; padding: 20px; color: #888;">Aucun utilisateur disponible</div>';
+      return;
+    }
+
+    // Afficher la liste des utilisateurs
+    let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
+
+    for (const user of data.users) {
+      const avatarUrl = user.avatar || '/icon-192.png';
+      const roleIcon = user.role === 'admin' ? '👑' : '';
+
+      html += `
+        <div style="display: flex; align-items: center; gap: 15px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; transition: background 0.2s;"
+             onclick="startDMWithUser('${user.email}')"
+             onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+             onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+          <img src="${avatarUrl}" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+          <div style="flex: 1;">
+            <div style="font-weight: bold; color: var(--accent-primary);">${roleIcon} ${user.name}</div>
+            <div style="font-size: 0.85em; color: #888;">${user.email}</div>
+          </div>
+          <div style="color: var(--accent-secondary); font-size: 1.2em;">→</div>
+        </div>
+      `;
+    }
+
+    html += '</div>';
+    content.innerHTML = html;
+
+  } catch (error) {
+    logger.error('Error loading users list', error);
+    content.innerHTML = '<div style="text-align: center; padding: 20px; color: #f44;">Erreur lors du chargement des utilisateurs</div>';
+  }
+}
+
+// Démarrer une conversation DM avec un utilisateur
+async function startDMWithUser(recipientEmail) {
+  try {
+    // Fermer la modal
+    closeNewDMModal();
+
+    // Ouvrir le chat DM avec cet utilisateur
+    await openDMChat(recipientEmail);
+
+  } catch (error) {
+    console.error('Error starting DM', error);
+    alert('Erreur lors du démarrage de la conversation');
+  }
 }
 
 // Charger les conversations DM
