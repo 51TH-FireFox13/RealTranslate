@@ -20,6 +20,34 @@ import {
 } from './auth.js';
 import stripePayment from './stripe-payment.js';
 import crypto from 'crypto';
+import {
+  initDatabase,
+  usersDB,
+  groupsDB,
+  messagesDB,
+  directMessagesDB,
+  tokensDB,
+  archivedDB,
+  statusesDB
+} from './database.js';
+import {
+  getGroupWithMembers,
+  getUserGroups,
+  getGroupMessages,
+  addGroupMessage,
+  getConversationMessages,
+  addDirectMessage,
+  getUserConversations
+} from './db-helpers.js';
+import {
+  groups,
+  messages,
+  messagesEnhanced,
+  directMessages,
+  directMessagesEnhanced,
+  clearMessagesCache,
+  clearDMsCache
+} from './db-proxy.js';
 
 dotenv.config();
 
@@ -81,109 +109,21 @@ app.use('/uploads', express.static(join(__dirname, 'uploads'))); // Servir les f
 logger.info('RealTranslate Backend starting...');
 
 // ===================================
-// GESTION DES GROUPES ET MESSAGES
+// GESTION DES DONNÉES (SQLite)
 // ===================================
 
-// Structures de données en mémoire (à migrer vers DB plus tard)
-const groups = {}; // groupId -> { id, name, creator, members: [{ email, displayName, role }], createdAt }
-const messages = {}; // groupId -> [{ id, from, content, translations: {lang: text}, timestamp }]
-const directMessages = {}; // conversationId -> [{ id, from, to, content, translations: {lang: text}, timestamp }]
+// Initialiser la base de données SQLite
+initDatabase();
+logger.info('SQLite database initialized');
+
+// Structures de données EN MÉMOIRE uniquement (non persistées)
 const onlineUsers = {}; // socketId -> { email, displayName }
 const userSockets = {}; // email -> Set of socketIds
-const userStatuses = {}; // email -> { online: boolean, lastSeen: timestamp }
-
-// Charger les groupes depuis le fichier
-const GROUPS_FILE = join(__dirname, 'groups.json');
-const MESSAGES_FILE = join(__dirname, 'messages.json');
-const DMS_FILE = join(__dirname, 'dms.json');
-const STATUSES_FILE = join(__dirname, 'statuses.json');
-
-async function loadGroups() {
-  try {
-    const data = await fs.readFile(GROUPS_FILE, 'utf8');
-    const loadedGroups = JSON.parse(data);
-    Object.assign(groups, loadedGroups);
-    logger.info('Groups loaded from file', { count: Object.keys(groups).length });
-  } catch (error) {
-    logger.info('No groups file found, starting fresh');
-  }
-}
-
-async function saveGroups() {
-  try {
-    await fs.writeFile(GROUPS_FILE, JSON.stringify(groups, null, 2));
-  } catch (error) {
-    logger.error('Error saving groups', error);
-  }
-}
-
-async function loadMessages() {
-  try {
-    const data = await fs.readFile(MESSAGES_FILE, 'utf8');
-    const loadedMessages = JSON.parse(data);
-    Object.assign(messages, loadedMessages);
-    logger.info('Messages loaded from file', { groups: Object.keys(messages).length });
-  } catch (error) {
-    logger.info('No messages file found, starting fresh');
-  }
-}
-
-async function saveMessages() {
-  try {
-    await fs.writeFile(MESSAGES_FILE, JSON.stringify(messages, null, 2));
-  } catch (error) {
-    logger.error('Error saving messages', error);
-  }
-}
-
-async function loadDirectMessages() {
-  try {
-    const data = await fs.readFile(DMS_FILE, 'utf8');
-    const loadedDMs = JSON.parse(data);
-    Object.assign(directMessages, loadedDMs);
-    logger.info('Direct messages loaded from file', { conversations: Object.keys(directMessages).length });
-  } catch (error) {
-    logger.info('No DMs file found, starting fresh');
-  }
-}
-
-async function saveDirectMessages() {
-  try {
-    await fs.writeFile(DMS_FILE, JSON.stringify(directMessages, null, 2));
-  } catch (error) {
-    logger.error('Error saving direct messages', error);
-  }
-}
 
 // Générer un ID de conversation entre 2 utilisateurs (toujours dans le même ordre)
 function getConversationId(email1, email2) {
   return [email1, email2].sort().join('_');
 }
-
-async function loadStatuses() {
-  try {
-    const data = await fs.readFile(STATUSES_FILE, 'utf8');
-    const loadedStatuses = JSON.parse(data);
-    Object.assign(userStatuses, loadedStatuses);
-    logger.info('User statuses loaded from file', { users: Object.keys(userStatuses).length });
-  } catch (error) {
-    logger.info('No statuses file found, starting fresh');
-  }
-}
-
-async function saveStatuses() {
-  try {
-    await fs.writeFile(STATUSES_FILE, JSON.stringify(userStatuses, null, 2));
-  } catch (error) {
-    logger.error('Error saving user statuses', error);
-  }
-}
-
-// Charger au démarrage
-await loadGroups();
-await loadMessages();
-await loadDirectMessages();
-await loadStatuses();
 
 // ===================================
 // WEBSOCKET HANDLERS
@@ -423,12 +363,12 @@ io.on('connection', (socket) => {
 
       await Promise.all(translationPromises);
 
-      // Sauvegarder le message
-      if (!messages[groupId]) {
-        messages[groupId] = [];
+      // Sauvegarder le message (via proxy SQLite)
+      if (!messagesEnhanced[groupId]) {
+        messagesEnhanced[groupId] = [];
       }
-      messages[groupId].push(message);
-      await saveMessages();
+      messagesEnhanced[groupId].push(message);
+      // Auto-saved via proxy, no need for saveMessages()
 
       // Diffuser à tous les membres du groupe
       io.to(groupId).emit('new_message', message);
@@ -499,13 +439,13 @@ io.on('connection', (socket) => {
         message.translations[targetLang] = translation;
       }
 
-      // Sauvegarder le message
+      // Sauvegarder le message (via proxy SQLite)
       const convId = getConversationId(fromEmail, toEmail);
-      if (!directMessages[convId]) {
-        directMessages[convId] = [];
+      if (!directMessagesEnhanced[convId]) {
+        directMessagesEnhanced[convId] = [];
       }
-      directMessages[convId].push(message);
-      await saveDirectMessages();
+      directMessagesEnhanced[convId].push(message);
+      // Auto-saved via proxy, no need for saveDirectMessages()
 
       // Envoyer au destinataire (si connecté)
       if (userSockets[toEmail]) {
@@ -612,7 +552,7 @@ io.on('connection', (socket) => {
       }
 
       // Sauvegarder les messages
-      await saveMessages();
+      // Auto-saved via proxy
 
       // Diffuser la mise à jour à tous les membres du groupe
       io.to(groupId).emit('message_reaction_updated', {
@@ -671,7 +611,7 @@ io.on('connection', (socket) => {
       messages[groupId].splice(messageIndex, 1);
 
       // Sauvegarder
-      await saveMessages();
+      // Auto-saved via proxy
 
       // Diffuser la suppression à tous les membres du groupe
       io.to(groupId).emit('message_deleted', {
@@ -2158,16 +2098,17 @@ app.post('/api/groups', authMiddleware, async (req, res) => {
       creator: creatorEmail,
       members,
       visibility: groupVisibility,
-      createdAt: new Date().toISOString()
+      createdAt: Date.now() // Timestamp pour cohérence DB
     };
 
-    messages[groupId] = [];
+    // Messages array auto-created by proxy when accessed
+    // No need to initialize messages[groupId] = []
 
     // Ajouter à la liste des groupes du créateur
     if (!creator.groups) creator.groups = [];
     creator.groups.push(groupId);
 
-    await saveGroups();
+    // Auto-saved via proxy, no need for saveGroups()
     authManager.saveUsers();
 
     logger.info(`Group created: ${groupId} by ${creatorEmail}`, { name, memberCount: members.length });
@@ -2300,7 +2241,7 @@ app.post('/api/groups/:groupId/members', authMiddleware, async (req, res) => {
     if (!newMember.groups) newMember.groups = [];
     newMember.groups.push(groupId);
 
-    await saveGroups();
+    // Auto-saved via proxy
     authManager.saveUsers();
 
     logger.info(`Member added to group: ${memberEmail} -> ${groupId}`);
@@ -2342,7 +2283,7 @@ app.delete('/api/groups/:groupId/members/:memberEmail', authMiddleware, async (r
       member.groups = member.groups.filter(g => g !== groupId);
     }
 
-    await saveGroups();
+    // Auto-saved via proxy
     authManager.saveUsers();
 
     logger.info(`Member removed from group: ${memberEmail} <- ${groupId}`);
@@ -2416,7 +2357,7 @@ app.post('/api/groups/:groupId/join', authMiddleware, async (req, res) => {
     if (!user.groups) user.groups = [];
     user.groups.push(groupId);
 
-    await saveGroups();
+    // Auto-saved via proxy
     authManager.saveUsers();
 
     logger.info(`User joined public group: ${userEmail} -> ${groupId}`);
@@ -2562,8 +2503,8 @@ app.delete('/api/admin/groups/:groupId', authMiddleware, adminMiddleware, async 
     // Supprimer le groupe
     delete groups[groupId];
 
-    await saveGroups();
-    await saveMessages();
+    // Auto-saved via proxy
+    // Auto-saved via proxy
     authManager.saveUsers();
 
     logger.info(`Group deleted by admin: ${groupId} (${group.name})`);
