@@ -2673,6 +2673,9 @@
         <button id="tabSubscriptions" onclick="switchAdminTab('subscriptions')" style="flex: 1; padding: 12px 20px; background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 1em;">
           💳 Abonnements & Jetons
         </button>
+        <button id="tabGroups" onclick="switchAdminTab('groups')" style="flex: 1; padding: 12px 20px; background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 1em;">
+          💬 Groupes
+        </button>
         <button id="tabLogs" onclick="switchAdminTab('logs')" style="flex: 1; padding: 12px 20px; background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 1em;">
           📋 Logs
         </button>
@@ -2777,7 +2780,54 @@
         </div>
       </div>
 
-      <!-- TAB 3: LOGS -->
+      <!-- TAB 3: GROUPES -->
+      <div id="adminTabGroups" style="display: none;">
+        <!-- All Groups Section -->
+        <div class="admin-section">
+          <h3>💬 Tous les Groupes</h3>
+          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <button class="create-user-btn" onclick="loadAllGroupsAdmin()" style="margin: 0;">🔄 Actualiser</button>
+            <div style="flex: 1; display: flex; gap: 10px; align-items: center;">
+              <label style="color: #888; white-space: nowrap;">Filtrer:</label>
+              <select id="groupFilterType" onchange="loadAllGroupsAdmin()" style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+                <option value="all">Tous les groupes</option>
+                <option value="public">🌐 Publics uniquement</option>
+                <option value="private">🔒 Privés uniquement</option>
+              </select>
+            </div>
+          </div>
+          <div id="adminGroupsContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 500px; overflow-y: auto;">
+            <div style="text-align: center; padding: 20px; color: #888;">
+              <p>Cliquez sur Actualiser pour charger les groupes</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group Statistics -->
+        <div class="admin-section">
+          <h3>📊 Statistiques</h3>
+          <div id="groupStatsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div style="background: rgba(0,255,157,0.1); border: 2px solid #00ff9d; border-radius: 10px; padding: 15px; text-align: center;">
+              <div style="font-size: 2em; font-weight: bold; color: #00ff9d;" id="totalGroupsCount">-</div>
+              <div style="color: #888; margin-top: 5px;">Total groupes</div>
+            </div>
+            <div style="background: rgba(100,180,255,0.1); border: 2px solid #64b4ff; border-radius: 10px; padding: 15px; text-align: center;">
+              <div style="font-size: 2em; font-weight: bold; color: #64b4ff;" id="publicGroupsCount">-</div>
+              <div style="color: #888; margin-top: 5px;">Groupes publics</div>
+            </div>
+            <div style="background: rgba(255,107,107,0.1); border: 2px solid #ff6b6b; border-radius: 10px; padding: 15px; text-align: center;">
+              <div style="font-size: 2em; font-weight: bold; color: #ff6b6b;" id="privateGroupsCount">-</div>
+              <div style="color: #888; margin-top: 5px;">Groupes privés</div>
+            </div>
+            <div style="background: rgba(255,212,59,0.1); border: 2px solid #ffd43b; border-radius: 10px; padding: 15px; text-align: center;">
+              <div style="font-size: 2em; font-weight: bold; color: #ffd43b;" id="totalMembersCount">-</div>
+              <div style="color: #888; margin-top: 5px;">Total membres</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: LOGS -->
       <div id="adminTabLogs" style="display: none;">
           <!-- Logs Viewer Section -->
         <div class="admin-section">

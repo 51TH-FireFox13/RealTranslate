@@ -2477,6 +2477,112 @@ app.get('/api/groups/archived/list', authMiddleware, async (req, res) => {
   }
 });
 
+// ===================================
+// ROUTES API - ADMIN (GROUPES)
+// ===================================
+
+// Middleware pour vérifier les droits admin
+const adminMiddleware = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Accès refusé - droits admin requis' });
+  }
+  next();
+};
+
+// Lister tous les groupes (admin only)
+app.get('/api/admin/groups', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const allGroups = Object.values(groups).map(g => ({
+      id: g.id,
+      name: g.name,
+      creator: g.creator,
+      visibility: g.visibility,
+      memberCount: g.members.length,
+      createdAt: g.createdAt
+    }));
+
+    // Trier par date de création (plus récent en premier)
+    allGroups.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.json({ groups: allGroups });
+
+  } catch (error) {
+    logger.error('Error listing all groups (admin)', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Obtenir les détails d'un groupe spécifique (admin only)
+app.get('/api/admin/groups/:groupId', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const group = groups[groupId];
+
+    if (!group) {
+      return res.status(404).json({ error: 'Groupe introuvable' });
+    }
+
+    // Compter les messages du groupe
+    const messageCount = groupMessages[groupId] ? groupMessages[groupId].length : 0;
+
+    res.json({
+      group: {
+        ...group,
+        messageCount
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error getting group details (admin)', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Supprimer un groupe (admin only)
+app.delete('/api/admin/groups/:groupId', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const group = groups[groupId];
+
+    if (!group) {
+      return res.status(404).json({ error: 'Groupe introuvable' });
+    }
+
+    // Retirer le groupe de tous les membres
+    group.members.forEach(member => {
+      const user = authManager.users[member.email];
+      if (user && user.groups) {
+        user.groups = user.groups.filter(g => g !== groupId);
+      }
+    });
+
+    // Supprimer les messages du groupe
+    delete groupMessages[groupId];
+
+    // Supprimer le groupe
+    delete groups[groupId];
+
+    await saveGroups();
+    await saveGroupMessages();
+    authManager.saveUsers();
+
+    logger.info(`Group deleted by admin: ${groupId} (${group.name})`);
+
+    res.json({
+      success: true,
+      message: `Groupe "${group.name}" supprimé avec succès`
+    });
+
+  } catch (error) {
+    logger.error('Error deleting group (admin)', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ===================================
+// ROUTES API - ARCHIVAGE DMS
+// ===================================
+
 // Archiver/Désarchiver une conversation DM
 app.post('/api/dms/:conversationId/archive', authMiddleware, async (req, res) => {
   try {

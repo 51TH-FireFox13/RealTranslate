@@ -1316,10 +1316,11 @@ function switchAdminTab(tab) {
   // Masquer tous les onglets
   document.getElementById('adminTabUsers').style.display = 'none';
   document.getElementById('adminTabSubscriptions').style.display = 'none';
+  document.getElementById('adminTabGroups').style.display = 'none';
   document.getElementById('adminTabLogs').style.display = 'none';
 
   // Réinitialiser les styles des boutons
-  const buttons = ['tabUsers', 'tabSubscriptions', 'tabLogs'];
+  const buttons = ['tabUsers', 'tabSubscriptions', 'tabGroups', 'tabLogs'];
   buttons.forEach(btnId => {
     const btn = document.getElementById(btnId);
     btn.style.background = 'rgba(255,255,255,0.1)';
@@ -1338,6 +1339,11 @@ function switchAdminTab(tab) {
     document.getElementById('tabSubscriptions').style.background = '#00ff9d';
     document.getElementById('tabSubscriptions').style.color = '#000';
     document.getElementById('tabSubscriptions').style.fontWeight = 'bold';
+  } else if (tab === 'groups') {
+    document.getElementById('adminTabGroups').style.display = 'block';
+    document.getElementById('tabGroups').style.background = '#00ff9d';
+    document.getElementById('tabGroups').style.color = '#000';
+    document.getElementById('tabGroups').style.fontWeight = 'bold';
   } else if (tab === 'logs') {
     document.getElementById('adminTabLogs').style.display = 'block';
     document.getElementById('tabLogs').style.background = '#00ff9d';
@@ -1391,6 +1397,161 @@ function switchProfileTab(tab) {
 
 // ===================================
 // VISUALISATION DES LOGS
+// ===================================
+
+// ===================================
+// ADMIN - GESTION DES GROUPES
+// ===================================
+
+// Charger tous les groupes (admin only)
+async function loadAllGroupsAdmin() {
+  const container = document.getElementById('adminGroupsContainer');
+  const filterType = document.getElementById('groupFilterType').value;
+
+  try {
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #888;">Chargement...</div>';
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/groups`, {
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors du chargement');
+    }
+
+    const data = await response.json();
+    let groupsToDisplay = data.groups || [];
+
+    // Appliquer le filtre
+    if (filterType === 'public') {
+      groupsToDisplay = groupsToDisplay.filter(g => g.visibility === 'public');
+    } else if (filterType === 'private') {
+      groupsToDisplay = groupsToDisplay.filter(g => g.visibility === 'private');
+    }
+
+    // Mettre à jour les statistiques
+    const totalGroups = data.groups.length;
+    const publicGroups = data.groups.filter(g => g.visibility === 'public').length;
+    const privateGroups = data.groups.filter(g => g.visibility === 'private').length;
+    const totalMembers = data.groups.reduce((sum, g) => sum + g.memberCount, 0);
+
+    document.getElementById('totalGroupsCount').textContent = totalGroups;
+    document.getElementById('publicGroupsCount').textContent = publicGroups;
+    document.getElementById('privateGroupsCount').textContent = privateGroups;
+    document.getElementById('totalMembersCount').textContent = totalMembers;
+
+    // Afficher les groupes
+    displayAdminGroups(groupsToDisplay);
+
+  } catch (error) {
+    console.error('Error loading groups:', error);
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ff6b6b;">❌ Erreur lors du chargement des groupes</div>';
+  }
+}
+
+// Afficher les groupes dans l'interface admin
+function displayAdminGroups(groups) {
+  const container = document.getElementById('adminGroupsContainer');
+
+  if (groups.length === 0) {
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #888;">Aucun groupe trouvé</div>';
+    return;
+  }
+
+  container.innerHTML = groups.map(group => {
+    const visibilityIcon = group.visibility === 'public' ? '🌐' : '🔒';
+    const createdDate = new Date(group.createdAt).toLocaleDateString('fr-FR');
+
+    return `
+      <div style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px; margin-bottom: 10px; border-left: 4px solid ${group.visibility === 'public' ? '#00ff9d' : '#64b4ff'};">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+          <div style="flex: 1;">
+            <div style="font-weight: bold; color: #fff; font-size: 1.1em; margin-bottom: 5px;">
+              ${visibilityIcon} ${group.name}
+            </div>
+            <div style="color: #888; font-size: 0.9em;">
+              <span>👤 Créateur: ${group.creator}</span>
+              <span style="margin-left: 15px;">👥 ${group.memberCount} membre(s)</span>
+              <span style="margin-left: 15px;">📅 ${createdDate}</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button onclick="viewGroupDetails('${group.id}')" style="padding: 8px 15px; background: rgba(100,180,255,0.2); border: 1px solid #64b4ff; color: #64b4ff; border-radius: 6px; cursor: pointer; font-size: 0.9em; transition: all 0.2s;" onmouseover="this.style.background='rgba(100,180,255,0.3)'" onmouseout="this.style.background='rgba(100,180,255,0.2)'">
+              📊 Détails
+            </button>
+            <button onclick="deleteGroupAdmin('${group.id}', '${group.name.replace(/'/g, "\\'")}'))" style="padding: 8px 15px; background: rgba(255,107,107,0.2); border: 1px solid #ff6b6b; color: #ff6b6b; border-radius: 6px; cursor: pointer; font-size: 0.9em; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,107,107,0.3)'" onmouseout="this.style.background='rgba(255,107,107,0.2)'">
+              🗑️ Supprimer
+            </button>
+          </div>
+        </div>
+        <div style="font-size: 0.85em; color: #aaa;">
+          ID: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px; font-family: monospace;">${group.id}</code>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Voir les détails d'un groupe (admin)
+async function viewGroupDetails(groupId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/groups/${groupId}`, {
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors du chargement');
+    }
+
+    const data = await response.json();
+    const group = data.group;
+
+    // Afficher les détails dans une alerte formatée
+    const membersList = group.members.map(m => `  - ${m.displayName || m.name} (${m.email})`).join('\n');
+
+    alert(`Détails du groupe: ${group.name}\n\nID: ${group.id}\nVisibilité: ${group.visibility === 'public' ? '🌐 Public' : '🔒 Privé'}\nCréateur: ${group.creator}\nDate de création: ${new Date(group.createdAt).toLocaleString('fr-FR')}\n\nMembres (${group.members.length}):\n${membersList}\n\nMessages: ${group.messageCount || 0}`);
+
+  } catch (error) {
+    console.error('Error loading group details:', error);
+    alert('❌ Erreur lors du chargement des détails du groupe');
+  }
+}
+
+// Supprimer un groupe (admin)
+async function deleteGroupAdmin(groupId, groupName) {
+  if (!confirm(`⚠️ Êtes-vous sûr de vouloir supprimer le groupe "${groupName}" ?\n\nCette action est irréversible et supprimera:\n- Le groupe\n- Tous les messages du groupe\n- L'accès pour tous les membres`)) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/groups/${groupId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert(`✅ Groupe "${groupName}" supprimé avec succès`);
+      loadAllGroupsAdmin(); // Recharger la liste
+    } else {
+      alert(`❌ ${data.error}`);
+    }
+
+  } catch (error) {
+    console.error('Error deleting group:', error);
+    alert('❌ Erreur lors de la suppression du groupe');
+  }
+}
+
+// ===================================
+// LOGS SYSTEM
 // ===================================
 
 // Variable globale pour stocker les logs actuels (pour export)
@@ -4489,14 +4650,7 @@ let groupsData = {
 };
 
 function showGroupsPanel() {
-  // Si en mode Communication, retourner à la page d'accueil Communication
-  const interfaceMode = localStorage.getItem('interface_mode');
-  if (interfaceMode === 'communication') {
-    backToCommunicationHome();
-    return;
-  }
-
-  // Sinon, afficher le panneau latéral traditionnel
+  // En mode Communication ou non, afficher le panneau latéral
   document.getElementById('groupsPanel').classList.remove('hidden');
   loadGroupsData();
 }
