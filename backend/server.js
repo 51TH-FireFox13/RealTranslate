@@ -17,7 +17,7 @@ import {
   requireAdmin,
   ROLES,
   SUBSCRIPTION_TIERS
-} from './auth.js';
+} from './auth-sqlite.js' // Version SQLite;
 import stripePayment from './stripe-payment.js';
 import crypto from 'crypto';
 import {
