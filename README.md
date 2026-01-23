@@ -11,40 +11,48 @@ Application web complète combinant traduction vocale en temps réel et messager
 ## 🎯 Vue d'ensemble
 
 RealTranslate est une plateforme tout-en-un permettant de communiquer sans barrière linguistique:
-- **Mode Traduction Instantanée**: Interface vocale temps réel avec détection automatique (VAD)
-- **Mode Communication**: Messagerie privée et groupes avec traduction automatique
+- **Mode Traduction Instantanée**: Conversation vocale 1-à-1 avec VAD (Voice Activity Detection)
+- **Mode Communication**: Messagerie groupes/DMs avec PTT (Push-to-Talk) + traduction texte
 - **Monétisation**: Système d'abonnements Stripe intégré (Free/Premium/Enterprise)
-- **Sécurité**: Chiffrement server-side robuste (XChaCha20-Poly1305)
+- **Sécurité**: Chiffrement server-side (XChaCha20-Poly1305) - données protégées au repos
 - **Mobile-First**: Interface optimisée smartphone/tablette avec scroll horizontal
 
 ---
 
 ## ✨ Fonctionnalités
 
-### 🎤 Traduction Vocale
-- Détection automatique de la voix (VAD) - pas de bouton !
-- Transcription audio via Whisper (OpenAI/DeepSeek)
-- Traduction instantanée (GPT-4o-mini/DeepSeek)
-- Synthèse vocale automatique (TTS)
-- 2 modes: Push-to-Talk ou Temps Réel
-- VU-mètre horizontal en temps réel
+### 🎤 Traduction Vocale (Mode Instantané)
+- **VAD (Voice Activity Detection)**: Détection automatique - mains libres
+- **Transcription** via Whisper (OpenAI/DeepSeek)
+- **Traduction instantanée** (GPT-4o-mini/DeepSeek)
+- **Synthèse vocale** automatique (TTS)
+- **Modes audio**: PTT (bouton) ou Temps Réel (VAD)
+- **VU-mètre** horizontal en temps réel
+- Usage: Conversations 1-à-1 en temps réel
 
-### 💬 Messagerie Multilingue
-- **Messages privés (DMs)**: Conversations 1-à-1 avec traduction
-- **Groupes publics/privés**: Discussions multilingues
+### 💬 Messagerie Multilingue (Mode Communication)
+- **Messages privés (DMs)**: Conversations 1-à-1 avec traduction automatique
+- **Groupes publics/privés**: Discussions multilingues asynchrones
+- **Audio PTT (Push-to-Talk)**: Messages vocaux transcrits + traduits dans les groupes
+- **Texte prioritaire**: Lecture audio sur clic (pas automatique)
 - **Mentions**: @user dans les groupes
-- **Historique**: Messages chiffrés et récupérables
+- **Historique**: Messages persistés et récupérables
 - **Statuts**: En ligne/hors ligne en temps réel
-- **Partage de fichiers**: Avatars et médias (bientôt)
+- **Partage de fichiers**: Images, documents, audio (25MB max)
 
 ### 🔐 Authentification & Sécurité
-- Inscription/connexion par email + mot de passe
-- JWT tokens avec refresh automatique
-- Rôles: `user`, `admin`
-- OAuth prêt: Google, Apple, WeChat (structure)
-- Chiffrement server-side: XChaCha20-Poly1305
-- Clés uniques par conversation
-- Rate limiting & protection CSRF
+- **Authentification**: Email + mot de passe (SHA256, migration Argon2id prévue)
+- **Sessions**: JWT tokens avec refresh automatique
+- **Rôles**: `user`, `admin`, `guest`
+- **OAuth**: Structure prête (Google, Apple, WeChat)
+- **Chiffrement server-side**: Infrastructure prête (XChaCha20-Poly1305 / libsodium)
+  - ⚠️ **Statut actuel**: Code implémenté mais non intégré (v1.1 prévue)
+  - ⚠️ **Non E2EE**: Le serveur peut déchiffrer (nécessaire pour traduction)
+  - 🔧 **Quand activé**: DB compromise ne révèlera pas les messages
+  - 🔧 **Clés uniques** par conversation (DEK/KEK architecture)
+  - 📝 **Actuellement**: Messages en clair dans SQLite (data/realtranslate.db)
+- **Protection réseau**: Rate limiting, HTTPS, CORS
+- **Backups**: Chiffrés et isolés
 
 ### 💳 Abonnements & Quotas
 - **Gratuit**: 50 transcriptions/jour, 250 traductions, 50 TTS
@@ -84,6 +92,50 @@ Support complet: **Français, English, 中文, Español, Deutsch, Italiano, Port
 
 ---
 
+## 🎮 Modes d'utilisation
+
+### 🗣️ Mode 1: Traduction Instantanée (Vocale 1-à-1)
+
+**Usage**: Conversation en temps réel entre 2 personnes de langues différentes
+
+**Fonctionnement**:
+1. Chaque utilisateur sélectionne sa langue native
+2. **Option A - VAD (Temps Réel)**: Parlez librement, détection automatique
+3. **Option B - PTT**: Appuyez sur le bouton micro pour parler
+4. Audio → Whisper (transcription) → GPT/DeepSeek (traduction) → TTS (synthèse)
+5. Les deux participants entendent la traduction automatiquement
+
+**Caractéristiques**:
+- Mains libres (VAD) ou contrôlé (PTT)
+- Traduction immédiate
+- Pas d'historique persisté
+- Usage: Conversations téléphoniques, meetings 1-à-1
+
+---
+
+### 💬 Mode 2: Communication (Groupes/DMs asynchrones)
+
+**Usage**: Messagerie de groupe avec traduction automatique
+
+**Fonctionnement**:
+1. Créer un groupe ou conversation DM
+2. **Texte prioritaire**: Écrire des messages (traduits automatiquement pour tous)
+3. **Audio PTT optionnel**:
+   - Appuyer sur micro → enregistrer → envoyer
+   - Transcrit en texte → traduit → affiché pour tous
+   - Lecture audio **sur clic** (pas automatique)
+4. Historique complet sauvegardé
+
+**Caractéristiques**:
+- Groupes publics/privés
+- Messages privés 1-à-1
+- Historique persisté et chiffré
+- Fichiers/médias supportés
+- Statuts en ligne/hors ligne
+- Usage: Équipes multilingues, communautés internationales
+
+---
+
 ## 🏗️ Architecture
 
 ```
@@ -96,11 +148,16 @@ RealTranslate/
 │
 ├── backend/              # Server-side (Node.js/Express)
 │   ├── server.js         # API REST + Socket.IO
-│   ├── auth.js           # JWT + middleware
+│   ├── database.js       # SQLite schema + CRUD
+│   ├── db-proxy.js       # Proxy layer (compatibilité)
+│   ├── db-helpers.js     # Helpers format legacy
+│   ├── migrate-to-sqlite.js # Script migration JSON→SQLite
+│   ├── auth-sqlite.js    # AuthManager (SQLite)
+│   ├── auth.js           # Legacy auth (deprecated)
 │   ├── logger.js         # Logging Winston
 │   ├── stripe-payment.js # Intégration Stripe
-│   ├── encryption.js     # Chiffrement (bientôt)
-│   ├── database.db       # SQLite (users, messages, groups)
+│   ├── encryption.js     # Chiffrement (prêt, intégration prévue)
+│   ├── realtranslate.db  # Base SQLite (users, groups, messages)
 │   ├── package.json      # Dependencies
 │   └── .env              # Configuration (secrets)
 │
@@ -198,7 +255,7 @@ STRIPE_PRICE_PREMIUM=price_votre-price-id-premium
 STRIPE_PRICE_ENTERPRISE=price_votre-price-id-enterprise
 
 # Base de données
-DATABASE_PATH=./database.db
+DATABASE_PATH=./realtranslate.db
 
 # CORS (optionnel)
 ALLOWED_ORIGINS=https://votre-domaine.com,https://www.votre-domaine.com
@@ -261,8 +318,9 @@ sudo ./setup-https.sh votre-domaine.com
 1. Sélectionner vos 2 langues (ex: Français ↔ 中文)
 2. Choisir "🎤 Traduction Instantanée"
 3. Autoriser le microphone
-4. **Desktop**: Parler normalement, VAD détecte automatiquement
-5. **Mobile**: Swiper horizontalement entre les 2 panneaux
+4. **Option A - VAD (Temps Réel)**: Parler normalement, détection automatique
+5. **Option B - PTT**: Maintenir le bouton micro pour parler
+6. **Mobile**: Swiper horizontalement entre les 2 panneaux de langues
 
 ### Mode Communication
 
@@ -289,17 +347,19 @@ sudo ./setup-https.sh votre-domaine.com
 
 ## 🔧 Configuration Avancée
 
-### Sensibilité VAD
+### Sensibilité VAD (Mode Traduction Instantanée uniquement)
 
 Dans `frontend/app.js`:
 
 ```javascript
 const VAD_CONFIG = {
-  VOLUME_THRESHOLD: 0.015,     // ↑ = moins sensible
+  VOLUME_THRESHOLD: 0.015,     // ↑ = moins sensible (Mode 1)
   SILENCE_DURATION: 1000,      // ms de silence avant arrêt
   MIN_RECORDING_DURATION: 600  // ms minimale d'enregistrement
 };
 ```
+
+**Note**: Le Mode Communication utilise PTT uniquement (pas de VAD dans les groupes)
 
 ### Voix TTS
 
@@ -334,10 +394,12 @@ stripe listen --forward-to localhost:3000/api/webhook/stripe
 stripe trigger checkout.session.completed
 ```
 
-### Messages non chiffrés
+### Base de données accessible
 
-- Vérifier que `encryption.js` est bien importé
-- Logs: `pm2 logs realtranslate | grep encryption`
+**Note**: Actuellement les messages sont stockés en clair dans SQLite
+- Infrastructure de chiffrement prête (encryption.js)
+- Intégration prévue en v1.1
+- Pour protéger: limiter accès à `backend/realtranslate.db` (chmod 600)
 
 ### Scroll horizontal ne marche pas (mobile)
 
@@ -362,12 +424,12 @@ const token = jwt.sign({ userId, email, role }, JWT_SECRET, {
 
 - ✅ HTTPS strict (HSTS headers)
 - ✅ JWT avec refresh tokens
-- ✅ Mots de passe hashés (Bcrypt, bientôt Argon2id)
+- ✅ Mots de passe hashés (SHA256, migration Argon2id prévue)
 - ✅ CORS configuré
 - ✅ Rate limiting sur login/API
 - ✅ XSS protection (CSP headers)
-- ✅ SQL injection protection (parameterized queries)
-- ✅ Chiffrement messages server-side (XChaCha20-Poly1305)
+- ✅ SQL injection protection (parameterized queries, SQLite)
+- 🔧 Chiffrement messages: Code prêt (XChaCha20-Poly1305), intégration v1.1
 - ✅ Secrets en variables d'environnement
 - ✅ Validation inputs backend
 - ✅ Stripe webhook signature verification
@@ -386,7 +448,7 @@ sudo apt install fail2ban
 sudo systemctl enable fail2ban
 
 # 3. Backups automatiques
-0 2 * * * tar -czf /backup/realtranslate-$(date +\%Y\%m\%d).tar.gz /root/RealTranslate/backend/database.db
+0 2 * * * tar -czf /backup/realtranslate-$(date +\%Y\%m\%d).tar.gz /root/RealTranslate/backend/realtranslate.db
 
 # 4. Monitoring
 pm2 install pm2-logrotate
@@ -398,25 +460,31 @@ pm2 set pm2-logrotate:max_size 10M
 ## 📊 Roadmap
 
 ### Version Actuelle (v1.0)
-- [x] Traduction vocale temps réel
-- [x] Messagerie DMs + groupes
-- [x] Abonnements Stripe
-- [x] Interface mobile optimisée
-- [x] Chiffrement server-side
+- [x] Traduction vocale temps réel (VAD + PTT)
+- [x] Messagerie DMs + groupes avec traduction
+- [x] Abonnements Stripe (Free/Premium/Enterprise)
+- [x] Interface mobile optimisée (scroll horizontal)
+- [x] Base SQLite (migration JSON terminée)
+- [x] Panel admin (gestion utilisateurs/groupes)
 
 ### Prochaines Versions
 
-**v1.1 - Q2 2026**
-- [ ] Partage de fichiers (images, docs)
-- [ ] Appels vocaux/vidéo
-- [ ] Notifications push (Firebase)
-- [ ] Thèmes personnalisables (+ dark mode amélioré)
+**v1.1 - Q1 2026**
+- [ ] Intégration chiffrement server-side (code prêt)
+- [ ] Tests automatisés (auth, quotas, WebSockets)
+- [ ] Refactoring frontend (modularisation app.js)
+- [ ] Partage de fichiers amélioré (aperçus images)
 
-**v1.2 - Q3 2026**
-- [ ] E2E encryption (Signal Protocol)
-- [ ] Messages éphémères
+**v1.2 - Q2 2026**
+- [ ] Appels vocaux/vidéo P2P (WebRTC)
+- [ ] Notifications push (Firebase)
 - [ ] Réactions aux messages
 - [ ] Recherche dans l'historique
+
+**v2.0 - Q3 2026**
+- [ ] E2E encryption (Signal Protocol)
+- [ ] Messages éphémères
+- [ ] Thèmes personnalisables (+ dark mode amélioré)
 
 **v2.0 - Q4 2026**
 - [ ] Application mobile native (React Native)
