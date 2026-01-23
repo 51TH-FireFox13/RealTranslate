@@ -2,7 +2,9 @@ node_modules/
 .env
 *.log
 .DS_Store
-backend/uploads/
+backend/uploads/*
+!backend/uploads/.gitkeep
+!backend/uploads/.gitignore
 
 # Fichiers de données (ne pas versionner)
 backend/users.json
