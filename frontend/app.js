@@ -4136,10 +4136,8 @@ window.addEventListener('load', () => {
   console.log(`🌐 Langue détectée: ${currentUILang}`);
 
   // Vérifier si l'utilisateur est déjà connecté
-  if (!checkAuth()) {
-    // Afficher l'écran de connexion
-    elements.loginContainer.classList.remove('hidden');
-  }
+  // Si pas de token, la page de connexion est déjà visible par défaut
+  checkAuth();
 });
 
 // Gestion du réveil de l'application (mobile/iOS)
