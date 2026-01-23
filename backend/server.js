@@ -2523,7 +2523,7 @@ app.get('/api/admin/groups/:groupId', authMiddleware, adminMiddleware, async (re
     }
 
     // Compter les messages du groupe
-    const messageCount = groupMessages[groupId] ? groupMessages[groupId].length : 0;
+    const messageCount = messages[groupId] ? messages[groupId].length : 0;
 
     res.json({
       group: {
@@ -2557,13 +2557,13 @@ app.delete('/api/admin/groups/:groupId', authMiddleware, adminMiddleware, async 
     });
 
     // Supprimer les messages du groupe
-    delete groupMessages[groupId];
+    delete messages[groupId];
 
     // Supprimer le groupe
     delete groups[groupId];
 
     await saveGroups();
-    await saveGroupMessages();
+    await saveMessages();
     authManager.saveUsers();
 
     logger.info(`Group deleted by admin: ${groupId} (${group.name})`);
