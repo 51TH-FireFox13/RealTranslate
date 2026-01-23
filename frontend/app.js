@@ -805,8 +805,8 @@ function checkAuth() {
 function showApp() {
   elements.loginContainer.classList.add('hidden');
 
-  // NE PAS afficher mainApp directement - laisser initLanguageSelection() gérer le flow
-  // elements.mainApp.classList.remove('hidden');
+  // Afficher mainApp
+  elements.mainApp.classList.remove('hidden');
 
   elements.userInfo.textContent = state.user.email;
 
@@ -822,11 +822,50 @@ function showApp() {
   // Demander la permission pour les notifications
   requestNotificationPermission();
 
-  // Initialiser la sélection de langues (affichera le bon écran selon l'état)
-  initLanguageSelection();
+  // Vérifier si l'utilisateur a déjà sélectionné ses langues et son mode
+  const savedLang1 = localStorage.getItem('lang1');
+  const savedLang2 = localStorage.getItem('lang2');
+  const savedInterfaceMode = localStorage.getItem('interface_mode');
+
+  if (savedLang1 && savedLang2 && savedInterfaceMode) {
+    // L'utilisateur a déjà tout configuré, aller directement au mode
+    state.lang1 = savedLang1;
+    state.lang2 = savedLang2;
+
+    if (savedInterfaceMode === 'translation') {
+      startTranslation();
+    } else if (savedInterfaceMode === 'communication') {
+      startCommunication();
+    } else {
+      // Fallback: afficher interfaceChoice
+      showInterfaceChoiceFromApp();
+    }
+  } else {
+    // Première utilisation ou pas de config sauvegardée
+    // Afficher interfaceChoice (menu principal)
+    showInterfaceChoiceFromApp();
+  }
 
   // Charger les statuts des utilisateurs
   fetchUserStatuses();
+}
+
+// Afficher interfaceChoice (menu principal) depuis l'app
+function showInterfaceChoiceFromApp() {
+  // Masquer tous les écrans
+  document.getElementById('languageSelection').classList.add('hidden');
+  document.getElementById('communicationHome').classList.add('hidden');
+
+  // Afficher interfaceChoice (2 cartes)
+  document.getElementById('interfaceChoice').classList.remove('hidden');
+
+  // Afficher le bouton admin si nécessaire
+  const adminBtn = document.getElementById('adminAccessBtn');
+  if (adminBtn && state.user && state.user.role === 'admin') {
+    adminBtn.style.display = 'inline-block';
+  } else if (adminBtn) {
+    adminBtn.style.display = 'none';
+  }
 }
 
 // ===================================
@@ -2601,12 +2640,24 @@ function selectInterfaceMode(mode) {
   // Sauvegarder le mode choisi
   localStorage.setItem('interface_mode', mode);
 
-  if (mode === 'translation') {
-    // Mode Traduction Simple
-    startTranslation();
-  } else if (mode === 'communication') {
-    // Mode Communication (Groupes/DMs)
-    startCommunication();
+  // Vérifier si les langues sont déjà configurées
+  const savedLang1 = localStorage.getItem('lang1');
+  const savedLang2 = localStorage.getItem('lang2');
+
+  if (savedLang1 && savedLang2 && LANGUAGES[savedLang1] && LANGUAGES[savedLang2]) {
+    // Langues déjà configurées, lancer directement le mode
+    state.lang1 = savedLang1;
+    state.lang2 = savedLang2;
+
+    if (mode === 'translation') {
+      startTranslation();
+    } else if (mode === 'communication') {
+      startCommunication();
+    }
+  } else {
+    // Langues pas encore configurées, afficher la sélection de langues d'abord
+    document.getElementById('interfaceChoice').classList.add('hidden');
+    document.getElementById('languageSelection').classList.remove('hidden');
   }
 }
 
