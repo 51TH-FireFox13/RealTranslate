@@ -311,12 +311,24 @@ class AuthManagerSQLite {
     }
 
     logger.info('User verified', { email });
+    // Retourner l'utilisateur via le proxy pour compatibilité
     return { success: true, user: this.users[email] };
   }
 
   // Alias pour compatibilité avec l'ancien code server.js
   authenticate(email, password) {
-    return this.verifyUser(email, password);
+    const result = this.verifyUser(email, password);
+    if (!result.success) {
+      return result;
+    }
+
+    // Générer un token de session
+    const token = this.createAuthToken(email);
+    return {
+      success: true,
+      user: result.user,
+      token
+    };
   }
 
   createAuthToken(email) {
