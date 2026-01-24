@@ -401,6 +401,30 @@ class AuthManagerSQLite {
 
     quotaUsage[action] = (quotaUsage[action] || 0) + 1;
   }
+
+  listUsers() {
+    // Retourner tous les utilisateurs depuis la DB
+    const allUsers = usersDB.getAll();
+    return allUsers.map(user => ({
+      id: user.email,
+      email: user.email,
+      displayName: user.display_name || user.email.split('@')[0],
+      name: user.name,
+      role: user.role,
+      subscriptionTier: user.subscription_tier,
+      subscriptionStatus: user.subscription_status,
+      stripeCustomerId: user.stripe_customer_id,
+      stripeSubscriptionId: user.stripe_subscription_id,
+      avatar: user.avatar,
+      createdAt: user.created_at,
+      subscription: {
+        tier: user.subscription_tier,
+        status: user.subscription_status,
+        stripeCustomerId: user.stripe_customer_id,
+        stripeSubscriptionId: user.stripe_subscription_id
+      }
+    }));
+  }
 }
 
 // Créer une instance unique
