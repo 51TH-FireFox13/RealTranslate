@@ -625,6 +625,32 @@ class AuthManagerSQLite {
       })
       .filter(friend => friend !== null);
   }
+
+  updateSubscription(email, tier, expiresAt = null) {
+    const user = usersDB.getByEmail(email);
+    if (!user) {
+      return { success: false, message: 'Utilisateur introuvable' };
+    }
+
+    const tierData = SUBSCRIPTION_TIERS[tier.toUpperCase()];
+    if (!tierData) {
+      return { success: false, message: 'Palier d\'abonnement invalide' };
+    }
+
+    // Mettre à jour l'abonnement dans la DB
+    usersDB.update(email, {
+      subscription_tier: tierData.name.toLowerCase(),
+      subscription_status: 'active',
+      subscription_expires_at: expiresAt
+    });
+
+    // Réinitialiser les quotas
+    this.quotaUsageStore.set(email, { transcribe: 0, translate: 0, speak: 0 });
+
+    logger.info('Subscription updated', { email, tier: tierData.name, expiresAt });
+
+    return { success: true, user: this.users[email] };
+  }
 }
 
 // Créer une instance unique

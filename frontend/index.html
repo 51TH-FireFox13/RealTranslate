@@ -2346,10 +2346,29 @@
               <p class="comm-empty-message">Chargement de vos conversations...</p>
             </div>
           </div>
+
+          <!-- Amis Section -->
+          <div class="comm-section">
+            <div class="comm-section-header">
+              <h3 class="comm-section-title">
+                <span>👥</span> <span class="comm-section-title-text">Mes Amis</span>
+              </h3>
+              <button onclick="showFriendsPanel()" class="comm-action-btn">
+                <span class="btn-icon">➕</span> <span class="btn-text">Gérer Amis</span>
+              </button>
+            </div>
+
+            <div id="commFriendsList" class="comm-list">
+              <p class="comm-empty-message">Chargement de vos amis...</p>
+            </div>
+          </div>
         </div>
 
         <!-- Quick Actions -->
         <div class="comm-quick-actions">
+          <button onclick="showFriendsPanel()" class="comm-quick-btn comm-quick-btn-primary">
+            <span>👥</span> <span class="comm-quick-text">Gérer mes amis</span>
+          </button>
           <button onclick="browsePublicGroups(); showGroupsPanel();" class="comm-quick-btn comm-quick-btn-primary">
             <span>🌐</span> <span class="comm-quick-text">Découvrir les groupes publics</span>
           </button>
