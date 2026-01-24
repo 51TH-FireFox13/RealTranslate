@@ -710,6 +710,131 @@ class AuthManagerSQLite {
 
     return userProxy.friendRequests;
   }
+
+  sendFriendRequest(fromEmail, toEmail) {
+    const fromUser = usersDB.getByEmail(fromEmail);
+    const toUser = usersDB.getByEmail(toEmail);
+
+    if (!fromUser || !toUser) {
+      return { success: false, message: 'Utilisateur introuvable' };
+    }
+
+    if (fromEmail === toEmail) {
+      return { success: false, message: 'Vous ne pouvez pas vous ajouter vous-même' };
+    }
+
+    // Utiliser le proxy pour gérer les arrays
+    const fromUserProxy = this.users[fromEmail];
+    const toUserProxy = this.users[toEmail];
+
+    // Vérifier si déjà amis
+    if (!fromUserProxy.friends) fromUserProxy.friends = [];
+    if (!toUserProxy.friends) toUserProxy.friends = [];
+
+    if (fromUserProxy.friends.includes(toEmail)) {
+      return { success: false, message: 'Déjà ami avec cet utilisateur' };
+    }
+
+    // Vérifier si demande déjà envoyée
+    if (!toUserProxy.friendRequests) toUserProxy.friendRequests = [];
+
+    const existingRequest = toUserProxy.friendRequests.find(req => req.from === fromEmail);
+    if (existingRequest) {
+      return { success: false, message: 'Demande d\'ami déjà envoyée' };
+    }
+
+    // Ajouter la demande
+    toUserProxy.friendRequests.push({
+      from: fromEmail,
+      fromDisplayName: fromUser.display_name || fromEmail.split('@')[0],
+      sentAt: new Date().toISOString()
+    });
+
+    logger.info('Friend request sent', { from: fromEmail, to: toEmail });
+
+    return { success: true, message: 'Demande envoyée' };
+  }
+
+  acceptFriendRequest(userEmail, fromEmail) {
+    const user = usersDB.getByEmail(userEmail);
+    const fromUser = usersDB.getByEmail(fromEmail);
+
+    if (!user || !fromUser) {
+      return { success: false, message: 'Utilisateur introuvable' };
+    }
+
+    const userProxy = this.users[userEmail];
+    const fromUserProxy = this.users[fromEmail];
+
+    if (!userProxy.friendRequests) userProxy.friendRequests = [];
+
+    const requestIndex = userProxy.friendRequests.findIndex(req => req.from === fromEmail);
+    if (requestIndex === -1) {
+      return { success: false, message: 'Demande d\'ami introuvable' };
+    }
+
+    // Retirer la demande
+    userProxy.friendRequests.splice(requestIndex, 1);
+
+    // Ajouter comme amis mutuellement
+    if (!userProxy.friends) userProxy.friends = [];
+    if (!fromUserProxy.friends) fromUserProxy.friends = [];
+
+    if (!userProxy.friends.includes(fromEmail)) {
+      userProxy.friends.push(fromEmail);
+    }
+    if (!fromUserProxy.friends.includes(userEmail)) {
+      fromUserProxy.friends.push(userEmail);
+    }
+
+    logger.info('Friend request accepted', { user: userEmail, from: fromEmail });
+
+    return { success: true, message: 'Demande acceptée' };
+  }
+
+  rejectFriendRequest(userEmail, fromEmail) {
+    const user = usersDB.getByEmail(userEmail);
+
+    if (!user) {
+      return { success: false, message: 'Utilisateur introuvable' };
+    }
+
+    const userProxy = this.users[userEmail];
+    if (!userProxy.friendRequests) userProxy.friendRequests = [];
+
+    const requestIndex = userProxy.friendRequests.findIndex(req => req.from === fromEmail);
+    if (requestIndex === -1) {
+      return { success: false, message: 'Demande d\'ami introuvable' };
+    }
+
+    userProxy.friendRequests.splice(requestIndex, 1);
+    logger.info('Friend request rejected', { user: userEmail, from: fromEmail });
+
+    return { success: true, message: 'Demande refusée' };
+  }
+
+  removeFriend(userEmail, friendEmail) {
+    const user = usersDB.getByEmail(userEmail);
+    const friend = usersDB.getByEmail(friendEmail);
+
+    if (!user || !friend) {
+      return { success: false, message: 'Utilisateur introuvable' };
+    }
+
+    const userProxy = this.users[userEmail];
+    const friendProxy = this.users[friendEmail];
+
+    if (!userProxy.friends) userProxy.friends = [];
+    if (!friendProxy.friends) friendProxy.friends = [];
+
+    // Retirer mutuellement
+    userProxy.friends = userProxy.friends.filter(f => f !== friendEmail);
+    friendProxy.friends = friendProxy.friends.filter(f => f !== userEmail);
+
+    logger.info('Friend removed', { user: userEmail, friend: friendEmail });
+
+    return { success: true, message: 'Ami supprimé' };
+  }
 }
 
 // Créer une instance unique
