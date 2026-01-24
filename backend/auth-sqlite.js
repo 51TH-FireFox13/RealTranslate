@@ -651,6 +651,65 @@ class AuthManagerSQLite {
 
     return { success: true, user: this.users[email] };
   }
+
+  updateDisplayName(email, newDisplayName) {
+    const user = usersDB.getByEmail(email);
+    if (!user) {
+      return { success: false, message: 'Utilisateur introuvable' };
+    }
+
+    // Validation du displayName
+    if (!newDisplayName || newDisplayName.trim().length < 2) {
+      return { success: false, message: 'Le nom doit contenir au moins 2 caractères' };
+    }
+
+    if (newDisplayName.trim().length > 50) {
+      return { success: false, message: 'Le nom ne peut pas dépasser 50 caractères' };
+    }
+
+    usersDB.update(email, {
+      display_name: newDisplayName.trim()
+    });
+
+    logger.info('DisplayName updated', { email, newDisplayName });
+
+    return { success: true, displayName: newDisplayName.trim() };
+  }
+
+  searchUsersByDisplayName(searchTerm) {
+    if (!searchTerm || searchTerm.trim().length < 2) {
+      return [];
+    }
+
+    const allUsers = usersDB.getAll();
+    const exactMatch = allUsers.filter(user => {
+      const displayName = user.display_name || user.email.split('@')[0];
+      return displayName &&
+        displayName.toLowerCase() === searchTerm.trim().toLowerCase() &&
+        user.role !== ROLES.GUEST; // Ne pas inclure les invités
+    });
+
+    return exactMatch.map(user => ({
+      id: user.email,
+      email: user.email,
+      displayName: user.display_name || user.email.split('@')[0]
+    }));
+  }
+
+  getFriendRequests(userEmail) {
+    const user = usersDB.getByEmail(userEmail);
+
+    if (!user) {
+      return [];
+    }
+
+    const userProxy = this.users[userEmail];
+    if (!userProxy.friendRequests || !Array.isArray(userProxy.friendRequests)) {
+      return [];
+    }
+
+    return userProxy.friendRequests;
+  }
 }
 
 // Créer une instance unique
