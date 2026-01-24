@@ -1173,10 +1173,16 @@ async function loadUsers() {
         enterprise: '💎'
       };
 
+      const isProtected = user.email === 'admin@realtranslate.com';
+      const canChangeRole = !isProtected && !isCurrentUser;
+
       html += `
         <tr>
           <td>${user.email} ${isCurrentUser ? '<span style="color: #00ff9d;">(vous)</span>' : ''}</td>
-          <td><span class="role-badge ${user.role}">${user.role}</span></td>
+          <td>
+            <span class="role-badge ${user.role}">${user.role}</span>
+            ${canChangeRole ? `<button onclick="toggleUserRole('${user.email}', '${user.role}')" style="margin-left: 8px; background: rgba(0,255,157,0.2); border: 1px solid #00ff9d; color: #00ff9d; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75em;" title="Changer le rôle">🔄</button>` : ''}
+          </td>
           <td>
             <span style="color: ${tierColors[subscription.tier] || '#888'};">
               ${tierIcons[subscription.tier] || '🆓'} ${subscription.tier.toUpperCase()}
@@ -1187,7 +1193,7 @@ async function loadUsers() {
             <button
               class="delete-user-btn"
               onclick="deleteUser('${user.email}')"
-              ${isCurrentUser ? 'disabled title="Vous ne pouvez pas vous supprimer"' : ''}>
+              ${isCurrentUser || isProtected ? 'disabled title="' + (isCurrentUser ? 'Vous ne pouvez pas vous supprimer' : 'Compte protégé') + '"' : ''}>
               🗑️ Supprimer
             </button>
           </td>
@@ -1291,6 +1297,40 @@ async function deleteUser(email) {
 
   } catch (error) {
     console.error('Erreur suppression user:', error);
+    showAdminMessage(`❌ ${error.message}`, 'error');
+  }
+}
+
+// Changer le rôle d'un utilisateur (admin <-> user)
+async function toggleUserRole(email, currentRole) {
+  const newRole = currentRole === 'admin' ? 'user' : 'admin';
+  const roleText = newRole === 'admin' ? 'administrateur' : 'utilisateur';
+
+  if (!confirm(`Voulez-vous changer le rôle de ${email} vers ${roleText} ?`)) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/users/${encodeURIComponent(email)}/role`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({ role: newRole })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Erreur lors du changement de rôle');
+    }
+
+    showAdminMessage(`✅ Rôle de ${email} changé vers ${roleText}`, 'success');
+    await loadUsers();
+
+  } catch (error) {
+    console.error('Erreur changement rôle:', error);
     showAdminMessage(`❌ ${error.message}`, 'error');
   }
 }

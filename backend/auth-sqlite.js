@@ -442,6 +442,67 @@ class AuthManagerSQLite {
       }
     }));
   }
+
+  deleteUser(email) {
+    try {
+      const user = usersDB.getByEmail(email);
+      if (!user) {
+        return { success: false, message: 'Utilisateur introuvable' };
+      }
+
+      // Ne pas permettre la suppression du compte admin par défaut
+      if (email === 'admin@realtranslate.com') {
+        return { success: false, message: 'Impossible de supprimer le compte administrateur principal' };
+      }
+
+      // Supprimer de la base de données
+      usersDB.delete(email);
+
+      // Révoquer tous les tokens de cet utilisateur
+      const tokensToRevoke = Object.keys(this.tokens).filter(
+        token => this.tokens[token].email === email
+      );
+      tokensToRevoke.forEach(token => delete this.tokens[token]);
+
+      logger.info('User deleted', { email });
+      return { success: true, message: 'Utilisateur supprimé' };
+    } catch (error) {
+      logger.error('Error deleting user', { error: error.message, email });
+      return { success: false, message: 'Erreur lors de la suppression' };
+    }
+  }
+
+  updateUserRole(email, newRole) {
+    try {
+      const user = usersDB.getByEmail(email);
+      if (!user) {
+        return { success: false, message: 'Utilisateur introuvable' };
+      }
+
+      // Valider le rôle
+      if (!Object.values(ROLES).includes(newRole)) {
+        return { success: false, message: 'Rôle invalide' };
+      }
+
+      // Ne pas permettre de retirer le rôle admin du compte principal
+      if (email === 'admin@realtranslate.com' && newRole !== ROLES.ADMIN) {
+        return { success: false, message: 'Impossible de modifier le rôle du compte administrateur principal' };
+      }
+
+      // Mettre à jour le rôle
+      usersDB.update(email, { role: newRole });
+
+      logger.info('User role updated', { email, newRole });
+      return {
+        success: true,
+        message: 'Rôle mis à jour',
+        user: this.users[email]
+      };
+    } catch (error) {
+      logger.error('Error updating user role', { error: error.message, email, newRole });
+      return { success: false, message: 'Erreur lors de la mise à jour du rôle' };
+    }
+  }
 }
 
 // Créer une instance unique

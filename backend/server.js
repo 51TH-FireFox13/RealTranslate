@@ -911,6 +911,29 @@ app.delete('/api/auth/users/:email', authMiddleware, requireAdmin, (req, res) =>
   }
 });
 
+// Changer le rôle d'un utilisateur (admin uniquement)
+app.patch('/api/auth/users/:email/role', authMiddleware, requireAdmin, (req, res) => {
+  try {
+    const { email } = req.params;
+    const { role } = req.body;
+
+    if (!role) {
+      return res.status(400).json({ error: 'Rôle requis' });
+    }
+
+    const result = authManager.updateUserRole(email, role);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    res.json({ success: true, user: result.user });
+  } catch (error) {
+    logger.error('Update user role error', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 // Logout (révoquer le token)
 app.post('/api/auth/logout', authMiddleware, (req, res) => {
   try {
