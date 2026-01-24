@@ -503,6 +503,128 @@ class AuthManagerSQLite {
       return { success: false, message: 'Erreur lors de la mise à jour du rôle' };
     }
   }
+
+  revokeToken(token) {
+    if (this.tokens[token]) {
+      delete this.tokens[token];
+      logger.info('Token revoked', { token: token.substring(0, 10) + '...' });
+      return true;
+    }
+    return false;
+  }
+
+  resetQuotas(tier) {
+    const tierData = SUBSCRIPTION_TIERS[tier.toUpperCase()];
+    if (!tierData) return {};
+
+    return {
+      transcribe: { used: 0, limit: tierData.quotas.transcribe, resetAt: this.getNextDayTimestamp() },
+      translate: { used: 0, limit: tierData.quotas.translate, resetAt: this.getNextDayTimestamp() },
+      speak: { used: 0, limit: tierData.quotas.speak, resetAt: this.getNextDayTimestamp() }
+    };
+  }
+
+  getNextDayTimestamp() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    return tomorrow.toISOString();
+  }
+
+  consumeQuota(email, action) {
+    const user = usersDB.getByEmail(email);
+    if (!user) {
+      return { allowed: false, message: 'Utilisateur introuvable' };
+    }
+
+    // Obtenir le tier de l'utilisateur
+    const tierKey = (user.subscription_tier || 'free').toUpperCase();
+    const tier = SUBSCRIPTION_TIERS[tierKey];
+
+    if (!tier) {
+      return { allowed: false, message: 'Tier invalide' };
+    }
+
+    // Quota illimité
+    if (tier.quotas[action] === -1) {
+      this.incrementQuota(email, action);
+      return { allowed: true, remaining: -1 };
+    }
+
+    // Récupérer l'usage actuel
+    let quotaUsage = this.quotaUsageStore.get(email);
+    if (!quotaUsage) {
+      quotaUsage = { transcribe: 0, translate: 0, speak: 0 };
+      this.quotaUsageStore.set(email, quotaUsage);
+    }
+
+    const currentUsage = quotaUsage[action] || 0;
+    const limit = tier.quotas[action];
+
+    // Vérifier si quota dépassé
+    if (currentUsage >= limit) {
+      return {
+        allowed: false,
+        message: `Quota ${action} dépassé (${currentUsage}/${limit})`,
+        resetAt: this.getNextDayTimestamp()
+      };
+    }
+
+    // Consommer le quota
+    this.incrementQuota(email, action);
+
+    return {
+      allowed: true,
+      remaining: limit - currentUsage - 1,
+      resetAt: this.getNextDayTimestamp()
+    };
+  }
+
+  getSubscriptionInfo(email) {
+    const user = usersDB.getByEmail(email);
+    if (!user) {
+      return null;
+    }
+
+    const tierKey = (user.subscription_tier || 'free').toUpperCase();
+    const tier = SUBSCRIPTION_TIERS[tierKey];
+    const quotaUsage = this.quotaUsageStore.get(email) || { transcribe: 0, translate: 0, speak: 0 };
+
+    return {
+      tier: user.subscription_tier || 'free',
+      status: user.subscription_status || 'active',
+      expiresAt: user.subscription_expires_at,
+      quotas: {
+        transcribe: { used: quotaUsage.transcribe || 0, limit: tier?.quotas?.transcribe || 50, resetAt: this.getNextDayTimestamp() },
+        translate: { used: quotaUsage.translate || 0, limit: tier?.quotas?.translate || 100, resetAt: this.getNextDayTimestamp() },
+        speak: { used: quotaUsage.speak || 0, limit: tier?.quotas?.speak || 50, resetAt: this.getNextDayTimestamp() }
+      }
+    };
+  }
+
+  getFriends(userEmail) {
+    const user = usersDB.getByEmail(userEmail);
+
+    if (!user) {
+      return [];
+    }
+
+    const userProxy = this.users[userEmail];
+    if (!userProxy.friends || !Array.isArray(userProxy.friends)) {
+      return [];
+    }
+
+    return userProxy.friends
+      .map(friendEmail => {
+        const friend = usersDB.getByEmail(friendEmail);
+        return friend ? {
+          id: friend.email,
+          email: friend.email,
+          displayName: friend.display_name || friend.email.split('@')[0]
+        } : null;
+      })
+      .filter(friend => friend !== null);
+  }
 }
 
 // Créer une instance unique
