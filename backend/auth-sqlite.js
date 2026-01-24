@@ -314,6 +314,11 @@ class AuthManagerSQLite {
     return { success: true, user: this.users[email] };
   }
 
+  // Alias pour compatibilité avec l'ancien code server.js
+  authenticate(email, password) {
+    return this.verifyUser(email, password);
+  }
+
   createAuthToken(email) {
     const token = this.generateToken();
     this.tokens[token] = {
