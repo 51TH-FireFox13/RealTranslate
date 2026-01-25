@@ -2149,17 +2149,12 @@ app.get('/api/groups', authMiddleware, async (req, res) => {
     const userEmail = req.user.email;
     const user = authManager.users[userEmail];
 
-    if (!user.groups) {
-      return res.json({ groups: [] });
-    }
+    // Récupérer les groupes directement depuis SQLite
+    const allUserGroups = getUserGroups(userEmail);
 
     // Filtrer les groupes archivés
     const archivedGroups = user.archivedGroups || [];
-
-    const userGroups = user.groups
-      .filter(groupId => !archivedGroups.includes(groupId)) // Exclure archivés
-      .map(groupId => groups[groupId])
-      .filter(g => g); // Filtrer les groupes supprimés
+    const userGroups = allUserGroups.filter(g => !archivedGroups.includes(g.id));
 
     res.json({ groups: userGroups });
 
