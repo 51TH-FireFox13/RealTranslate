@@ -312,7 +312,7 @@ class AuthManagerSQLite {
 
     logger.info('User verified', { email });
     // Retourner l'utilisateur via le proxy pour compatibilité
-    return { success: true, user: this.users[email] };
+    return { success: true, user: this.sanitizeUser(this.users[email]) };
   }
 
   // Alias pour compatibilité avec l'ancien code server.js
@@ -326,7 +326,7 @@ class AuthManagerSQLite {
     const token = this.createAuthToken(email);
     return {
       success: true,
-      user: result.user,
+      user: this.sanitizeUser(result.user),
       token
     };
   }
@@ -351,7 +351,7 @@ class AuthManagerSQLite {
       return { success: false, message: 'Utilisateur introuvable' };
     }
 
-    return { success: true, user: this.users[tokenData.email] };
+    return { success: true, user: this.sanitizeUser(this.users[tokenData.email]) };
   }
 
   updateUserSubscription(email, tier, status = 'active') {
@@ -496,7 +496,7 @@ class AuthManagerSQLite {
       return {
         success: true,
         message: 'Rôle mis à jour',
-        user: this.users[email]
+        user: this.sanitizeUser(this.users[email])
       };
     } catch (error) {
       logger.error('Error updating user role', { error: error.message, email, newRole });
@@ -649,7 +649,7 @@ class AuthManagerSQLite {
 
     logger.info('Subscription updated', { email, tier: tierData.name, expiresAt });
 
-    return { success: true, user: this.users[email] };
+    return { success: true, user: this.sanitizeUser(this.users[email]) };
   }
 
   updateDisplayName(email, newDisplayName) {
@@ -834,6 +834,12 @@ class AuthManagerSQLite {
     logger.info('Friend removed', { user: userEmail, friend: friendEmail });
 
     return { success: true, message: 'Ami supprimé' };
+  }
+
+  sanitizeUser(user) {
+    // Enlever les champs sensibles avant de retourner au client
+    const { passwordHash, password, ...sanitized } = user;
+    return sanitized;
   }
 }
 
