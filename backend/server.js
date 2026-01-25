@@ -2164,6 +2164,52 @@ app.get('/api/groups', authMiddleware, async (req, res) => {
   }
 });
 
+// Obtenir les groupes publics
+app.get('/api/groups/public', authMiddleware, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+
+    // Récupérer les groupes publics depuis SQLite
+    const publicGroupsRaw = groupsDB.getPublic();
+    const publicGroups = publicGroupsRaw.map(g => {
+      const members = groupsDB.getMembers(g.id);
+      const isMember = members.some(m => m.user_email === userEmail);
+      return {
+        id: g.id,
+        name: g.name,
+        creator: g.creator,
+        memberCount: members.length,
+        isMember,
+        createdAt: g.created_at
+      };
+    });
+
+    res.json({ groups: publicGroups });
+
+  } catch (error) {
+    logger.error('Error fetching public groups', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Obtenir les groupes archivés
+app.get('/api/groups/archived/list', authMiddleware, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const user = authManager.users[userEmail];
+
+    const archivedGroups = (user.archivedGroups || [])
+      .map(groupId => groups[groupId])
+      .filter(g => g); // Filtrer les groupes supprimés
+
+    res.json({ groups: archivedGroups });
+
+  } catch (error) {
+    logger.error('Error getting archived groups', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 // Obtenir les détails d'un groupe
 app.get('/api/groups/:groupId', authMiddleware, async (req, res) => {
   try {
@@ -2312,33 +2358,6 @@ app.delete('/api/groups/:groupId/members/:memberEmail', authMiddleware, async (r
 });
 
 // Découvrir les groupes publics
-app.get('/api/groups/public', authMiddleware, async (req, res) => {
-  try {
-    const userEmail = req.user.email;
-
-    // Récupérer les groupes publics depuis SQLite
-    const publicGroupsRaw = groupsDB.getPublic();
-    const publicGroups = publicGroupsRaw.map(g => {
-      const members = groupsDB.getMembers(g.id);
-      const isMember = members.some(m => m.user_email === userEmail);
-      return {
-        id: g.id,
-        name: g.name,
-        creator: g.creator,
-        memberCount: members.length,
-        isMember,
-        createdAt: g.created_at
-      };
-    });
-
-    res.json({ groups: publicGroups });
-
-  } catch (error) {
-    logger.error('Error fetching public groups', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-});
-
 // Rejoindre un groupe public
 app.post('/api/groups/:groupId/join', authMiddleware, async (req, res) => {
   try {
@@ -2361,8 +2380,8 @@ app.post('/api/groups/:groupId/join', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Vous êtes déjà membre de ce groupe' });
     }
 
-    // Ajouter l'utilisateur au groupe
-    group.members.push({
+    // Ajouter l'utilisateur au groupe dans la DB
+    groupsDB.addMember(groupId, {
       email: userEmail,
       displayName: user.displayName,
       role: 'member'
@@ -2371,7 +2390,6 @@ app.post('/api/groups/:groupId/join', authMiddleware, async (req, res) => {
     if (!user.groups) user.groups = [];
     user.groups.push(groupId);
 
-    // Auto-saved via proxy
     authManager.saveUsers();
 
     logger.info(`User joined public group: ${userEmail} -> ${groupId}`);
@@ -2415,23 +2433,6 @@ app.post('/api/groups/:groupId/archive', authMiddleware, async (req, res) => {
 });
 
 // Obtenir les groupes archivés
-app.get('/api/groups/archived/list', authMiddleware, async (req, res) => {
-  try {
-    const userEmail = req.user.email;
-    const user = authManager.users[userEmail];
-
-    const archivedGroups = (user.archivedGroups || [])
-      .map(groupId => groups[groupId])
-      .filter(g => g); // Filtrer les groupes supprimés
-
-    res.json({ groups: archivedGroups });
-
-  } catch (error) {
-    logger.error('Error getting archived groups', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-});
-
 // ===================================
 // ROUTES API - ADMIN (GROUPES)
 // ===================================
