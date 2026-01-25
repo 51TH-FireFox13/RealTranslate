@@ -737,10 +737,31 @@ class AuthManagerSQLite {
 
     // Vérifier si demande déjà envoyée
     if (!toUserProxy.friendRequests) toUserProxy.friendRequests = [];
+    if (!fromUserProxy.friendRequests) fromUserProxy.friendRequests = [];
 
     const existingRequest = toUserProxy.friendRequests.find(req => req.from === fromEmail);
     if (existingRequest) {
       return { success: false, message: 'Demande d\'ami déjà envoyée' };
+    }
+
+    // CORRECTION: Vérifier si demande croisée (TO a déjà envoyé une demande à FROM)
+    const crossRequest = fromUserProxy.friendRequests.find(req => req.from === toEmail);
+    if (crossRequest) {
+      // Demande croisée détectée : les deux veulent être amis
+      // Supprimer la demande existante
+      fromUserProxy.friendRequests = fromUserProxy.friendRequests.filter(req => req.from !== toEmail);
+
+      // Ajouter comme amis mutuellement
+      if (!fromUserProxy.friends.includes(toEmail)) {
+        fromUserProxy.friends.push(toEmail);
+      }
+      if (!toUserProxy.friends.includes(fromEmail)) {
+        toUserProxy.friends.push(fromEmail);
+      }
+
+      logger.info('Friend request auto-accepted (cross-request)', { from: fromEmail, to: toEmail });
+
+      return { success: true, message: 'Demande acceptée automatiquement', autoAccepted: true };
     }
 
     // Ajouter la demande
