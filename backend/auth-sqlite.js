@@ -4,6 +4,7 @@
  */
 
 import crypto from 'crypto';
+import bcrypt from 'bcrypt';
 import { usersDB, tokensDB, friendsDB, groupsDB, archivedDB, quotasDB } from './database.js';
 import { logger } from './logger.js';
 
@@ -286,7 +287,24 @@ class AuthManagerSQLite {
   }
 
   hashPassword(password) {
-    return crypto.createHash('sha256').update(password).digest('hex');
+    // Utiliser bcrypt avec 10 rounds (bon compromis sécurité/performance)
+    return bcrypt.hashSync(password, 10);
+  }
+
+  async hashPasswordAsync(password) {
+    // Version async pour les nouvelles créations
+    return bcrypt.hash(password, 10);
+  }
+
+  verifyPassword(password, hash) {
+    // Support legacy SHA256 pour migration progressive
+    if (hash.length === 64 && /^[a-f0-9]+$/.test(hash)) {
+      // C'est probablement un hash SHA256 legacy
+      logger.warn('Legacy SHA256 hash detected - user should change password');
+      return crypto.createHash('sha256').update(password).digest('hex') === hash;
+    }
+    // Hash bcrypt
+    return bcrypt.compareSync(password, hash);
   }
 
   generateToken() {
@@ -323,8 +341,8 @@ class AuthManagerSQLite {
       return { success: false, message: 'Utilisateur introuvable' };
     }
 
-    const hashedPassword = this.hashPassword(password);
-    if (user.password !== hashedPassword) {
+    // Utiliser verifyPassword qui supporte bcrypt + legacy SHA256
+    if (!this.verifyPassword(password, user.password)) {
       return { success: false, message: 'Mot de passe incorrect' };
     }
 
