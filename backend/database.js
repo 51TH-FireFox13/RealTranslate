@@ -140,6 +140,7 @@ function createTables() {
       current_uses INTEGER DEFAULT 0,
       expires_at INTEGER,
       description TEXT,
+      status TEXT DEFAULT 'active',
       created_at INTEGER DEFAULT (strftime('%s', 'now'))
     )
   `);
@@ -468,6 +469,11 @@ export const tokensDB = {
   incrementUse(token) {
     const stmt = db.prepare('UPDATE access_tokens SET current_uses = current_uses + 1 WHERE token = ?');
     return stmt.run(token);
+  },
+
+  updateStatus(token, status) {
+    const stmt = db.prepare('UPDATE access_tokens SET status = ? WHERE token = ?');
+    return stmt.run(status, token);
   },
 
   delete(token) {

@@ -836,6 +836,143 @@ class AuthManagerSQLite {
     return { success: true, message: 'Ami supprimé' };
   }
 
+  // ===================================
+  // Access Tokens (jetons d'accès invités)
+  // ===================================
+
+  generateAccessToken(subscriptionTier = 'free', expiresInDays = 30, maxUses = 1, description = '') {
+    const token = `AT-${crypto.randomBytes(16).toString('hex')}`;
+
+    const tokenData = {
+      token,
+      tier: subscriptionTier,
+      maxUses,
+      description,
+      expiresAt: Math.floor(Date.now() / 1000) + (expiresInDays * 24 * 60 * 60)
+    };
+
+    tokensDB.create(tokenData);
+    logger.info('Access token generated', { tier: subscriptionTier, maxUses });
+
+    return {
+      token,
+      tier: subscriptionTier,
+      maxUses,
+      usedCount: 0,
+      description,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(tokenData.expiresAt * 1000).toISOString(),
+      status: 'active'
+    };
+  }
+
+  authenticateWithAccessToken(accessToken) {
+    const tokenData = tokensDB.getByToken(accessToken);
+
+    if (!tokenData) {
+      logger.info('Access token login failed - token not found');
+      return { success: false, message: 'Jeton d\'accès invalide' };
+    }
+
+    // Vérifier le statut
+    if (tokenData.status !== 'active') {
+      logger.info('Access token login failed - token inactive', { status: tokenData.status });
+      return { success: false, message: 'Jeton d\'accès désactivé' };
+    }
+
+    // Vérifier l'expiration
+    const now = Math.floor(Date.now() / 1000);
+    if (tokenData.expires_at && tokenData.expires_at < now) {
+      tokensDB.updateStatus(accessToken, 'expired');
+      logger.info('Access token login failed - token expired');
+      return { success: false, message: 'Jeton d\'accès expiré' };
+    }
+
+    // Vérifier le nombre d'utilisations
+    if (tokenData.current_uses >= tokenData.max_uses) {
+      tokensDB.updateStatus(accessToken, 'exhausted');
+      logger.info('Access token login failed - max uses reached');
+      return { success: false, message: 'Jeton d\'accès déjà utilisé (limite atteinte)' };
+    }
+
+    // Créer un utilisateur temporaire
+    const tempUserId = `guest-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+    const tempUser = {
+      id: tempUserId,
+      email: `${tempUserId}@guest.realtranslate.com`,
+      role: ROLES.GUEST,
+      subscription_tier: tokenData.tier,
+      subscription_status: 'active',
+      display_name: `Invité ${tokenData.tier}`,
+      accessTokenUsed: accessToken,
+      created_at: new Date().toISOString()
+    };
+
+    // Incrémenter l'utilisation
+    tokensDB.incrementUse(accessToken);
+
+    // Marquer comme épuisé si limite atteinte
+    if (tokenData.current_uses + 1 >= tokenData.max_uses) {
+      tokensDB.updateStatus(accessToken, 'exhausted');
+    }
+
+    // Générer un token de session classique pour cet utilisateur temporaire
+    const sessionToken = this.generateToken();
+    this.tokens[sessionToken] = {
+      email: tempUser.email,
+      role: tempUser.role,
+      tier: tokenData.tier,
+      createdAt: Date.now(),
+      isGuest: true
+    };
+
+    logger.info('Access token login success', { userId: tempUserId, tier: tokenData.tier });
+
+    return {
+      success: true,
+      token: sessionToken,
+      user: this.sanitizeUser(tempUser)
+    };
+  }
+
+  listAccessTokens() {
+    const allTokens = tokensDB.getAll();
+    const now = Math.floor(Date.now() / 1000);
+
+    return allTokens.map(token => {
+      // Dériver le status si nécessaire
+      let status = token.status || 'active';
+      if (status === 'active') {
+        if (token.expires_at && token.expires_at < now) {
+          status = 'expired';
+        } else if (token.current_uses >= token.max_uses) {
+          status = 'exhausted';
+        }
+      }
+
+      return {
+        token: token.token,
+        tier: token.tier,
+        maxUses: token.max_uses,
+        usedCount: token.current_uses,
+        description: token.description,
+        status,
+        createdAt: new Date(token.created_at * 1000).toISOString(),
+        expiresAt: token.expires_at ? new Date(token.expires_at * 1000).toISOString() : null
+      };
+    });
+  }
+
+  revokeAccessToken(accessToken) {
+    const tokenData = tokensDB.getByToken(accessToken);
+    if (tokenData) {
+      tokensDB.updateStatus(accessToken, 'revoked');
+      logger.info('Access token revoked', { token: accessToken });
+      return { success: true, message: 'Jeton révoqué' };
+    }
+    return { success: false, message: 'Jeton introuvable' };
+  }
+
   sanitizeUser(user) {
     // Enlever les champs sensibles avant de retourner au client
     const { passwordHash, password, ...sanitized } = user;
