@@ -15,6 +15,44 @@ import {
 import { logger } from './logger.js';
 
 // ===================================
+// GESTION DES ERREURS PROXY
+// ===================================
+
+/**
+ * Stocke la dernière erreur survenue dans un proxy
+ * Permet de récupérer l'erreur après qu'un proxy retourne false
+ */
+export const lastProxyError = {
+  error: null,
+  context: null,
+  timestamp: null
+};
+
+/**
+ * Gère une erreur de proxy de manière cohérente
+ * @param {Error} error - L'erreur survenue
+ * @param {string} operation - L'opération qui a échoué (ex: 'groups.set', 'messages.delete')
+ * @param {object} context - Contexte supplémentaire (ex: {groupId, userId})
+ * @returns {boolean} false (pour que le proxy indique l'échec)
+ */
+function handleProxyError(error, operation, context = {}) {
+  // Logger l'erreur complète avec stack trace
+  logger.error(`Proxy error: ${operation}`, {
+    error: error.message,
+    stack: error.stack,
+    context,
+    timestamp: new Date().toISOString()
+  });
+
+  // Stocker pour récupération ultérieure
+  lastProxyError.error = error;
+  lastProxyError.context = { operation, ...context };
+  lastProxyError.timestamp = Date.now();
+
+  return false;
+}
+
+// ===================================
 // GROUPS PROXY
 // ===================================
 
@@ -57,8 +95,7 @@ export const groups = new Proxy({}, {
       }
       return true;
     } catch (error) {
-      logger.error('Error in groups proxy set', { error: error.message, groupId });
-      return false;
+      return handleProxyError(error, 'groups.set', { groupId, groupName: value?.name });
     }
   },
 
@@ -71,12 +108,15 @@ export const groups = new Proxy({}, {
           error: result.error,
           groupId
         });
+        // Stocker l'erreur pour récupération
+        lastProxyError.error = new Error(result.error);
+        lastProxyError.context = { operation: 'groups.deleteProperty', groupId };
+        lastProxyError.timestamp = Date.now();
         return false;
       }
       return true;
     } catch (error) {
-      logger.error('Error in groups proxy delete', { error: error.message, groupId });
-      return false;
+      return handleProxyError(error, 'groups.deleteProperty', { groupId });
     }
   },
 
@@ -105,7 +145,91 @@ export const groups = new Proxy({}, {
 // MESSAGES PROXY
 // ===================================
 
-const messagesCache = new Map(); // Cache temporaire pour éviter trop de requêtes
+/**
+ * Cache avec TTL (Time To Live) pour les messages
+ * Expire automatiquement les entrées après un certain temps
+ */
+class TTLCache {
+  constructor(ttlMs = 60000) { // 60 secondes par défaut
+    this.cache = new Map();
+    this.ttl = ttlMs;
+  }
+
+  set(key, value) {
+    this.cache.set(key, {
+      value,
+      expireAt: Date.now() + this.ttl
+    });
+  }
+
+  get(key) {
+    const entry = this.cache.get(key);
+
+    if (!entry) {
+      return undefined;
+    }
+
+    // Vérifier si l'entrée a expiré
+    if (Date.now() > entry.expireAt) {
+      this.cache.delete(key);
+      return undefined;
+    }
+
+    return entry.value;
+  }
+
+  has(key) {
+    const entry = this.cache.get(key);
+
+    if (!entry) {
+      return false;
+    }
+
+    // Vérifier si l'entrée a expiré
+    if (Date.now() > entry.expireAt) {
+      this.cache.delete(key);
+      return false;
+    }
+
+    return true;
+  }
+
+  delete(key) {
+    return this.cache.delete(key);
+  }
+
+  clear() {
+    this.cache.clear();
+  }
+
+  /**
+   * Nettoie toutes les entrées expirées
+   */
+  cleanup() {
+    const now = Date.now();
+    for (const [key, entry] of this.cache.entries()) {
+      if (now > entry.expireAt) {
+        this.cache.delete(key);
+      }
+    }
+  }
+
+  /**
+   * Retourne le nombre d'entrées dans le cache (incluant les expirées)
+   */
+  size() {
+    return this.cache.size;
+  }
+}
+
+// Cache avec TTL de 5 minutes pour les messages
+const messagesCache = new TTLCache(5 * 60 * 1000);
+
+// Nettoyer le cache toutes les 10 minutes
+setInterval(() => {
+  messagesCache.cleanup();
+  logger.info('Messages cache cleaned up', { size: messagesCache.size() });
+}, 10 * 60 * 1000);
 
 export const messages = new Proxy({}, {
   get(target, groupId) {
@@ -133,8 +257,7 @@ export const messages = new Proxy({}, {
       messagesCache.delete(groupId);
       return true;
     } catch (error) {
-      logger.error('Error in messages proxy delete', { error: error.message, groupId });
-      return false;
+      return handleProxyError(error, 'messages.deleteProperty', { groupId });
     }
   },
 
@@ -168,13 +291,18 @@ function createMessageArrayProxy(groupId) {
     get(target, prop) {
       if (prop === 'push') {
         return function(...messages) {
-          // Intercepter push pour sauvegarder en DB
-          messages.forEach(msg => {
-            addGroupMessage(groupId, msg);
-          });
-          // Mettre à jour le cache
-          messagesCache.set(groupId, getGroupMessages(groupId));
-          return target.length + messages.length;
+          try {
+            // Intercepter push pour sauvegarder en DB
+            messages.forEach(msg => {
+              addGroupMessage(groupId, msg);
+            });
+            // Mettre à jour le cache
+            messagesCache.set(groupId, getGroupMessages(groupId));
+            return target.length + messages.length;
+          } catch (error) {
+            handleProxyError(error, 'messagesEnhanced.push', { groupId, messageCount: messages.length });
+            throw error; // Re-throw pour que l'appelant sache qu'il y a eu une erreur
+          }
         };
       }
       return target[prop];
@@ -202,8 +330,7 @@ export const messagesEnhanced = new Proxy({}, {
       messagesCache.delete(groupId);
       return true;
     } catch (error) {
-      logger.error('Error in messages proxy delete', { error: error.message, groupId });
-      return false;
+      return handleProxyError(error, 'messages.deleteProperty', { groupId });
     }
   },
 
@@ -216,7 +343,14 @@ export const messagesEnhanced = new Proxy({}, {
 // DIRECT MESSAGES PROXY
 // ===================================
 
-const dmsCache = new Map();
+// Cache avec TTL de 5 minutes pour les DMs
+const dmsCache = new TTLCache(5 * 60 * 1000);
+
+// Nettoyer le cache DMs toutes les 10 minutes
+setInterval(() => {
+  dmsCache.cleanup();
+  logger.info('DMs cache cleaned up', { size: dmsCache.size() });
+}, 10 * 60 * 1000);
 
 export const directMessages = new Proxy({}, {
   get(target, convId) {
@@ -241,8 +375,7 @@ export const directMessages = new Proxy({}, {
       dmsCache.delete(convId);
       return true;
     } catch (error) {
-      logger.error('Error in DMs proxy delete', { error: error.message, convId });
-      return false;
+      return handleProxyError(error, 'directMessages.deleteProperty', { convId });
     }
   },
 
@@ -261,11 +394,16 @@ function createDMArrayProxy(convId) {
     get(target, prop) {
       if (prop === 'push') {
         return function(...dms) {
-          dms.forEach(dm => {
-            addDirectMessage(convId, dm);
-          });
-          dmsCache.set(convId, getConversationMessages(convId));
-          return target.length + dms.length;
+          try {
+            dms.forEach(dm => {
+              addDirectMessage(convId, dm);
+            });
+            dmsCache.set(convId, getConversationMessages(convId));
+            return target.length + dms.length;
+          } catch (error) {
+            handleProxyError(error, 'directMessagesEnhanced.push', { convId, messageCount: dms.length });
+            throw error; // Re-throw pour que l'appelant sache qu'il y a eu une erreur
+          }
         };
       }
       return target[prop];

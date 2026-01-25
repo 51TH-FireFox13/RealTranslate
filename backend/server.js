@@ -22,6 +22,7 @@ import {
 import stripePayment from './stripe-payment.js';
 import { verifyPayPalIPN, verifyWeChatSignature, verifyWeChatV3Signature } from './payment-security.js';
 import { verifyCSRFToken, csrfTokenEndpoint, exemptCSRF } from './csrf-protection.js';
+import { validateWebSocketData } from './websocket-validation.js';
 import crypto from 'crypto';
 import {
   initDatabase,
@@ -44,7 +45,6 @@ import {
 } from './db-helpers.js';
 import {
   groups,
-  messages,
   messagesEnhanced,
   directMessages,
   directMessagesEnhanced,
@@ -317,6 +317,13 @@ io.on('connection', (socket) => {
   // Envoyer un message de groupe
   socket.on('send_message', async (data) => {
     try {
+      // Valider les données reçues
+      const validation = validateWebSocketData('send_message', data);
+      if (!validation.valid) {
+        socket.emit('error', { message: 'Données invalides', errors: validation.errors });
+        return;
+      }
+
       const { groupId, content, userLang, fileInfo } = data;
       const group = groups[groupId];
 
@@ -426,6 +433,13 @@ io.on('connection', (socket) => {
   // Envoyer un message privé (DM)
   socket.on('send_dm', async (data) => {
     try {
+      // Valider les données reçues
+      const validation = validateWebSocketData('send_dm', data);
+      if (!validation.valid) {
+        socket.emit('error', { message: 'Données invalides', errors: validation.errors });
+        return;
+      }
+
       const { toEmail, content, userLang, fileInfo } = data;
       const fromEmail = userEmail;
 
@@ -494,6 +508,13 @@ io.on('connection', (socket) => {
   // Indicateur "en train d'écrire..."
   socket.on('user_typing', (data) => {
     try {
+      // Valider les données reçues
+      const validation = validateWebSocketData('user_typing', data);
+      if (!validation.valid) {
+        socket.emit('error', { message: 'Données invalides', errors: validation.errors });
+        return;
+      }
+
       const { groupId, isTyping } = data;
       const group = groups[groupId];
 
@@ -523,6 +544,13 @@ io.on('connection', (socket) => {
   // Ajouter/retirer une réaction sur un message
   socket.on('toggle_reaction', async (data) => {
     try {
+      // Valider les données reçues
+      const validation = validateWebSocketData('toggle_reaction', data);
+      if (!validation.valid) {
+        socket.emit('error', { message: 'Données invalides', errors: validation.errors });
+        return;
+      }
+
       const { groupId, messageId, emoji } = data;
       const group = groups[groupId];
 
@@ -539,7 +567,7 @@ io.on('connection', (socket) => {
       }
 
       // Trouver le message
-      const groupMessages = messages[groupId] || [];
+      const groupMessages = messagesEnhanced[groupId] || [];
       const message = groupMessages.find(m => m.id === messageId);
 
       if (!message) {
@@ -601,6 +629,13 @@ io.on('connection', (socket) => {
   // Supprimer un message
   socket.on('delete_message', async (data) => {
     try {
+      // Valider les données reçues
+      const validation = validateWebSocketData('delete_message', data);
+      if (!validation.valid) {
+        socket.emit('error', { message: 'Données invalides', errors: validation.errors });
+        return;
+      }
+
       const { groupId, messageId } = data;
       const group = groups[groupId];
 
@@ -617,7 +652,7 @@ io.on('connection', (socket) => {
       }
 
       // Trouver le message
-      const groupMessages = messages[groupId] || [];
+      const groupMessages = messagesEnhanced[groupId] || [];
       const messageIndex = groupMessages.findIndex(m => m.id === messageId);
 
       if (messageIndex === -1) {
@@ -658,6 +693,13 @@ io.on('connection', (socket) => {
 
   // Rejoindre un groupe
   socket.on('join_group', (data) => {
+    // Valider les données reçues
+    const validation = validateWebSocketData('join_group', data);
+    if (!validation.valid) {
+      socket.emit('error', { message: 'Données invalides', errors: validation.errors });
+      return;
+    }
+
     const { groupId } = data;
     const group = groups[groupId];
 
@@ -677,12 +719,19 @@ io.on('connection', (socket) => {
     logger.info(`${userEmail} joined group ${groupId}`);
 
     // Envoyer l'historique des messages
-    const groupMessages = messages[groupId] || [];
+    const groupMessages = messagesEnhanced[groupId] || [];
     socket.emit('group_history', { groupId, messages: groupMessages });
   });
 
   // Quitter un groupe
   socket.on('leave_group', (data) => {
+    // Valider les données reçues
+    const validation = validateWebSocketData('leave_group', data);
+    if (!validation.valid) {
+      socket.emit('error', { message: 'Données invalides', errors: validation.errors });
+      return;
+    }
+
     const { groupId } = data;
     socket.leave(groupId);
     logger.info(`${userEmail} left group ${groupId}`);
@@ -2331,7 +2380,7 @@ app.get('/api/groups/:groupId/messages', authMiddleware, async (req, res) => {
       return res.status(403).json({ error: 'Accès refusé' });
     }
 
-    const groupMessages = messages[groupId] || [];
+    const groupMessages = messagesEnhanced[groupId] || [];
     res.json({ messages: groupMessages });
 
   } catch (error) {
@@ -2548,7 +2597,7 @@ app.get('/api/admin/groups/:groupId', authMiddleware, adminMiddleware, async (re
     }
 
     // Compter les messages du groupe
-    const messageCount = messages[groupId] ? messages[groupId].length : 0;
+    const messageCount = messagesEnhanced[groupId] ? messagesEnhanced[groupId].length : 0;
 
     res.json({
       group: {
@@ -2578,7 +2627,7 @@ app.delete('/api/admin/groups/:groupId', authMiddleware, adminMiddleware, async 
     // Pas besoin de modifier user.groups manuellement
 
     // Supprimer les messages du groupe
-    delete messages[groupId];
+    delete messagesEnhanced[groupId];
 
     // Supprimer le groupe (CASCADE DELETE supprimera automatiquement group_members)
     delete groups[groupId];
