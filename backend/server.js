@@ -2315,7 +2315,6 @@ app.delete('/api/groups/:groupId/members/:memberEmail', authMiddleware, async (r
 app.get('/api/groups/public', authMiddleware, async (req, res) => {
   try {
     const userEmail = req.user.email;
-    const user = authManager.users[userEmail];
 
     // Récupérer les groupes publics depuis SQLite
     const publicGroupsRaw = groupsDB.getPublic();
