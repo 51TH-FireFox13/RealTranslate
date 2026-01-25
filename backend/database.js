@@ -180,6 +180,18 @@ function createTables() {
     )
   `);
 
+  // Table user_quotas (usage des quotas par utilisateur)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_quotas (
+      user_email TEXT PRIMARY KEY,
+      transcribe_used INTEGER DEFAULT 0,
+      translate_used INTEGER DEFAULT 0,
+      speak_used INTEGER DEFAULT 0,
+      last_reset INTEGER DEFAULT (strftime('%s', 'now')),
+      FOREIGN KEY (user_email) REFERENCES users(email) ON DELETE CASCADE
+    )
+  `);
+
   logger.info('Database tables created/verified');
 }
 
@@ -662,6 +674,64 @@ export const friendsDB = {
   }
 };
 
+// ===================================
+// USER QUOTAS
+// ===================================
+
+export const quotasDB = {
+  get(userEmail) {
+    const stmt = db.prepare('SELECT * FROM user_quotas WHERE user_email = ?');
+    return stmt.get(userEmail);
+  },
+
+  getOrCreate(userEmail) {
+    let quota = this.get(userEmail);
+    if (!quota) {
+      const stmt = db.prepare(`
+        INSERT INTO user_quotas (user_email, transcribe_used, translate_used, speak_used)
+        VALUES (?, 0, 0, 0)
+      `);
+      stmt.run(userEmail);
+      quota = this.get(userEmail);
+    }
+    return quota;
+  },
+
+  increment(userEmail, action) {
+    const columnMap = {
+      transcribe: 'transcribe_used',
+      translate: 'translate_used',
+      speak: 'speak_used'
+    };
+    const column = columnMap[action];
+    if (!column) return;
+
+    const stmt = db.prepare(`
+      INSERT INTO user_quotas (user_email, ${column})
+      VALUES (?, 1)
+      ON CONFLICT(user_email) DO UPDATE SET ${column} = ${column} + 1
+    `);
+    return stmt.run(userEmail);
+  },
+
+  reset(userEmail) {
+    const stmt = db.prepare(`
+      UPDATE user_quotas
+      SET transcribe_used = 0, translate_used = 0, speak_used = 0, last_reset = ?
+      WHERE user_email = ?
+    `);
+    return stmt.run(Math.floor(Date.now() / 1000), userEmail);
+  },
+
+  resetAll() {
+    const stmt = db.prepare(`
+      UPDATE user_quotas
+      SET transcribe_used = 0, translate_used = 0, speak_used = 0, last_reset = ?
+    `);
+    return stmt.run(Math.floor(Date.now() / 1000));
+  }
+};
+
 export function closeDatabase() {
   if (db) {
     db.close();
@@ -679,7 +749,8 @@ export default {
   tokensDB,
   archivedDB,
   statusesDB,
-  friendsDB
+  friendsDB,
+  quotasDB
 };
 
 // Auto-initialize database on module load

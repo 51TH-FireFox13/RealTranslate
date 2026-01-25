@@ -676,6 +676,10 @@ io.on('connection', (socket) => {
         // Mettre à jour le statut offline (SQLite)
         statusesDB.setOffline(userEmail);
 
+        // Récupérer le lastSeenTime depuis la DB
+        const status = statusesDB.get(userEmail);
+        const lastSeenTime = status?.last_seen || Date.now();
+
         // Notifier tous les utilisateurs concernés (groupes + DMs)
         const user = authManager.users[userEmail];
         const notifiedUsers = new Set();
@@ -2109,9 +2113,8 @@ app.post('/api/groups', authMiddleware, async (req, res) => {
           role: 'member'
         });
 
-        // Ajouter le groupe à la liste des groupes de l'utilisateur
-        if (!member.groups) member.groups = [];
-        member.groups.push(groupId);
+        // Note: user.groups est maintenant calculé automatiquement depuis group_members
+        // Pas besoin de modifier member.groups ici
       }
     }
 
@@ -2127,12 +2130,9 @@ app.post('/api/groups', authMiddleware, async (req, res) => {
     // Messages array auto-created by proxy when accessed
     // No need to initialize messages[groupId] = []
 
-    // Ajouter à la liste des groupes du créateur
-    if (!creator.groups) creator.groups = [];
-    creator.groups.push(groupId);
-
-    // Auto-saved via proxy, no need for saveGroups()
-    authManager.saveUsers();
+    // Note: creator.groups est maintenant calculé automatiquement depuis group_members
+    // Pas besoin de modifier creator.groups ici
+    // Note: saveUsers() est un no-op dans la version SQLite
 
     logger.info(`Group created: ${groupId} by ${creatorEmail}`, { name, memberCount: members.length });
     res.json({ success: true, group: groups[groupId] });
@@ -2302,10 +2302,8 @@ app.post('/api/groups/:groupId/members', authMiddleware, async (req, res) => {
       role: 'member'
     });
 
-    if (!newMember.groups) newMember.groups = [];
-    newMember.groups.push(groupId);
-
-    authManager.saveUsers();
+    // Note: newMember.groups est calculé automatiquement depuis group_members
+    // saveUsers() est un no-op dans la version SQLite
 
     logger.info(`Member added to group: ${memberEmail} -> ${groupId}`);
     res.json({ success: true, group });
@@ -2341,12 +2339,8 @@ app.delete('/api/groups/:groupId/members/:memberEmail', authMiddleware, async (r
     // Retirer le membre de la DB
     groupsDB.removeMember(groupId, memberEmail);
 
-    const member = authManager.users[memberEmail];
-    if (member && member.groups) {
-      member.groups = member.groups.filter(g => g !== groupId);
-    }
-
-    authManager.saveUsers();
+    // Note: member.groups est calculé automatiquement depuis group_members
+    // saveUsers() est un no-op dans la version SQLite
 
     logger.info(`Member removed from group: ${memberEmail} <- ${groupId}`);
     res.json({ success: true });
@@ -2387,10 +2381,8 @@ app.post('/api/groups/:groupId/join', authMiddleware, async (req, res) => {
       role: 'member'
     });
 
-    if (!user.groups) user.groups = [];
-    user.groups.push(groupId);
-
-    authManager.saveUsers();
+    // Note: user.groups est calculé automatiquement depuis group_members
+    // saveUsers() est un no-op dans la version SQLite
 
     logger.info(`User joined public group: ${userEmail} -> ${groupId}`);
     res.json({ success: true, group });
@@ -2510,22 +2502,16 @@ app.delete('/api/admin/groups/:groupId', authMiddleware, adminMiddleware, async 
     }
 
     // Retirer le groupe de tous les membres
-    group.members.forEach(member => {
-      const user = authManager.users[member.email];
-      if (user && user.groups) {
-        user.groups = user.groups.filter(g => g !== groupId);
-      }
-    });
+    // Note: user.groups sera automatiquement mis à jour via CASCADE DELETE
+    // Pas besoin de modifier user.groups manuellement
 
     // Supprimer les messages du groupe
     delete messages[groupId];
 
-    // Supprimer le groupe
+    // Supprimer le groupe (CASCADE DELETE supprimera automatiquement group_members)
     delete groups[groupId];
 
-    // Auto-saved via proxy
-    // Auto-saved via proxy
-    authManager.saveUsers();
+    // Note: saveUsers() est un no-op dans la version SQLite
 
     logger.info(`Group deleted by admin: ${groupId} (${group.name})`);
 

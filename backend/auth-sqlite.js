@@ -4,7 +4,7 @@
  */
 
 import crypto from 'crypto';
-import { usersDB, tokensDB, friendsDB } from './database.js';
+import { usersDB, tokensDB, friendsDB, groupsDB, archivedDB, quotasDB } from './database.js';
 import { logger } from './logger.js';
 
 // Rôles disponibles
@@ -77,9 +77,6 @@ class AuthManagerSQLite {
     this.tokens = {}; // Tokens de session (en mémoire uniquement)
     this.accessTokens = this.createAccessTokensProxy();
 
-    // Quotas usage en mémoire (pas encore persisté en DB)
-    this.quotaUsageStore = new Map(); // email -> { transcribe, translate, speak }
-
     // Créer admin par défaut si absent
     this.ensureDefaultAdmin();
   }
@@ -94,8 +91,13 @@ class AuthManagerSQLite {
         const user = usersDB.getByEmail(email);
         if (!user) return undefined;
 
-        // Récupérer quotaUsage depuis le store en mémoire
-        const quotaUsage = self.quotaUsageStore.get(email) || { transcribe: 0, translate: 0, speak: 0 };
+        // Récupérer quotaUsage depuis la DB
+        const quotaData = quotasDB.get(email);
+        const quotaUsage = quotaData ? {
+          transcribe: quotaData.transcribe_used,
+          translate: quotaData.translate_used,
+          speak: quotaData.speak_used
+        } : { transcribe: 0, translate: 0, speak: 0 };
 
         // Récupérer les amis et demandes d'ami depuis la DB
         const friends = friendsDB.getFriends(email).map(f => f.email);
@@ -104,6 +106,13 @@ class AuthManagerSQLite {
           fromDisplayName: req.fromDisplayName,
           sentAt: new Date(req.sentAt * 1000).toISOString()
         }));
+
+        // Récupérer les groupes depuis la DB (via group_members)
+        const userGroups = groupsDB.getByUser(email).map(g => g.id);
+
+        // Récupérer les archives depuis la DB
+        const archivedGroups = archivedDB.getArchived(email, 'group');
+        const archivedDMs = archivedDB.getArchived(email, 'dm');
 
         // Convertir format DB → format legacy
         return {
@@ -120,12 +129,12 @@ class AuthManagerSQLite {
           stripeSubscriptionId: user.stripe_subscription_id,
           avatar: user.avatar,
           createdAt: user.created_at,
-          // Propriétés calculées/temporaires
-          groups: user.groups || [],
+          // Propriétés calculées depuis la DB (read-only)
+          groups: userGroups,
           friends: friends,
           friendRequests: friendRequests,
-          archivedGroups: user.archivedGroups || [],
-          archivedDMs: user.archivedDMs || [],
+          archivedGroups: archivedGroups,
+          archivedDMs: archivedDMs,
           lastQuotaReset: user.lastQuotaReset,
           quotaUsage: quotaUsage
         };
@@ -414,18 +423,11 @@ class AuthManagerSQLite {
   }
 
   incrementQuota(email, action) {
-    // Note: quotaUsage n'est pas encore dans la DB
-    // Utiliser le store en mémoire
     const user = usersDB.getByEmail(email);
     if (!user) return;
 
-    let quotaUsage = this.quotaUsageStore.get(email);
-    if (!quotaUsage) {
-      quotaUsage = { transcribe: 0, translate: 0, speak: 0 };
-      this.quotaUsageStore.set(email, quotaUsage);
-    }
-
-    quotaUsage[action] = (quotaUsage[action] || 0) + 1;
+    // Incrémenter dans la DB
+    quotasDB.increment(email, action);
   }
 
   listUsers() {
@@ -560,14 +562,14 @@ class AuthManagerSQLite {
       return { allowed: true, remaining: -1 };
     }
 
-    // Récupérer l'usage actuel
-    let quotaUsage = this.quotaUsageStore.get(email);
-    if (!quotaUsage) {
-      quotaUsage = { transcribe: 0, translate: 0, speak: 0 };
-      this.quotaUsageStore.set(email, quotaUsage);
-    }
-
-    const currentUsage = quotaUsage[action] || 0;
+    // Récupérer l'usage actuel depuis la DB
+    const quotaData = quotasDB.getOrCreate(email);
+    const actionMap = {
+      transcribe: 'transcribe_used',
+      translate: 'translate_used',
+      speak: 'speak_used'
+    };
+    const currentUsage = quotaData[actionMap[action]] || 0;
     const limit = tier.quotas[action];
 
     // Vérifier si quota dépassé
@@ -597,16 +599,23 @@ class AuthManagerSQLite {
 
     const tierKey = (user.subscription_tier || 'free').toUpperCase();
     const tier = SUBSCRIPTION_TIERS[tierKey];
-    const quotaUsage = this.quotaUsageStore.get(email) || { transcribe: 0, translate: 0, speak: 0 };
+
+    // Récupérer quotas depuis la DB
+    const quotaData = quotasDB.getOrCreate(email);
+    const quotaUsage = {
+      transcribe: quotaData.transcribe_used || 0,
+      translate: quotaData.translate_used || 0,
+      speak: quotaData.speak_used || 0
+    };
 
     return {
       tier: user.subscription_tier || 'free',
       status: user.subscription_status || 'active',
       expiresAt: user.subscription_expires_at,
       quotas: {
-        transcribe: { used: quotaUsage.transcribe || 0, limit: tier?.quotas?.transcribe || 50, resetAt: this.getNextDayTimestamp() },
-        translate: { used: quotaUsage.translate || 0, limit: tier?.quotas?.translate || 100, resetAt: this.getNextDayTimestamp() },
-        speak: { used: quotaUsage.speak || 0, limit: tier?.quotas?.speak || 50, resetAt: this.getNextDayTimestamp() }
+        transcribe: { used: quotaUsage.transcribe, limit: tier?.quotas?.transcribe || 50, resetAt: this.getNextDayTimestamp() },
+        translate: { used: quotaUsage.translate, limit: tier?.quotas?.translate || 100, resetAt: this.getNextDayTimestamp() },
+        speak: { used: quotaUsage.speak, limit: tier?.quotas?.speak || 50, resetAt: this.getNextDayTimestamp() }
       }
     };
   }
@@ -653,8 +662,8 @@ class AuthManagerSQLite {
       subscription_expires_at: expiresAt
     });
 
-    // Réinitialiser les quotas
-    this.quotaUsageStore.set(email, { transcribe: 0, translate: 0, speak: 0 });
+    // Réinitialiser les quotas dans la DB
+    quotasDB.reset(email);
 
     logger.info('Subscription updated', { email, tier: tierData.name, expiresAt });
 
