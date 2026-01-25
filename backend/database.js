@@ -539,6 +539,129 @@ export const statusesDB = {
   }
 };
 
+// ===================================
+// USER FRIENDS
+// ===================================
+// SEMANTIQUE:
+// - (user_email: A, friend_email: B, status: 'pending') = A a envoyé une demande à B
+// - (user_email: A, friend_email: B, status: 'accepted') = A et B sont amis (deux lignes en miroir)
+
+export const friendsDB = {
+  // Ajouter une demande d'ami (status = 'pending')
+  // fromEmail envoie une demande à toEmail
+  addFriendRequest(fromEmail, toEmail) {
+    const stmt = db.prepare(`
+      INSERT OR IGNORE INTO user_friends (user_email, friend_email, status)
+      VALUES (?, ?, 'pending')
+    `);
+    return stmt.run(fromEmail, toEmail);
+  },
+
+  // Récupérer toutes les demandes d'ami REÇUES par un utilisateur (status = 'pending')
+  // Retourne toutes les demandes où friend_email = userEmail
+  getFriendRequests(userEmail) {
+    const stmt = db.prepare(`
+      SELECT uf.user_email as from_email, u.display_name as fromDisplayName, uf.created_at as sentAt
+      FROM user_friends uf
+      INNER JOIN users u ON uf.user_email = u.email
+      WHERE uf.friend_email = ? AND uf.status = 'pending'
+    `);
+    return stmt.all(userEmail);
+  },
+
+  // Récupérer toutes les demandes d'ami ENVOYÉES par un utilisateur (status = 'pending')
+  getSentFriendRequests(userEmail) {
+    const stmt = db.prepare(`
+      SELECT friend_email as to_email, status, created_at as sentAt
+      FROM user_friends
+      WHERE user_email = ? AND status = 'pending'
+    `);
+    return stmt.all(userEmail);
+  },
+
+  // Vérifier si une demande croisée existe
+  // (B a déjà demandé A, maintenant A demande B)
+  // Cherche si (user_email: toEmail, friend_email: fromEmail, status: 'pending') existe
+  checkCrossRequest(fromEmail, toEmail) {
+    const stmt = db.prepare(`
+      SELECT * FROM user_friends
+      WHERE user_email = ? AND friend_email = ? AND status = 'pending'
+    `);
+    return stmt.get(toEmail, fromEmail);
+  },
+
+  // Vérifier si une demande existe déjà
+  // Cherche si (user_email: fromEmail, friend_email: toEmail) existe
+  checkExistingRequest(fromEmail, toEmail) {
+    const stmt = db.prepare(`
+      SELECT * FROM user_friends
+      WHERE user_email = ? AND friend_email = ?
+    `);
+    return stmt.get(fromEmail, toEmail);
+  },
+
+  // Accepter une demande d'ami (créer la relation mutuelle)
+  // userEmail accepte la demande de fromEmail
+  // Transforme (fromEmail, userEmail, 'pending') en 'accepted'
+  // Et crée le miroir (userEmail, fromEmail, 'accepted')
+  acceptFriendRequest(userEmail, fromEmail) {
+    const stmt1 = db.prepare(`
+      UPDATE user_friends
+      SET status = 'accepted'
+      WHERE user_email = ? AND friend_email = ? AND status = 'pending'
+    `);
+    const stmt2 = db.prepare(`
+      INSERT OR REPLACE INTO user_friends (user_email, friend_email, status)
+      VALUES (?, ?, 'accepted')
+    `);
+
+    stmt1.run(fromEmail, userEmail);
+    stmt2.run(userEmail, fromEmail);
+
+    return { success: true };
+  },
+
+  // Rejeter une demande d'ami
+  // userEmail rejette la demande de fromEmail
+  // Supprime (fromEmail, userEmail, 'pending')
+  rejectFriendRequest(userEmail, fromEmail) {
+    const stmt = db.prepare(`
+      DELETE FROM user_friends
+      WHERE user_email = ? AND friend_email = ? AND status = 'pending'
+    `);
+    return stmt.run(fromEmail, userEmail);
+  },
+
+  // Supprimer une relation d'ami (mutuelle)
+  removeFriend(userEmail, friendEmail) {
+    const stmt = db.prepare(`
+      DELETE FROM user_friends
+      WHERE (user_email = ? AND friend_email = ?) OR (user_email = ? AND friend_email = ?)
+    `);
+    return stmt.run(userEmail, friendEmail, friendEmail, userEmail);
+  },
+
+  // Récupérer la liste des amis acceptés
+  getFriends(userEmail) {
+    const stmt = db.prepare(`
+      SELECT uf.friend_email as email, u.display_name as displayName, u.avatar
+      FROM user_friends uf
+      INNER JOIN users u ON uf.friend_email = u.email
+      WHERE uf.user_email = ? AND uf.status = 'accepted'
+    `);
+    return stmt.all(userEmail);
+  },
+
+  // Vérifier si deux utilisateurs sont amis
+  areFriends(email1, email2) {
+    const stmt = db.prepare(`
+      SELECT * FROM user_friends
+      WHERE user_email = ? AND friend_email = ? AND status = 'accepted'
+    `);
+    return stmt.get(email1, email2) !== undefined;
+  }
+};
+
 export function closeDatabase() {
   if (db) {
     db.close();
@@ -555,7 +678,8 @@ export default {
   directMessagesDB,
   tokensDB,
   archivedDB,
-  statusesDB
+  statusesDB,
+  friendsDB
 };
 
 // Auto-initialize database on module load

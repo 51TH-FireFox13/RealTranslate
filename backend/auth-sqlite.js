@@ -4,7 +4,7 @@
  */
 
 import crypto from 'crypto';
-import { usersDB, tokensDB } from './database.js';
+import { usersDB, tokensDB, friendsDB } from './database.js';
 import { logger } from './logger.js';
 
 // Rôles disponibles
@@ -97,6 +97,14 @@ class AuthManagerSQLite {
         // Récupérer quotaUsage depuis le store en mémoire
         const quotaUsage = self.quotaUsageStore.get(email) || { transcribe: 0, translate: 0, speak: 0 };
 
+        // Récupérer les amis et demandes d'ami depuis la DB
+        const friends = friendsDB.getFriends(email).map(f => f.email);
+        const friendRequests = friendsDB.getFriendRequests(email).map(req => ({
+          from: req.from_email,
+          fromDisplayName: req.fromDisplayName,
+          sentAt: new Date(req.sentAt * 1000).toISOString()
+        }));
+
         // Convertir format DB → format legacy
         return {
           id: user.email,
@@ -114,7 +122,8 @@ class AuthManagerSQLite {
           createdAt: user.created_at,
           // Propriétés calculées/temporaires
           groups: user.groups || [],
-          friends: user.friends || [],
+          friends: friends,
+          friendRequests: friendRequests,
           archivedGroups: user.archivedGroups || [],
           archivedDMs: user.archivedDMs || [],
           lastQuotaReset: user.lastQuotaReset,
@@ -723,41 +732,23 @@ class AuthManagerSQLite {
       return { success: false, message: 'Vous ne pouvez pas vous ajouter vous-même' };
     }
 
-    // Utiliser le proxy pour gérer les arrays
-    const fromUserProxy = this.users[fromEmail];
-    const toUserProxy = this.users[toEmail];
-
     // Vérifier si déjà amis
-    if (!fromUserProxy.friends) fromUserProxy.friends = [];
-    if (!toUserProxy.friends) toUserProxy.friends = [];
-
-    if (fromUserProxy.friends.includes(toEmail)) {
+    if (friendsDB.areFriends(fromEmail, toEmail)) {
       return { success: false, message: 'Déjà ami avec cet utilisateur' };
     }
 
     // Vérifier si demande déjà envoyée
-    if (!toUserProxy.friendRequests) toUserProxy.friendRequests = [];
-    if (!fromUserProxy.friendRequests) fromUserProxy.friendRequests = [];
-
-    const existingRequest = toUserProxy.friendRequests.find(req => req.from === fromEmail);
+    const existingRequest = friendsDB.checkExistingRequest(fromEmail, toEmail);
     if (existingRequest) {
       return { success: false, message: 'Demande d\'ami déjà envoyée' };
     }
 
     // CORRECTION: Vérifier si demande croisée (TO a déjà envoyé une demande à FROM)
-    const crossRequest = fromUserProxy.friendRequests.find(req => req.from === toEmail);
+    const crossRequest = friendsDB.checkCrossRequest(fromEmail, toEmail);
     if (crossRequest) {
       // Demande croisée détectée : les deux veulent être amis
-      // Supprimer la demande existante
-      fromUserProxy.friendRequests = fromUserProxy.friendRequests.filter(req => req.from !== toEmail);
-
-      // Ajouter comme amis mutuellement
-      if (!fromUserProxy.friends.includes(toEmail)) {
-        fromUserProxy.friends.push(toEmail);
-      }
-      if (!toUserProxy.friends.includes(fromEmail)) {
-        toUserProxy.friends.push(fromEmail);
-      }
+      // Accepter automatiquement les deux demandes
+      friendsDB.acceptFriendRequest(fromEmail, toEmail);
 
       logger.info('Friend request auto-accepted (cross-request)', { from: fromEmail, to: toEmail });
 
@@ -765,11 +756,7 @@ class AuthManagerSQLite {
     }
 
     // Ajouter la demande
-    toUserProxy.friendRequests.push({
-      from: fromEmail,
-      fromDisplayName: fromUser.display_name || fromEmail.split('@')[0],
-      sentAt: new Date().toISOString()
-    });
+    friendsDB.addFriendRequest(fromEmail, toEmail);
 
     logger.info('Friend request sent', { from: fromEmail, to: toEmail });
 
@@ -784,29 +771,16 @@ class AuthManagerSQLite {
       return { success: false, message: 'Utilisateur introuvable' };
     }
 
+    // Vérifier que la demande existe
     const userProxy = this.users[userEmail];
-    const fromUserProxy = this.users[fromEmail];
+    const requestExists = userProxy.friendRequests.find(req => req.from === fromEmail);
 
-    if (!userProxy.friendRequests) userProxy.friendRequests = [];
-
-    const requestIndex = userProxy.friendRequests.findIndex(req => req.from === fromEmail);
-    if (requestIndex === -1) {
+    if (!requestExists) {
       return { success: false, message: 'Demande d\'ami introuvable' };
     }
 
-    // Retirer la demande
-    userProxy.friendRequests.splice(requestIndex, 1);
-
-    // Ajouter comme amis mutuellement
-    if (!userProxy.friends) userProxy.friends = [];
-    if (!fromUserProxy.friends) fromUserProxy.friends = [];
-
-    if (!userProxy.friends.includes(fromEmail)) {
-      userProxy.friends.push(fromEmail);
-    }
-    if (!fromUserProxy.friends.includes(userEmail)) {
-      fromUserProxy.friends.push(userEmail);
-    }
+    // Accepter la demande (supprime la demande et crée la relation mutuelle)
+    friendsDB.acceptFriendRequest(userEmail, fromEmail);
 
     logger.info('Friend request accepted', { user: userEmail, from: fromEmail });
 
@@ -820,15 +794,16 @@ class AuthManagerSQLite {
       return { success: false, message: 'Utilisateur introuvable' };
     }
 
+    // Vérifier que la demande existe
     const userProxy = this.users[userEmail];
-    if (!userProxy.friendRequests) userProxy.friendRequests = [];
+    const requestExists = userProxy.friendRequests.find(req => req.from === fromEmail);
 
-    const requestIndex = userProxy.friendRequests.findIndex(req => req.from === fromEmail);
-    if (requestIndex === -1) {
+    if (!requestExists) {
       return { success: false, message: 'Demande d\'ami introuvable' };
     }
 
-    userProxy.friendRequests.splice(requestIndex, 1);
+    // Rejeter la demande
+    friendsDB.rejectFriendRequest(userEmail, fromEmail);
     logger.info('Friend request rejected', { user: userEmail, from: fromEmail });
 
     return { success: true, message: 'Demande refusée' };
@@ -842,15 +817,13 @@ class AuthManagerSQLite {
       return { success: false, message: 'Utilisateur introuvable' };
     }
 
-    const userProxy = this.users[userEmail];
-    const friendProxy = this.users[friendEmail];
+    // Vérifier qu'ils sont bien amis
+    if (!friendsDB.areFriends(userEmail, friendEmail)) {
+      return { success: false, message: 'Vous n\'êtes pas ami avec cet utilisateur' };
+    }
 
-    if (!userProxy.friends) userProxy.friends = [];
-    if (!friendProxy.friends) friendProxy.friends = [];
-
-    // Retirer mutuellement
-    userProxy.friends = userProxy.friends.filter(f => f !== friendEmail);
-    friendProxy.friends = friendProxy.friends.filter(f => f !== userEmail);
+    // Supprimer la relation d'ami (mutuelle)
+    friendsDB.removeFriend(userEmail, friendEmail);
 
     logger.info('Friend removed', { user: userEmail, friend: friendEmail });
 
