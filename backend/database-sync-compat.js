@@ -824,12 +824,6 @@ export const quotasDB = {
   }
 };
 
-// Auto-initialize database on module load
-// This ensures db is ready when auth-sqlite.js or other modules import it
-if (!globalDb) {
-  initDatabase();
-}
-
 export default {
   initDatabase,
   closeDatabase,

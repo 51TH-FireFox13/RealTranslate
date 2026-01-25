@@ -1,54 +1,61 @@
-/**
- * Couche de compatibilité synchrone pour database.js
- * Permet d'utiliser l'ancien code synchrone avec le nouveau système de pool
- *
- * ATTENTION: Cette approche utilise un pattern "sync-over-async" qui n'est pas idéal.
- * À terme, il faudra migrer tout le code vers async/await.
- *
- * Pour l'instant, on garde une connexion globale ouverte en permanence
- * pour maintenir la compatibilité avec auth-sqlite.js et autres fichiers
- */
-
 import Database from 'better-sqlite3';
 import { logger } from './logger.js';
-import { getDatabaseConfig } from './src/config/database.js';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-// Connexion globale (comme dans l'ancien database.js)
-let globalDb = null;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Support for test database via environment variable
+const DB_FILE = process.env.DB_FILE || join(__dirname, 'realtranslate.db');
+
+// Connexion SQLite
+let db;
 
 /**
- * Initialise la connexion globale
+ * Exécute une fonction dans une transaction SQLite
+ * Si la fonction lance une exception, la transaction est annulée (rollback)
+ * Sinon, la transaction est validée (commit)
+ *
+ * @param {Function} fn - Fonction à exécuter dans la transaction
+ * @returns {*} Résultat de la fonction
  */
+export function transaction(fn) {
+  if (!db) {
+    throw new Error('Database not initialized');
+  }
+  return db.transaction(fn)();
+}
+
+/**
+ * Exporte l'objet db pour un accès direct (à utiliser avec précaution)
+ */
+export function getDB() {
+  return db;
+}
+
 export function initDatabase(dbPath = null) {
-  const config = getDatabaseConfig('main');
-  const finalPath = dbPath || config.path;
-
+  const finalPath = dbPath || DB_FILE;
   try {
-    globalDb = new Database(finalPath, config.options);
+    db = new Database(finalPath);
+    db.pragma('journal_mode = WAL'); // Write-Ahead Logging pour meilleures perfs
+    db.pragma('foreign_keys = ON'); // Intégrité référentielle
 
-    // Appliquer les pragmas
-    Object.entries(config.pragmas).forEach(([key, value]) => {
-      globalDb.pragma(`${key} = ${value}`);
-    });
-
-    logger.info('SQLite database initialized', { file: finalPath });
+    logger.info('SQLite database connected', { file: finalPath });
 
     // Créer les tables
     createTables();
 
-    return globalDb;
+    return db;
   } catch (error) {
     logger.error('Error initializing database', { error: error.message });
     throw error;
   }
 }
 
-/**
- * Crée toutes les tables
- */
 function createTables() {
   // Table users
-  globalDb.exec(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       email TEXT PRIMARY KEY,
       password TEXT NOT NULL,
@@ -68,16 +75,17 @@ function createTables() {
 
   // Migration: Ajouter colonne history_encrypted si elle n'existe pas
   try {
-    globalDb.exec(`ALTER TABLE users ADD COLUMN history_encrypted TEXT`);
+    db.exec(`ALTER TABLE users ADD COLUMN history_encrypted TEXT`);
     logger.info('Migration: Added history_encrypted column to users table');
   } catch (error) {
+    // Colonne existe déjà, ignorer l'erreur
     if (!error.message.includes('duplicate column name')) {
       logger.error('Migration error for history_encrypted', { error: error.message });
     }
   }
 
   // Table groups
-  globalDb.exec(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS groups (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -89,7 +97,7 @@ function createTables() {
   `);
 
   // Table group_members
-  globalDb.exec(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS group_members (
       group_id TEXT NOT NULL,
       user_email TEXT NOT NULL,
@@ -103,7 +111,7 @@ function createTables() {
   `);
 
   // Table messages (groupes)
-  globalDb.exec(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS messages (
       id TEXT PRIMARY KEY,
       group_id TEXT NOT NULL,
@@ -111,20 +119,21 @@ function createTables() {
       from_display_name TEXT,
       content TEXT NOT NULL,
       original_lang TEXT NOT NULL,
-      translations TEXT,
-      reactions TEXT,
-      file_info TEXT,
+      translations TEXT, -- JSON: {lang: text}
+      reactions TEXT, -- JSON: {emoji: [{email, displayName, timestamp}]}
+      file_info TEXT, -- JSON: {filename, size, url}
       timestamp INTEGER DEFAULT (strftime('%s', 'now') * 1000),
       FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
       FOREIGN KEY (from_email) REFERENCES users(email) ON DELETE CASCADE
     )
   `);
 
-  globalDb.exec(`CREATE INDEX IF NOT EXISTS idx_messages_group ON messages(group_id, timestamp DESC)`);
-  globalDb.exec(`CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp DESC)`);
+  // Index pour performances
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_messages_group ON messages(group_id, timestamp DESC)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp DESC)`);
 
   // Table direct_messages
-  globalDb.exec(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS direct_messages (
       id TEXT PRIMARY KEY,
       conversation_id TEXT NOT NULL,
@@ -133,29 +142,31 @@ function createTables() {
       from_display_name TEXT,
       content TEXT NOT NULL,
       original_lang TEXT NOT NULL,
-      translations TEXT,
-      file_info TEXT,
+      translations TEXT, -- JSON: {lang: text}
+      file_info TEXT, -- JSON: {filename, size, url}
       timestamp INTEGER DEFAULT (strftime('%s', 'now') * 1000),
       FOREIGN KEY (from_email) REFERENCES users(email) ON DELETE CASCADE,
       FOREIGN KEY (to_email) REFERENCES users(email) ON DELETE CASCADE
     )
   `);
 
-  globalDb.exec(`CREATE INDEX IF NOT EXISTS idx_dm_conversation ON direct_messages(conversation_id, timestamp DESC)`);
-  globalDb.exec(`CREATE INDEX IF NOT EXISTS idx_dm_users ON direct_messages(from_email, to_email)`);
+  // Index pour DMs
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_dm_conversation ON direct_messages(conversation_id, timestamp DESC)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_dm_users ON direct_messages(from_email, to_email)`);
 
   // Migration: Ajouter reactions column si elle n'existe pas
   try {
-    globalDb.exec(`ALTER TABLE messages ADD COLUMN reactions TEXT`);
+    db.exec(`ALTER TABLE messages ADD COLUMN reactions TEXT`);
     logger.info('Migration: reactions column added to messages table');
   } catch (error) {
+    // Column already exists, ignore
     if (!error.message.includes('duplicate column')) {
       logger.warn('Migration warning', { error: error.message });
     }
   }
 
   // Table access_tokens
-  globalDb.exec(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS access_tokens (
       token TEXT PRIMARY KEY,
       tier TEXT NOT NULL,
@@ -168,11 +179,11 @@ function createTables() {
     )
   `);
 
-  // Table user_archived
-  globalDb.exec(`
+  // Table user_archived (groupes et DMs archivés par utilisateur)
+  db.exec(`
     CREATE TABLE IF NOT EXISTS user_archived (
       user_email TEXT NOT NULL,
-      item_type TEXT NOT NULL,
+      item_type TEXT NOT NULL, -- 'group' ou 'dm'
       item_id TEXT NOT NULL,
       archived_at INTEGER DEFAULT (strftime('%s', 'now')),
       PRIMARY KEY (user_email, item_type, item_id),
@@ -181,11 +192,11 @@ function createTables() {
   `);
 
   // Table user_friends
-  globalDb.exec(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS user_friends (
       user_email TEXT NOT NULL,
       friend_email TEXT NOT NULL,
-      status TEXT DEFAULT 'accepted',
+      status TEXT DEFAULT 'accepted', -- 'pending', 'accepted', 'blocked'
       created_at INTEGER DEFAULT (strftime('%s', 'now')),
       PRIMARY KEY (user_email, friend_email),
       FOREIGN KEY (user_email) REFERENCES users(email) ON DELETE CASCADE,
@@ -193,8 +204,8 @@ function createTables() {
     )
   `);
 
-  // Table user_statuses
-  globalDb.exec(`
+  // Table user_statuses (online/offline)
+  db.exec(`
     CREATE TABLE IF NOT EXISTS user_statuses (
       user_email TEXT PRIMARY KEY,
       status TEXT DEFAULT 'offline',
@@ -203,8 +214,8 @@ function createTables() {
     )
   `);
 
-  // Table user_quotas
-  globalDb.exec(`
+  // Table user_quotas (usage des quotas par utilisateur)
+  db.exec(`
     CREATE TABLE IF NOT EXISTS user_quotas (
       user_email TEXT PRIMARY KEY,
       transcribe_used INTEGER DEFAULT 0,
@@ -218,50 +229,23 @@ function createTables() {
   logger.info('Database tables created/verified');
 }
 
-/**
- * Transaction synchrone (comme dans l'ancien database.js)
- */
-export function transaction(fn) {
-  if (!globalDb) {
-    throw new Error('Database not initialized');
-  }
-  return globalDb.transaction(fn)();
-}
-
-/**
- * Obtient la connexion globale
- */
-export function getDB() {
-  return globalDb;
-}
-
-/**
- * Ferme la connexion
- */
-export function closeDatabase() {
-  if (globalDb) {
-    globalDb.close();
-    logger.info('Database connection closed');
-  }
-}
-
 // ===================================
-// USERS - API Synchrone
+// USERS
 // ===================================
 
 export const usersDB = {
   getAll() {
-    const stmt = globalDb.prepare('SELECT * FROM users');
+    const stmt = db.prepare('SELECT * FROM users');
     return stmt.all();
   },
 
   getByEmail(email) {
-    const stmt = globalDb.prepare('SELECT * FROM users WHERE email = ?');
+    const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
     return stmt.get(email);
   },
 
   create(user) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       INSERT INTO users (email, password, name, display_name, role, subscription_tier)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
@@ -295,33 +279,33 @@ export const usersDB = {
     values.push(Math.floor(Date.now() / 1000));
     values.push(email);
 
-    const stmt = globalDb.prepare(`UPDATE users SET ${updates.join(', ')} WHERE email = ?`);
+    const stmt = db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE email = ?`);
     return stmt.run(...values);
   },
 
   delete(email) {
-    const stmt = globalDb.prepare('DELETE FROM users WHERE email = ?');
+    const stmt = db.prepare('DELETE FROM users WHERE email = ?');
     return stmt.run(email);
   }
 };
 
 // ===================================
-// GROUPS - API Synchrone
+// GROUPS
 // ===================================
 
 export const groupsDB = {
   getAll() {
-    const stmt = globalDb.prepare('SELECT * FROM groups');
+    const stmt = db.prepare('SELECT * FROM groups');
     return stmt.all();
   },
 
   getById(id) {
-    const stmt = globalDb.prepare('SELECT * FROM groups WHERE id = ?');
+    const stmt = db.prepare('SELECT * FROM groups WHERE id = ?');
     return stmt.get(id);
   },
 
   getByUser(userEmail) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       SELECT g.* FROM groups g
       INNER JOIN group_members gm ON g.id = gm.group_id
       WHERE gm.user_email = ?
@@ -330,12 +314,12 @@ export const groupsDB = {
   },
 
   getPublic() {
-    const stmt = globalDb.prepare('SELECT * FROM groups WHERE visibility = ?');
+    const stmt = db.prepare('SELECT * FROM groups WHERE visibility = ?');
     return stmt.all('public');
   },
 
   create(group) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       INSERT INTO groups (id, name, creator, visibility, created_at)
       VALUES (?, ?, ?, ?, ?)
     `);
@@ -349,17 +333,18 @@ export const groupsDB = {
   },
 
   delete(id) {
-    const stmt = globalDb.prepare('DELETE FROM groups WHERE id = ?');
+    const stmt = db.prepare('DELETE FROM groups WHERE id = ?');
     return stmt.run(id);
   },
 
+  // Membres
   getMembers(groupId) {
-    const stmt = globalDb.prepare('SELECT * FROM group_members WHERE group_id = ?');
+    const stmt = db.prepare('SELECT * FROM group_members WHERE group_id = ?');
     return stmt.all(groupId);
   },
 
   addMember(groupId, member) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       INSERT INTO group_members (group_id, user_email, display_name, role)
       VALUES (?, ?, ?, ?)
     `);
@@ -367,19 +352,26 @@ export const groupsDB = {
   },
 
   removeMember(groupId, userEmail) {
-    const stmt = globalDb.prepare('DELETE FROM group_members WHERE group_id = ? AND user_email = ?');
+    const stmt = db.prepare('DELETE FROM group_members WHERE group_id = ? AND user_email = ?');
     return stmt.run(groupId, userEmail);
   },
 
   updateMemberRole(groupId, userEmail, role) {
-    const stmt = globalDb.prepare('UPDATE group_members SET role = ? WHERE group_id = ? AND user_email = ?');
+    const stmt = db.prepare('UPDATE group_members SET role = ? WHERE group_id = ? AND user_email = ?');
     return stmt.run(role, groupId, userEmail);
   },
 
+  /**
+   * Crée un groupe avec ses membres de manière atomique (transaction)
+   * @param {object} group - Données du groupe {id, name, creator, visibility, createdAt}
+   * @param {array} members - Liste des membres [{email, displayName, role}]
+   * @returns {object} {success: true, groupId} ou {success: false, error}
+   */
   createGroupWithMembers(group, members) {
     try {
       return transaction(() => {
-        const createStmt = globalDb.prepare(`
+        // 1. Créer le groupe
+        const createStmt = db.prepare(`
           INSERT INTO groups (id, name, creator, visibility, created_at)
           VALUES (?, ?, ?, ?, ?)
         `);
@@ -391,8 +383,9 @@ export const groupsDB = {
           group.createdAt || Date.now()
         );
 
+        // 2. Ajouter tous les membres (atomiquement)
         if (members && members.length > 0) {
-          const addMemberStmt = globalDb.prepare(`
+          const addMemberStmt = db.prepare(`
             INSERT INTO group_members (group_id, user_email, display_name, role)
             VALUES (?, ?, ?, ?)
           `);
@@ -423,13 +416,23 @@ export const groupsDB = {
     }
   },
 
+  /**
+   * Supprime un groupe avec cascade (transaction explicite pour garantir atomicité)
+   * Note: SQLite a déjà CASCADE DELETE configuré, mais on utilise une transaction
+   * explicite pour garantir l'atomicité et logger les suppressions
+   *
+   * @param {string} groupId - ID du groupe à supprimer
+   * @returns {object} {success: true, deleted} ou {success: false, error}
+   */
   deleteGroupWithCascade(groupId) {
     try {
       return transaction(() => {
-        const membersCount = globalDb.prepare('SELECT COUNT(*) as count FROM group_members WHERE group_id = ?').get(groupId).count;
-        const messagesCount = globalDb.prepare('SELECT COUNT(*) as count FROM messages WHERE group_id = ?').get(groupId).count;
+        // Compter ce qui sera supprimé (pour logging)
+        const membersCount = db.prepare('SELECT COUNT(*) as count FROM group_members WHERE group_id = ?').get(groupId).count;
+        const messagesCount = db.prepare('SELECT COUNT(*) as count FROM messages WHERE group_id = ?').get(groupId).count;
 
-        const deleteStmt = globalDb.prepare('DELETE FROM groups WHERE id = ?');
+        // Supprimer le groupe (CASCADE DELETE supprimera automatiquement members et messages)
+        const deleteStmt = db.prepare('DELETE FROM groups WHERE id = ?');
         const result = deleteStmt.run(groupId);
 
         logger.info('Group deleted atomically with cascade', {
@@ -459,22 +462,22 @@ export const groupsDB = {
 };
 
 // ===================================
-// MESSAGES - API Synchrone
+// MESSAGES
 // ===================================
 
 export const messagesDB = {
   getByGroup(groupId, limit = 100) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       SELECT * FROM messages
       WHERE group_id = ?
       ORDER BY timestamp DESC
       LIMIT ?
     `);
-    return stmt.all(groupId, limit).reverse();
+    return stmt.all(groupId, limit).reverse(); // Plus récent en dernier
   },
 
   create(message) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       INSERT INTO messages (id, group_id, from_email, from_display_name, content, original_lang, translations, reactions, file_info, timestamp)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
@@ -509,28 +512,28 @@ export const messagesDB = {
     if (updates.length === 0) return;
 
     values.push(messageId);
-    const stmt = globalDb.prepare(`UPDATE messages SET ${updates.join(', ')} WHERE id = ?`);
+    const stmt = db.prepare(`UPDATE messages SET ${updates.join(', ')} WHERE id = ?`);
     return stmt.run(...values);
   },
 
   delete(messageId) {
-    const stmt = globalDb.prepare('DELETE FROM messages WHERE id = ?');
+    const stmt = db.prepare('DELETE FROM messages WHERE id = ?');
     return stmt.run(messageId);
   },
 
   deleteByGroup(groupId) {
-    const stmt = globalDb.prepare('DELETE FROM messages WHERE group_id = ?');
+    const stmt = db.prepare('DELETE FROM messages WHERE group_id = ?');
     return stmt.run(groupId);
   }
 };
 
 // ===================================
-// DIRECT MESSAGES - API Synchrone
+// DIRECT MESSAGES
 // ===================================
 
 export const directMessagesDB = {
   getByConversation(conversationId, limit = 100) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       SELECT * FROM direct_messages
       WHERE conversation_id = ?
       ORDER BY timestamp DESC
@@ -540,7 +543,7 @@ export const directMessagesDB = {
   },
 
   getConversationsByUser(userEmail) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       SELECT DISTINCT conversation_id FROM direct_messages
       WHERE from_email = ? OR to_email = ?
     `);
@@ -548,7 +551,7 @@ export const directMessagesDB = {
   },
 
   create(message) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       INSERT INTO direct_messages (id, conversation_id, from_email, to_email, from_display_name, content, original_lang, translations, file_info, timestamp)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
@@ -568,34 +571,34 @@ export const directMessagesDB = {
 
   update(messageId, fields) {
     if (fields.translations) {
-      const stmt = globalDb.prepare('UPDATE direct_messages SET translations = ? WHERE id = ?');
+      const stmt = db.prepare('UPDATE direct_messages SET translations = ? WHERE id = ?');
       return stmt.run(JSON.stringify(fields.translations), messageId);
     }
   },
 
   delete(messageId) {
-    const stmt = globalDb.prepare('DELETE FROM direct_messages WHERE id = ?');
+    const stmt = db.prepare('DELETE FROM direct_messages WHERE id = ?');
     return stmt.run(messageId);
   }
 };
 
 // ===================================
-// TOKENS, ARCHIVED, STATUSES, FRIENDS, QUOTAS
+// ACCESS TOKENS
 // ===================================
 
 export const tokensDB = {
   getAll() {
-    const stmt = globalDb.prepare('SELECT * FROM access_tokens');
+    const stmt = db.prepare('SELECT * FROM access_tokens');
     return stmt.all();
   },
 
   getByToken(token) {
-    const stmt = globalDb.prepare('SELECT * FROM access_tokens WHERE token = ?');
+    const stmt = db.prepare('SELECT * FROM access_tokens WHERE token = ?');
     return stmt.get(token);
   },
 
   create(token) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       INSERT INTO access_tokens (token, tier, max_uses, current_uses, expires_at, description)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
@@ -610,29 +613,33 @@ export const tokensDB = {
   },
 
   incrementUse(token) {
-    const stmt = globalDb.prepare('UPDATE access_tokens SET current_uses = current_uses + 1 WHERE token = ?');
+    const stmt = db.prepare('UPDATE access_tokens SET current_uses = current_uses + 1 WHERE token = ?');
     return stmt.run(token);
   },
 
   updateStatus(token, status) {
-    const stmt = globalDb.prepare('UPDATE access_tokens SET status = ? WHERE token = ?');
+    const stmt = db.prepare('UPDATE access_tokens SET status = ? WHERE token = ?');
     return stmt.run(status, token);
   },
 
   delete(token) {
-    const stmt = globalDb.prepare('DELETE FROM access_tokens WHERE token = ?');
+    const stmt = db.prepare('DELETE FROM access_tokens WHERE token = ?');
     return stmt.run(token);
   }
 };
 
+// ===================================
+// USER ARCHIVED
+// ===================================
+
 export const archivedDB = {
   getArchived(userEmail, itemType) {
-    const stmt = globalDb.prepare('SELECT item_id FROM user_archived WHERE user_email = ? AND item_type = ?');
+    const stmt = db.prepare('SELECT item_id FROM user_archived WHERE user_email = ? AND item_type = ?');
     return stmt.all(userEmail, itemType).map(row => row.item_id);
   },
 
   archive(userEmail, itemType, itemId) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       INSERT OR IGNORE INTO user_archived (user_email, item_type, item_id)
       VALUES (?, ?, ?)
     `);
@@ -640,19 +647,23 @@ export const archivedDB = {
   },
 
   unarchive(userEmail, itemType, itemId) {
-    const stmt = globalDb.prepare('DELETE FROM user_archived WHERE user_email = ? AND item_type = ? AND item_id = ?');
+    const stmt = db.prepare('DELETE FROM user_archived WHERE user_email = ? AND item_type = ? AND item_id = ?');
     return stmt.run(userEmail, itemType, itemId);
   }
 };
 
+// ===================================
+// USER STATUSES
+// ===================================
+
 export const statusesDB = {
   get(userEmail) {
-    const stmt = globalDb.prepare('SELECT * FROM user_statuses WHERE user_email = ?');
+    const stmt = db.prepare('SELECT * FROM user_statuses WHERE user_email = ?');
     return stmt.get(userEmail);
   },
 
   setOnline(userEmail) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       INSERT INTO user_statuses (user_email, status, last_seen)
       VALUES (?, 'online', ?)
       ON CONFLICT(user_email) DO UPDATE SET status = 'online', last_seen = ?
@@ -662,29 +673,40 @@ export const statusesDB = {
   },
 
   setOffline(userEmail) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       UPDATE user_statuses SET status = 'offline', last_seen = ? WHERE user_email = ?
     `);
     return stmt.run(Date.now(), userEmail);
   },
 
   getAll() {
-    const stmt = globalDb.prepare('SELECT * FROM user_statuses');
+    const stmt = db.prepare('SELECT * FROM user_statuses');
     return stmt.all();
   }
 };
 
+// ===================================
+// USER FRIENDS
+// ===================================
+// SEMANTIQUE:
+// - (user_email: A, friend_email: B, status: 'pending') = A a envoyé une demande à B
+// - (user_email: A, friend_email: B, status: 'accepted') = A et B sont amis (deux lignes en miroir)
+
 export const friendsDB = {
+  // Ajouter une demande d'ami (status = 'pending')
+  // fromEmail envoie une demande à toEmail
   addFriendRequest(fromEmail, toEmail) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       INSERT OR IGNORE INTO user_friends (user_email, friend_email, status)
       VALUES (?, ?, 'pending')
     `);
     return stmt.run(fromEmail, toEmail);
   },
 
+  // Récupérer toutes les demandes d'ami REÇUES par un utilisateur (status = 'pending')
+  // Retourne toutes les demandes où friend_email = userEmail
   getFriendRequests(userEmail) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       SELECT uf.user_email as from_email, u.display_name as fromDisplayName, uf.created_at as sentAt
       FROM user_friends uf
       INNER JOIN users u ON uf.user_email = u.email
@@ -693,8 +715,9 @@ export const friendsDB = {
     return stmt.all(userEmail);
   },
 
+  // Récupérer toutes les demandes d'ami ENVOYÉES par un utilisateur (status = 'pending')
   getSentFriendRequests(userEmail) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       SELECT friend_email as to_email, status, created_at as sentAt
       FROM user_friends
       WHERE user_email = ? AND status = 'pending'
@@ -702,29 +725,38 @@ export const friendsDB = {
     return stmt.all(userEmail);
   },
 
+  // Vérifier si une demande croisée existe
+  // (B a déjà demandé A, maintenant A demande B)
+  // Cherche si (user_email: toEmail, friend_email: fromEmail, status: 'pending') existe
   checkCrossRequest(fromEmail, toEmail) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       SELECT * FROM user_friends
       WHERE user_email = ? AND friend_email = ? AND status = 'pending'
     `);
     return stmt.get(toEmail, fromEmail);
   },
 
+  // Vérifier si une demande existe déjà
+  // Cherche si (user_email: fromEmail, friend_email: toEmail) existe
   checkExistingRequest(fromEmail, toEmail) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       SELECT * FROM user_friends
       WHERE user_email = ? AND friend_email = ?
     `);
     return stmt.get(fromEmail, toEmail);
   },
 
+  // Accepter une demande d'ami (créer la relation mutuelle)
+  // userEmail accepte la demande de fromEmail
+  // Transforme (fromEmail, userEmail, 'pending') en 'accepted'
+  // Et crée le miroir (userEmail, fromEmail, 'accepted')
   acceptFriendRequest(userEmail, fromEmail) {
-    const stmt1 = globalDb.prepare(`
+    const stmt1 = db.prepare(`
       UPDATE user_friends
       SET status = 'accepted'
       WHERE user_email = ? AND friend_email = ? AND status = 'pending'
     `);
-    const stmt2 = globalDb.prepare(`
+    const stmt2 = db.prepare(`
       INSERT OR REPLACE INTO user_friends (user_email, friend_email, status)
       VALUES (?, ?, 'accepted')
     `);
@@ -735,24 +767,29 @@ export const friendsDB = {
     return { success: true };
   },
 
+  // Rejeter une demande d'ami
+  // userEmail rejette la demande de fromEmail
+  // Supprime (fromEmail, userEmail, 'pending')
   rejectFriendRequest(userEmail, fromEmail) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       DELETE FROM user_friends
       WHERE user_email = ? AND friend_email = ? AND status = 'pending'
     `);
     return stmt.run(fromEmail, userEmail);
   },
 
+  // Supprimer une relation d'ami (mutuelle)
   removeFriend(userEmail, friendEmail) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       DELETE FROM user_friends
       WHERE (user_email = ? AND friend_email = ?) OR (user_email = ? AND friend_email = ?)
     `);
     return stmt.run(userEmail, friendEmail, friendEmail, userEmail);
   },
 
+  // Récupérer la liste des amis acceptés
   getFriends(userEmail) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       SELECT uf.friend_email as email, u.display_name as displayName, u.avatar
       FROM user_friends uf
       INNER JOIN users u ON uf.friend_email = u.email
@@ -761,8 +798,9 @@ export const friendsDB = {
     return stmt.all(userEmail);
   },
 
+  // Vérifier si deux utilisateurs sont amis
   areFriends(email1, email2) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       SELECT * FROM user_friends
       WHERE user_email = ? AND friend_email = ? AND status = 'accepted'
     `);
@@ -770,16 +808,20 @@ export const friendsDB = {
   }
 };
 
+// ===================================
+// USER QUOTAS
+// ===================================
+
 export const quotasDB = {
   get(userEmail) {
-    const stmt = globalDb.prepare('SELECT * FROM user_quotas WHERE user_email = ?');
+    const stmt = db.prepare('SELECT * FROM user_quotas WHERE user_email = ?');
     return stmt.get(userEmail);
   },
 
   getOrCreate(userEmail) {
     let quota = this.get(userEmail);
     if (!quota) {
-      const stmt = globalDb.prepare(`
+      const stmt = db.prepare(`
         INSERT INTO user_quotas (user_email, transcribe_used, translate_used, speak_used)
         VALUES (?, 0, 0, 0)
       `);
@@ -798,7 +840,7 @@ export const quotasDB = {
     const column = columnMap[action];
     if (!column) return;
 
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       INSERT INTO user_quotas (user_email, ${column})
       VALUES (?, 1)
       ON CONFLICT(user_email) DO UPDATE SET ${column} = ${column} + 1
@@ -807,7 +849,7 @@ export const quotasDB = {
   },
 
   reset(userEmail) {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       UPDATE user_quotas
       SET transcribe_used = 0, translate_used = 0, speak_used = 0, last_reset = ?
       WHERE user_email = ?
@@ -816,7 +858,7 @@ export const quotasDB = {
   },
 
   resetAll() {
-    const stmt = globalDb.prepare(`
+    const stmt = db.prepare(`
       UPDATE user_quotas
       SET transcribe_used = 0, translate_used = 0, speak_used = 0, last_reset = ?
     `);
@@ -824,17 +866,16 @@ export const quotasDB = {
   }
 };
 
-// Auto-initialize database on module load
-// This ensures db is ready when auth-sqlite.js or other modules import it
-if (!globalDb) {
-  initDatabase();
+export function closeDatabase() {
+  if (db) {
+    db.close();
+    logger.info('Database connection closed');
+  }
 }
 
 export default {
   initDatabase,
   closeDatabase,
-  transaction,
-  getDB,
   usersDB,
   groupsDB,
   messagesDB,
@@ -845,3 +886,9 @@ export default {
   friendsDB,
   quotasDB
 };
+
+// Auto-initialize database on module load
+// This ensures db is ready when auth-sqlite.js or other modules import it
+if (!db) {
+  initDatabase();
+}

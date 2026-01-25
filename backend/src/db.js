@@ -75,7 +75,7 @@ class DatabasePool {
         db.pragma(`${key} = ${value}`);
       });
 
-      logger.debug('New database connection created', {
+      logger.info('New database connection created', {
         path: this.config.path,
         pragmas: Object.keys(DB_PRAGMAS)
       });
@@ -124,11 +124,8 @@ class DatabasePool {
     const connection = this.availableConnections.pop();
     this.busyConnections.add(connection);
 
-    logger.debug('Connection acquired from pool', {
-      available: this.availableConnections.length,
-      busy: this.busyConnections.size,
-      total: this.connections.length
-    });
+    // Connection acquired (too verbose for info level)
+    // logger.info('Connection acquired from pool', { ... });
 
     return connection;
   }
@@ -146,10 +143,8 @@ class DatabasePool {
     this.busyConnections.delete(connection);
     this.availableConnections.push(connection);
 
-    logger.debug('Connection released to pool', {
-      available: this.availableConnections.length,
-      busy: this.busyConnections.size
-    });
+    // Connection released (too verbose for info level)
+    // logger.info('Connection released to pool', { ... });
   }
 
   /**
@@ -266,16 +261,30 @@ export async function withConnection(fn) {
 
 /**
  * Exécute une transaction SQLite avec retry en cas d'erreur SQLITE_BUSY
- * @param {Function} fn - Fonction à exécuter dans la transaction
+ * Cette version utilise BEGIN/COMMIT/ROLLBACK pour supporter les fonctions async
+ * @param {Function} fn - Fonction (peut être async) à exécuter dans la transaction
  * @param {number} retries - Nombre de tentatives restantes
  * @returns {Promise<*>} Résultat de la transaction
  */
 export async function transaction(fn, retries = DB_LIMITS.maxRetries) {
   return await withConnection(async (db) => {
     try {
-      // Créer une fonction de transaction
-      const transactionFn = db.transaction(fn);
-      return transactionFn();
+      // Démarrer la transaction manuellement
+      db.exec('BEGIN TRANSACTION');
+
+      try {
+        // Exécuter la fonction (peut être async)
+        const result = await fn(db);
+
+        // Committer si succès
+        db.exec('COMMIT');
+
+        return result;
+      } catch (error) {
+        // Rollback en cas d'erreur
+        db.exec('ROLLBACK');
+        throw error;
+      }
     } catch (error) {
       // Retry en cas d'erreur SQLITE_BUSY
       if (error.code === 'SQLITE_BUSY' && retries > 0) {
