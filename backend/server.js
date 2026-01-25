@@ -2399,21 +2399,14 @@ app.post('/api/groups/:groupId/archive', authMiddleware, async (req, res) => {
     const { groupId } = req.params;
     const { archived } = req.body; // true pour archiver, false pour désarchiver
     const userEmail = req.user.email;
-    const user = authManager.users[userEmail];
-
-    if (!user.archivedGroups) user.archivedGroups = [];
 
     if (archived) {
-      // Archiver
-      if (!user.archivedGroups.includes(groupId)) {
-        user.archivedGroups.push(groupId);
-      }
+      // Archiver dans la DB
+      archivedDB.archive(userEmail, 'group', groupId);
     } else {
-      // Désarchiver
-      user.archivedGroups = user.archivedGroups.filter(id => id !== groupId);
+      // Désarchiver depuis la DB
+      archivedDB.unarchive(userEmail, 'group', groupId);
     }
-
-    authManager.saveUsers();
 
     logger.info(`Group ${archived ? 'archived' : 'unarchived'}: ${groupId} by ${userEmail}`);
     res.json({ success: true });
@@ -2536,21 +2529,14 @@ app.post('/api/dms/:conversationId/archive', authMiddleware, async (req, res) =>
     const { conversationId } = req.params;
     const { archived } = req.body; // true pour archiver, false pour désarchiver
     const userEmail = req.user.email;
-    const user = authManager.users[userEmail];
-
-    if (!user.archivedDMs) user.archivedDMs = [];
 
     if (archived) {
-      // Archiver
-      if (!user.archivedDMs.includes(conversationId)) {
-        user.archivedDMs.push(conversationId);
-      }
+      // Archiver dans la DB
+      archivedDB.archive(userEmail, 'dm', conversationId);
     } else {
-      // Désarchiver
-      user.archivedDMs = user.archivedDMs.filter(id => id !== conversationId);
+      // Désarchiver depuis la DB
+      archivedDB.unarchive(userEmail, 'dm', conversationId);
     }
-
-    authManager.saveUsers();
 
     logger.info(`DM ${archived ? 'archived' : 'unarchived'}: ${conversationId} by ${userEmail}`);
     res.json({ success: true });
