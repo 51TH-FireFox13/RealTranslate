@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import multer from 'multer';
 import fetch from 'node-fetch';
@@ -19,6 +20,8 @@ import {
   SUBSCRIPTION_TIERS
 } from './auth-sqlite.js' // Version SQLite;
 import stripePayment from './stripe-payment.js';
+import { verifyPayPalIPN, verifyWeChatSignature, verifyWeChatV3Signature } from './payment-security.js';
+import { verifyCSRFToken, csrfTokenEndpoint, exemptCSRF } from './csrf-protection.js';
 import crypto from 'crypto';
 import {
   initDatabase,
@@ -101,8 +104,33 @@ const fileUpload = multer({
 
 // Middleware
 app.use(cors());
+app.use(cookieParser()); // Parser les cookies pour CSRF protection
 app.use(express.json());
 app.use(accessLoggerMiddleware); // Logger toutes les requêtes
+
+// Protection CSRF pour toutes les routes mutantes (POST, PUT, DELETE, PATCH)
+// Exempte les webhooks et les routes publiques
+app.use((req, res, next) => {
+  // Routes exemptées de vérification CSRF
+  const exemptedPaths = [
+    '/api/webhook/stripe',
+    '/api/webhook/paypal',
+    '/api/webhook/wechat',
+    '/api/auth/register',
+    '/api/auth/login',
+    '/api/auth/guest',
+    '/api/csrf-token',
+  ];
+
+  // Vérifier si la route est exemptée
+  if (exemptedPaths.includes(req.path)) {
+    return next();
+  }
+
+  // Appliquer la vérification CSRF
+  return verifyCSRFToken(req, res, next);
+});
+
 app.use(express.static(join(__dirname, '../frontend')));
 app.use('/uploads', express.static(join(__dirname, 'uploads'))); // Servir les fichiers uploadés
 
@@ -963,6 +991,9 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
   });
 });
 
+// Obtenir un token CSRF (pour SPAs)
+app.get('/api/csrf-token', csrfTokenEndpoint);
+
 // Changer le mot de passe
 app.post('/api/auth/change-password', authMiddleware, (req, res) => {
   try {
@@ -997,7 +1028,7 @@ app.post('/api/auth/change-password', authMiddleware, (req, res) => {
     // Mettre à jour le mot de passe
     user.passwordHash = authManager.hashPassword(newPassword);
 
-    authManager.saveUsers();
+    // Note: saveUsers() est un no-op dans la version SQLite (auto-persisted)
     logger.info(`Mot de passe changé pour ${userEmail}${hadHistory ? ' (historique supprimé)' : ''}`);
 
     res.json({
@@ -1037,17 +1068,13 @@ app.delete('/api/auth/me', authMiddleware, (req, res) => {
       return res.status(401).json({ error: 'Mot de passe incorrect' });
     }
 
-    // Supprimer l'utilisateur de l'objet
-    delete authManager.users[userEmail];
-    authManager.saveUsers();
+    // Supprimer l'utilisateur via la méthode dédiée (supprime de DB + révoque tokens)
+    const result = authManager.deleteUser(userEmail);
 
-    // Révoquer tous les tokens de cet utilisateur
-    Object.keys(authManager.tokens).forEach(token => {
-      if (authManager.tokens[token].email === userEmail) {
-        delete authManager.tokens[token];
-      }
-    });
-    authManager.saveTokens();
+    if (!result.success) {
+      logger.error('Failed to delete user', { email: userEmail, error: result.message });
+      return res.status(500).json({ error: result.message });
+    }
 
     logger.info(`Compte supprimé: ${userEmail}`);
     res.json({ success: true, message: 'Compte supprimé avec succès' });
@@ -1228,7 +1255,7 @@ app.post('/api/history/save', authMiddleware, async (req, res) => {
 
     // Crypter et sauvegarder
     user.historyEncrypted = encryptHistory(history, user.passwordHash);
-    authManager.saveUsers();
+    // Note: saveUsers() est un no-op dans la version SQLite (auto-persisted)
 
     logger.info(`Historique sauvegardé pour ${userEmail}`);
     res.json({ success: true, count: history.length });
@@ -1276,7 +1303,7 @@ app.delete('/api/history', authMiddleware, async (req, res) => {
 
     // Supprimer l'historique crypté
     delete user.historyEncrypted;
-    authManager.saveUsers();
+    // Note: saveUsers() est un no-op dans la version SQLite (auto-persisted)
 
     logger.info(`Historique supprimé pour ${userEmail}`);
     res.json({ success: true, message: 'Historique supprimé' });
@@ -1549,10 +1576,23 @@ app.get('/api/health', (req, res) => {
 // Webhook PayPal
 app.post('/api/webhook/paypal', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
-    // TODO: Vérifier la signature PayPal IPN
-    const event = JSON.parse(req.body.toString());
+    // Vérifier la signature PayPal IPN
+    const rawBody = req.body.toString('utf8');
+    const useSandbox = process.env.PAYPAL_MODE === 'sandbox';
 
-    logger.info('PayPal webhook received', event);
+    const isValid = await verifyPayPalIPN(rawBody, useSandbox);
+
+    if (!isValid) {
+      logger.warn('PayPal webhook rejected: invalid signature', {
+        ip: req.ip,
+        bodyPreview: rawBody.substring(0, 100),
+      });
+      return res.status(403).json({ error: 'Invalid webhook signature' });
+    }
+
+    const event = JSON.parse(rawBody);
+
+    logger.info('PayPal webhook received and verified', event);
 
     if (event.event_type === 'PAYMENT.SALE.COMPLETED') {
       const email = event.resource.custom; // Email passé en custom field
@@ -1584,10 +1624,43 @@ app.post('/api/webhook/paypal', express.raw({ type: 'application/json' }), async
 // Webhook WeChat Pay
 app.post('/api/webhook/wechat', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
-    // TODO: Vérifier la signature WeChat Pay
-    const event = JSON.parse(req.body.toString());
+    const rawBody = req.body.toString('utf8');
+    const event = JSON.parse(rawBody);
 
-    logger.info('WeChat Pay webhook received', event);
+    // Vérifier la signature WeChat Pay
+    const signature = event.sign || req.headers['wechatpay-signature'];
+    const apiKey = process.env.WECHAT_API_KEY;
+
+    if (!apiKey) {
+      logger.error('WeChat API key not configured');
+      return res.status(500).json({ error: 'WeChat payment not configured' });
+    }
+
+    // Vérifier si c'est v3 (avec headers spéciaux)
+    const timestamp = req.headers['wechatpay-timestamp'];
+    const nonce = req.headers['wechatpay-nonce'];
+    const serialNo = req.headers['wechatpay-serial'];
+
+    let isValid = false;
+
+    if (timestamp && nonce && serialNo) {
+      // WeChat Pay v3
+      const apiV3Key = process.env.WECHAT_API_V3_KEY || apiKey;
+      isValid = verifyWeChatV3Signature(timestamp, nonce, rawBody, signature, serialNo, apiV3Key);
+    } else {
+      // WeChat Pay v2 (ancien protocole)
+      isValid = verifyWeChatSignature(event, signature, apiKey);
+    }
+
+    if (!isValid) {
+      logger.warn('WeChat webhook rejected: invalid signature', {
+        ip: req.ip,
+        hasV3Headers: !!(timestamp && nonce),
+      });
+      return res.status(403).json({ error: 'Invalid webhook signature' });
+    }
+
+    logger.info('WeChat Pay webhook received and verified', event);
 
     if (event.event_type === 'TRANSACTION.SUCCESS') {
       const email = event.out_trade_no; // Email passé dans out_trade_no
@@ -1881,7 +1954,7 @@ app.post('/api/upload-avatar', authMiddleware, avatarUpload.single('avatar'), as
 
     // Sauvegarder l'URL de l'avatar dans le profil utilisateur
     user.avatar = avatarUrl;
-    await authManager.saveUsers();
+    // Note: saveUsers() est un no-op dans la version SQLite (auto-persisted)
 
     logger.info('Avatar uploaded successfully', {
       user: userEmail,
@@ -2112,30 +2185,36 @@ app.post('/api/groups', authMiddleware, async (req, res) => {
           displayName: member.displayName,
           role: 'member'
         });
-
-        // Note: user.groups est maintenant calculé automatiquement depuis group_members
-        // Pas besoin de modifier member.groups ici
       }
     }
 
-    groups[groupId] = {
-      id: groupId,
+    // Créer le groupe et ajouter les membres de manière ATOMIQUE (transaction)
+    const result = groupsDB.createGroupWithMembers(
+      {
+        id: groupId,
+        name,
+        creator: creatorEmail,
+        visibility: groupVisibility,
+        createdAt: Date.now()
+      },
+      members
+    );
+
+    if (!result.success) {
+      logger.error('Failed to create group in DB', { error: result.error, groupId });
+      return res.status(500).json({ error: 'Erreur lors de la création du groupe' });
+    }
+
+    // Récupérer le groupe depuis la DB via le proxy (pour cohérence)
+    const createdGroup = groups[groupId];
+
+    logger.info(`Group created atomically: ${groupId} by ${creatorEmail}`, {
       name,
-      creator: creatorEmail,
-      members,
-      visibility: groupVisibility,
-      createdAt: Date.now() // Timestamp pour cohérence DB
-    };
+      memberCount: members.length,
+      visibility: groupVisibility
+    });
 
-    // Messages array auto-created by proxy when accessed
-    // No need to initialize messages[groupId] = []
-
-    // Note: creator.groups est maintenant calculé automatiquement depuis group_members
-    // Pas besoin de modifier creator.groups ici
-    // Note: saveUsers() est un no-op dans la version SQLite
-
-    logger.info(`Group created: ${groupId} by ${creatorEmail}`, { name, memberCount: members.length });
-    res.json({ success: true, group: groups[groupId] });
+    res.json({ success: true, group: createdGroup });
 
   } catch (error) {
     logger.error('Error creating group', error);

@@ -12,6 +12,28 @@ const DB_FILE = process.env.DB_FILE || join(__dirname, 'realtranslate.db');
 // Connexion SQLite
 let db;
 
+/**
+ * Exécute une fonction dans une transaction SQLite
+ * Si la fonction lance une exception, la transaction est annulée (rollback)
+ * Sinon, la transaction est validée (commit)
+ *
+ * @param {Function} fn - Fonction à exécuter dans la transaction
+ * @returns {*} Résultat de la fonction
+ */
+export function transaction(fn) {
+  if (!db) {
+    throw new Error('Database not initialized');
+  }
+  return db.transaction(fn)();
+}
+
+/**
+ * Exporte l'objet db pour un accès direct (à utiliser avec précaution)
+ */
+export function getDB() {
+  return db;
+}
+
 export function initDatabase(dbPath = null) {
   const finalPath = dbPath || DB_FILE;
   try {
@@ -45,10 +67,22 @@ function createTables() {
       subscription_status TEXT DEFAULT 'active',
       stripe_customer_id TEXT,
       stripe_subscription_id TEXT,
+      history_encrypted TEXT,
       created_at INTEGER DEFAULT (strftime('%s', 'now')),
       updated_at INTEGER DEFAULT (strftime('%s', 'now'))
     )
   `);
+
+  // Migration: Ajouter colonne history_encrypted si elle n'existe pas
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN history_encrypted TEXT`);
+    logger.info('Migration: Added history_encrypted column to users table');
+  } catch (error) {
+    // Colonne existe déjà, ignorer l'erreur
+    if (!error.message.includes('duplicate column name')) {
+      logger.error('Migration error for history_encrypted', { error: error.message });
+    }
+  }
 
   // Table groups
   db.exec(`
@@ -237,6 +271,7 @@ export const usersDB = {
     if (fields.subscription_status !== undefined) { updates.push('subscription_status = ?'); values.push(fields.subscription_status); }
     if (fields.stripe_customer_id !== undefined) { updates.push('stripe_customer_id = ?'); values.push(fields.stripe_customer_id); }
     if (fields.stripe_subscription_id !== undefined) { updates.push('stripe_subscription_id = ?'); values.push(fields.stripe_subscription_id); }
+    if (fields.history_encrypted !== undefined) { updates.push('history_encrypted = ?'); values.push(fields.history_encrypted); }
 
     if (updates.length === 0) return;
 
@@ -324,6 +359,105 @@ export const groupsDB = {
   updateMemberRole(groupId, userEmail, role) {
     const stmt = db.prepare('UPDATE group_members SET role = ? WHERE group_id = ? AND user_email = ?');
     return stmt.run(role, groupId, userEmail);
+  },
+
+  /**
+   * Crée un groupe avec ses membres de manière atomique (transaction)
+   * @param {object} group - Données du groupe {id, name, creator, visibility, createdAt}
+   * @param {array} members - Liste des membres [{email, displayName, role}]
+   * @returns {object} {success: true, groupId} ou {success: false, error}
+   */
+  createGroupWithMembers(group, members) {
+    try {
+      return transaction(() => {
+        // 1. Créer le groupe
+        const createStmt = db.prepare(`
+          INSERT INTO groups (id, name, creator, visibility, created_at)
+          VALUES (?, ?, ?, ?, ?)
+        `);
+        createStmt.run(
+          group.id,
+          group.name,
+          group.creator,
+          group.visibility || 'private',
+          group.createdAt || Date.now()
+        );
+
+        // 2. Ajouter tous les membres (atomiquement)
+        if (members && members.length > 0) {
+          const addMemberStmt = db.prepare(`
+            INSERT INTO group_members (group_id, user_email, display_name, role)
+            VALUES (?, ?, ?, ?)
+          `);
+
+          for (const member of members) {
+            addMemberStmt.run(
+              group.id,
+              member.email,
+              member.displayName,
+              member.role || 'member'
+            );
+          }
+        }
+
+        logger.info('Group created atomically with transaction', {
+          groupId: group.id,
+          memberCount: members?.length || 0
+        });
+
+        return { success: true, groupId: group.id };
+      });
+    } catch (error) {
+      logger.error('Error creating group with transaction', {
+        error: error.message,
+        groupId: group.id
+      });
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * Supprime un groupe avec cascade (transaction explicite pour garantir atomicité)
+   * Note: SQLite a déjà CASCADE DELETE configuré, mais on utilise une transaction
+   * explicite pour garantir l'atomicité et logger les suppressions
+   *
+   * @param {string} groupId - ID du groupe à supprimer
+   * @returns {object} {success: true, deleted} ou {success: false, error}
+   */
+  deleteGroupWithCascade(groupId) {
+    try {
+      return transaction(() => {
+        // Compter ce qui sera supprimé (pour logging)
+        const membersCount = db.prepare('SELECT COUNT(*) as count FROM group_members WHERE group_id = ?').get(groupId).count;
+        const messagesCount = db.prepare('SELECT COUNT(*) as count FROM messages WHERE group_id = ?').get(groupId).count;
+
+        // Supprimer le groupe (CASCADE DELETE supprimera automatiquement members et messages)
+        const deleteStmt = db.prepare('DELETE FROM groups WHERE id = ?');
+        const result = deleteStmt.run(groupId);
+
+        logger.info('Group deleted atomically with cascade', {
+          groupId,
+          membersDeleted: membersCount,
+          messagesDeleted: messagesCount,
+          changes: result.changes
+        });
+
+        return {
+          success: true,
+          deleted: {
+            group: result.changes > 0,
+            members: membersCount,
+            messages: messagesCount
+          }
+        };
+      });
+    } catch (error) {
+      logger.error('Error deleting group with cascade', {
+        error: error.message,
+        groupId
+      });
+      return { success: false, error: error.message };
+    }
   }
 };
 

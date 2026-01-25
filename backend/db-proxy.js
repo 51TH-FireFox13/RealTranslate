@@ -35,24 +35,24 @@ export const groups = new Proxy({}, {
         // Update (pas implémenté pour l'instant, on garde tel quel)
         logger.warn('Group update via proxy not fully implemented', { groupId });
       } else {
-        // Create
-        groupsDB.create({
-          id: value.id,
-          name: value.name,
-          creator: value.creator,
-          visibility: value.visibility || 'private',
-          createdAt: value.createdAt || Date.now()
-        });
+        // Create - Utiliser la fonction atomique avec transaction
+        const result = groupsDB.createGroupWithMembers(
+          {
+            id: value.id,
+            name: value.name,
+            creator: value.creator,
+            visibility: value.visibility || 'private',
+            createdAt: value.createdAt || Date.now()
+          },
+          value.members || []
+        );
 
-        // Ajouter les membres
-        if (value.members && value.members.length > 0) {
-          value.members.forEach(member => {
-            groupsDB.addMember(value.id, {
-              email: member.email,
-              displayName: member.displayName || member.email.split('@')[0],
-              role: member.role || 'member'
-            });
+        if (!result.success) {
+          logger.error('Failed to create group atomically in proxy', {
+            error: result.error,
+            groupId
           });
+          return false;
         }
       }
       return true;
@@ -64,7 +64,15 @@ export const groups = new Proxy({}, {
 
   deleteProperty(target, groupId) {
     try {
-      groupsDB.delete(groupId);
+      // Utiliser la fonction atomique avec cascade explicite pour meilleur logging
+      const result = groupsDB.deleteGroupWithCascade(groupId);
+      if (!result.success) {
+        logger.error('Failed to delete group atomically in proxy', {
+          error: result.error,
+          groupId
+        });
+        return false;
+      }
       return true;
     } catch (error) {
       logger.error('Error in groups proxy delete', { error: error.message, groupId });

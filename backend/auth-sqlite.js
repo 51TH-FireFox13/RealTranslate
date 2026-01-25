@@ -129,6 +129,7 @@ class AuthManagerSQLite {
           stripeCustomerId: user.stripe_customer_id,
           stripeSubscriptionId: user.stripe_subscription_id,
           avatar: user.avatar,
+          historyEncrypted: user.history_encrypted,
           createdAt: user.created_at,
           // Propriétés calculées depuis la DB (read-only)
           groups: userGroups,
@@ -158,6 +159,7 @@ class AuthManagerSQLite {
             if (value.subscriptionStatus !== undefined) updates.subscription_status = value.subscriptionStatus;
             if (value.stripeCustomerId !== undefined) updates.stripe_customer_id = value.stripeCustomerId;
             if (value.stripeSubscriptionId !== undefined) updates.stripe_subscription_id = value.stripeSubscriptionId;
+            if (value.historyEncrypted !== undefined) updates.history_encrypted = value.historyEncrypted;
 
             usersDB.update(email, updates);
           } else {
