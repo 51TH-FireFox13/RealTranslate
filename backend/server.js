@@ -27,7 +27,7 @@ dotenv.config();
 // Imports internes
 import { logger, accessLoggerMiddleware } from './logger.js';
 import { initDatabase } from './database.js';
-import { verifyCSRFToken, exemptCSRF } from './csrf-protection.js';
+import { csrfProtection } from './src/middleware/csrf.middleware.js';
 import { setupRoutes } from './src/routes/index.js';
 import { setupWebSocket } from './src/websocket/socket.js';
 
@@ -79,8 +79,8 @@ app.use(express.static(join(__dirname, '../frontend')));
 app.use(accessLoggerMiddleware);
 
 // Protection CSRF (sauf pour webhooks et endpoints publics)
-app.use(exemptCSRF);
-app.use(verifyCSRFToken);
+// Utilise csrfProtection qui gère les exemptions pour login/register
+app.use(csrfProtection);
 
 // ===================================
 // ROUTES API
