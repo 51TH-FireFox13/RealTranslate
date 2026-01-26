@@ -6,7 +6,7 @@
 import { logger } from '../../utils/logger.js';
 import { validateWebSocketData } from '../../../websocket-validation.js';
 import { groups } from '../../db-proxy.js';
-import { messagesDB } from '../../database.js';
+import { messagesDB, usersDB } from '../../database.js';
 import {
   createGroupMessage,
   createDirectMessage
@@ -43,6 +43,10 @@ export async function handleGroupMessage(io, socket, data) {
       return socket.emit('error', { message: 'Accès refusé au groupe' });
     }
 
+    // Récupérer le displayName de l'utilisateur depuis le groupe
+    const member = group.members.find(m => m.email === userEmail);
+    const fromDisplayName = member?.displayName || userEmail.split('@')[0];
+
     // Créer le message avec traduction
     const messageData = await createGroupMessage({
       groupId,
@@ -51,7 +55,8 @@ export async function handleGroupMessage(io, socket, data) {
       timestamp: Date.now(),
       targetLang: userLang,
       provider: data.translationProvider || 'openai',
-      fileInfo
+      fileInfo,
+      fromDisplayName
     });
 
     // Diffuser à tous les membres du groupe
@@ -66,6 +71,7 @@ export async function handleGroupMessage(io, socket, data) {
   } catch (error) {
     logger.error('Error handling group message', {
       error: error.message,
+      stack: error.stack,
       userId: socket.userId,
       groupId: data?.groupId
     });
@@ -98,6 +104,10 @@ export async function handleDirectMessage(io, socket, data) {
     const { recipientEmail, content, userLang, fileInfo } = data;
     const userEmail = socket.userId;
 
+    // Récupérer le displayName de l'utilisateur depuis la DB
+    const user = usersDB.getByEmail(userEmail);
+    const fromDisplayName = user?.display_name || userEmail.split('@')[0];
+
     // Créer le message avec traduction
     const messageData = await createDirectMessage({
       from: userEmail,
@@ -106,7 +116,8 @@ export async function handleDirectMessage(io, socket, data) {
       timestamp: Date.now(),
       targetLang: userLang,
       provider: data.translationProvider || 'openai',
-      fileInfo
+      fileInfo,
+      fromDisplayName
     });
 
     // Envoyer au destinataire
@@ -130,6 +141,7 @@ export async function handleDirectMessage(io, socket, data) {
   } catch (error) {
     logger.error('Error handling direct message', {
       error: error.message,
+      stack: error.stack,
       userId: socket.userId,
       recipientEmail: data?.recipientEmail
     });

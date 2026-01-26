@@ -61,14 +61,17 @@ export async function createGroupMessage({
   timestamp,
   targetLang = null,
   provider = 'openai',
-  fileInfo = null
+  fileInfo = null,
+  fromDisplayName = null
 }) {
   try {
-    // Préparer le message
+    // Préparer le message avec les champs corrects pour la DB
     const messageData = {
       id: generateMessageId('msg'),
-      sender,
-      message,
+      from: sender,
+      fromDisplayName: fromDisplayName || sender.split('@')[0],
+      content: message,
+      originalLang: 'auto',
       timestamp,
       translations: {},
       fileInfo: fileInfo || undefined
@@ -82,6 +85,7 @@ export async function createGroupMessage({
       } catch (error) {
         logger.error('Translation error in group message', {
           error: error.message,
+          stack: error.stack,
           groupId,
           targetLang
         });
@@ -107,6 +111,7 @@ export async function createGroupMessage({
   } catch (error) {
     logger.error('Error creating group message', {
       error: error.message,
+      stack: error.stack,
       groupId,
       sender
     });
@@ -133,16 +138,20 @@ export async function createDirectMessage({
   timestamp,
   targetLang = null,
   provider = 'openai',
-  fileInfo = null
+  fileInfo = null,
+  fromDisplayName = null
 }) {
   try {
     const conversationId = getConversationId(from, to);
 
-    // Préparer le message
+    // Préparer le message avec les champs corrects pour la DB
     const messageData = {
       id: generateMessageId('dm'),
-      sender: from,
-      message,
+      from: from,
+      to: to,
+      fromDisplayName: fromDisplayName || from.split('@')[0],
+      content: message,
+      originalLang: 'auto',
       timestamp,
       translations: {},
       fileInfo: fileInfo || undefined
@@ -156,6 +165,7 @@ export async function createDirectMessage({
       } catch (error) {
         logger.error('Translation error in DM', {
           error: error.message,
+          stack: error.stack,
           conversationId,
           targetLang
         });
@@ -185,6 +195,7 @@ export async function createDirectMessage({
   } catch (error) {
     logger.error('Error creating direct message', {
       error: error.message,
+      stack: error.stack,
       from,
       to
     });
