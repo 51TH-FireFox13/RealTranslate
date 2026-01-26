@@ -49,7 +49,8 @@ export function generateMessageId(prefix = 'msg') {
  * @param {string} params.sender - Email de l'expéditeur
  * @param {string} params.message - Contenu du message
  * @param {number} params.timestamp - Timestamp du message
- * @param {string} params.targetLang - Langue cible pour traduction (optionnel)
+ * @param {string} params.targetLang - Langue cible pour traduction (optionnel, deprecated)
+ * @param {Array<string>} params.targetLangs - Langues cibles pour traduction (optionnel)
  * @param {string} params.provider - Provider IA (optionnel)
  * @param {Object} params.fileInfo - Informations fichier (optionnel)
  * @returns {Promise<Object>} - Message créé
@@ -60,6 +61,7 @@ export async function createGroupMessage({
   message,
   timestamp,
   targetLang = null,
+  targetLangs = null,
   provider = 'openai',
   fileInfo = null,
   fromDisplayName = null
@@ -77,17 +79,40 @@ export async function createGroupMessage({
       fileInfo: fileInfo || undefined
     };
 
-    // Traduire si demandé
-    if (targetLang) {
+    // Supporter l'ancien paramètre targetLang pour la compatibilité
+    const languagesToTranslate = targetLangs || (targetLang ? [targetLang] : []);
+
+    // Traduire vers toutes les langues demandées en parallèle
+    if (languagesToTranslate.length > 0) {
       try {
-        const translated = await translateText(message, targetLang, provider);
-        messageData.translations[targetLang] = translated;
+        const translationPromises = languagesToTranslate.map(async (lang) => {
+          try {
+            const translated = await translateText(message, lang, provider);
+            return { lang, translated };
+          } catch (error) {
+            logger.error('Translation error for language', {
+              error: error.message,
+              groupId,
+              targetLang: lang
+            });
+            return { lang, translated: null };
+          }
+        });
+
+        const results = await Promise.all(translationPromises);
+
+        // Ajouter les traductions réussies
+        for (const { lang, translated } of results) {
+          if (translated) {
+            messageData.translations[lang] = translated;
+          }
+        }
       } catch (error) {
         logger.error('Translation error in group message', {
           error: error.message,
           stack: error.stack,
           groupId,
-          targetLang
+          targetLangs: languagesToTranslate
         });
         // Continuer sans traduction
       }
@@ -103,7 +128,7 @@ export async function createGroupMessage({
       groupId,
       sender,
       messageId: messageData.id,
-      hasTranslation: !!targetLang,
+      translationsCount: Object.keys(messageData.translations).length,
       hasFile: !!fileInfo
     });
 
@@ -126,7 +151,8 @@ export async function createGroupMessage({
  * @param {string} params.to - Email du destinataire
  * @param {string} params.message - Contenu du message
  * @param {number} params.timestamp - Timestamp du message
- * @param {string} params.targetLang - Langue cible pour traduction (optionnel)
+ * @param {string} params.targetLang - Langue cible pour traduction (optionnel, deprecated)
+ * @param {Array<string>} params.targetLangs - Langues cibles pour traduction (optionnel)
  * @param {string} params.provider - Provider IA (optionnel)
  * @param {Object} params.fileInfo - Informations fichier (optionnel)
  * @returns {Promise<Object>} - Message créé avec conversationId
@@ -137,6 +163,7 @@ export async function createDirectMessage({
   message,
   timestamp,
   targetLang = null,
+  targetLangs = null,
   provider = 'openai',
   fileInfo = null,
   fromDisplayName = null
@@ -157,17 +184,40 @@ export async function createDirectMessage({
       fileInfo: fileInfo || undefined
     };
 
-    // Traduire si demandé
-    if (targetLang) {
+    // Supporter l'ancien paramètre targetLang pour la compatibilité
+    const languagesToTranslate = targetLangs || (targetLang ? [targetLang] : []);
+
+    // Traduire vers toutes les langues demandées en parallèle
+    if (languagesToTranslate.length > 0) {
       try {
-        const translated = await translateText(message, targetLang, provider);
-        messageData.translations[targetLang] = translated;
+        const translationPromises = languagesToTranslate.map(async (lang) => {
+          try {
+            const translated = await translateText(message, lang, provider);
+            return { lang, translated };
+          } catch (error) {
+            logger.error('Translation error for language in DM', {
+              error: error.message,
+              conversationId,
+              targetLang: lang
+            });
+            return { lang, translated: null };
+          }
+        });
+
+        const results = await Promise.all(translationPromises);
+
+        // Ajouter les traductions réussies
+        for (const { lang, translated } of results) {
+          if (translated) {
+            messageData.translations[lang] = translated;
+          }
+        }
       } catch (error) {
         logger.error('Translation error in DM', {
           error: error.message,
           stack: error.stack,
           conversationId,
-          targetLang
+          targetLangs: languagesToTranslate
         });
         // Continuer sans traduction
       }
@@ -184,7 +234,7 @@ export async function createDirectMessage({
       from,
       to,
       messageId: messageData.id,
-      hasTranslation: !!targetLang,
+      translationsCount: Object.keys(messageData.translations).length,
       hasFile: !!fileInfo
     });
 

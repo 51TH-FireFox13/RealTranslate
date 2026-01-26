@@ -130,6 +130,7 @@ class AuthManagerSQLite {
           stripeSubscriptionId: user.stripe_subscription_id,
           avatar: user.avatar,
           historyEncrypted: user.history_encrypted,
+          preferredLanguage: user.preferred_language || 'en',
           createdAt: user.created_at,
           // Propriétés calculées depuis la DB (read-only)
           groups: userGroups,
@@ -712,6 +713,26 @@ class AuthManagerSQLite {
     logger.info('DisplayName updated', { email, newDisplayName });
 
     return { success: true, displayName: newDisplayName.trim() };
+  }
+
+  updateLanguagePreference(email, language) {
+    const user = usersDB.getByEmail(email);
+    if (!user) {
+      return { success: false, message: 'Utilisateur introuvable' };
+    }
+
+    // Validation de la langue (codes ISO 639-1)
+    if (!language || language.trim().length < 2) {
+      return { success: false, message: 'Code de langue invalide' };
+    }
+
+    usersDB.update(email, {
+      preferred_language: language.trim().toLowerCase()
+    });
+
+    logger.info('Language preference updated', { email, language });
+
+    return { success: true, language: language.trim().toLowerCase() };
   }
 
   searchUsersByDisplayName(searchTerm) {

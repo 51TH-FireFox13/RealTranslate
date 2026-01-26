@@ -47,13 +47,22 @@ export async function handleGroupMessage(io, socket, data) {
     const member = group.members.find(m => m.email === userEmail);
     const fromDisplayName = member?.displayName || userEmail.split('@')[0];
 
-    // Créer le message avec traduction
+    // Récupérer les langues préférées de tous les membres du groupe
+    const memberLanguages = new Set();
+    for (const groupMember of group.members) {
+      const memberUser = usersDB.getByEmail(groupMember.email);
+      if (memberUser && memberUser.preferred_language) {
+        memberLanguages.add(memberUser.preferred_language);
+      }
+    }
+
+    // Créer le message avec traductions pour toutes les langues
     const messageData = await createGroupMessage({
       groupId,
       sender: userEmail,
       message: content,
       timestamp: Date.now(),
-      targetLang: userLang,
+      targetLangs: Array.from(memberLanguages),
       provider: data.translationProvider || 'openai',
       fileInfo,
       fromDisplayName
@@ -108,13 +117,23 @@ export async function handleDirectMessage(io, socket, data) {
     const user = usersDB.getByEmail(userEmail);
     const fromDisplayName = user?.display_name || userEmail.split('@')[0];
 
-    // Créer le message avec traduction
+    // Récupérer les langues des deux participants (expéditeur et destinataire)
+    const recipient = usersDB.getByEmail(recipientEmail);
+    const targetLangs = [];
+    if (user?.preferred_language) {
+      targetLangs.push(user.preferred_language);
+    }
+    if (recipient?.preferred_language && recipient.preferred_language !== user?.preferred_language) {
+      targetLangs.push(recipient.preferred_language);
+    }
+
+    // Créer le message avec traductions pour les deux langues
     const messageData = await createDirectMessage({
       from: userEmail,
       to: recipientEmail,
       message: content,
       timestamp: Date.now(),
-      targetLang: userLang,
+      targetLangs: targetLangs,
       provider: data.translationProvider || 'openai',
       fileInfo,
       fromDisplayName

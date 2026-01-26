@@ -36,10 +36,12 @@ export function authSocketMiddleware(socket, next) {
     socket.userEmail = result.user.email;
     socket.displayName = result.user.displayName || result.user.email;
     socket.tier = result.user.tier || 'free';
+    socket.userLanguage = result.user.preferredLanguage || 'en';
 
     logger.info('WebSocket authenticated', {
       socketId: socket.id,
-      userId: result.user.email
+      userId: result.user.email,
+      language: socket.userLanguage
     });
 
     next();
@@ -80,6 +82,7 @@ export function handleAuthenticate(socket, token, callback) {
     socket.userEmail = result.user.email;
     socket.displayName = result.user.displayName || result.user.email;
     socket.tier = result.user.tier || 'free';
+    socket.userLanguage = result.user.preferredLanguage || 'en';
 
     // Rejoindre la room personnelle
     socket.join(`user:${result.user.email}`);
@@ -89,7 +92,8 @@ export function handleAuthenticate(socket, token, callback) {
 
     logger.info('Socket authenticated via event', {
       userId: result.user.email,
-      socketId: socket.id
+      socketId: socket.id,
+      language: socket.userLanguage
     });
 
     if (callback) {

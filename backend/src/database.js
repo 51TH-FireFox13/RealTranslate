@@ -61,6 +61,7 @@ function createTables() {
       stripe_customer_id TEXT,
       stripe_subscription_id TEXT,
       history_encrypted TEXT,
+      preferred_language TEXT DEFAULT 'en',
       created_at INTEGER DEFAULT (strftime('%s', 'now')),
       updated_at INTEGER DEFAULT (strftime('%s', 'now'))
     )
@@ -73,6 +74,16 @@ function createTables() {
   } catch (error) {
     if (!error.message.includes('duplicate column name')) {
       logger.error('Migration error for history_encrypted', { error: error.message });
+    }
+  }
+
+  // Migration: Ajouter colonne preferred_language si elle n'existe pas
+  try {
+    globalDb.exec(`ALTER TABLE users ADD COLUMN preferred_language TEXT DEFAULT 'en'`);
+    logger.info('Migration: Added preferred_language column to users table');
+  } catch (error) {
+    if (!error.message.includes('duplicate column name')) {
+      logger.error('Migration error for preferred_language', { error: error.message });
     }
   }
 
@@ -288,6 +299,7 @@ export const usersDB = {
     if (fields.stripe_customer_id !== undefined) { updates.push('stripe_customer_id = ?'); values.push(fields.stripe_customer_id); }
     if (fields.stripe_subscription_id !== undefined) { updates.push('stripe_subscription_id = ?'); values.push(fields.stripe_subscription_id); }
     if (fields.history_encrypted !== undefined) { updates.push('history_encrypted = ?'); values.push(fields.history_encrypted); }
+    if (fields.preferred_language !== undefined) { updates.push('preferred_language = ?'); values.push(fields.preferred_language); }
 
     if (updates.length === 0) return;
 

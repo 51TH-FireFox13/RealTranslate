@@ -83,5 +83,33 @@ export default function usersRoutes(dependencies = {}) {
     }
   });
 
+  /**
+   * PUT /api/profile/language
+   * Mettre à jour la langue préférée de l'utilisateur connecté
+   */
+  router.put('/profile/language', authMiddleware, async (req, res) => {
+    try {
+      const { language } = req.body;
+      const userEmail = req.user.email;
+
+      if (!language) {
+        return res.status(400).json({ error: 'Language requis' });
+      }
+
+      const result = authManager.updateLanguagePreference(userEmail, language);
+
+      if (!result.success) {
+        return res.status(400).json({ error: result.message });
+      }
+
+      logger.info(`Language preference updated for ${userEmail}`, { language });
+      res.json({ success: true, language: result.language });
+
+    } catch (error) {
+      logger.error('Erreur mise à jour language preference', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
   return router;
 }

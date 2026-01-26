@@ -2809,6 +2809,28 @@ function selectLang2(langCode) {
 // NAVIGATION ENTRE LES ÉCRANS (Étapes B et C)
 // ===================================
 
+// Sauvegarder la préférence de langue sur le serveur
+async function saveLanguagePreferenceToServer(language) {
+  if (!state.user) return;
+
+  try {
+    const response = await fetch('/api/profile/language', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({ language })
+    });
+
+    if (!response.ok) {
+      console.error('Failed to save language preference to server');
+    }
+  } catch (error) {
+    console.error('Error saving language preference:', error);
+  }
+}
+
 // Afficher l'écran de choix d'interface (Étape C)
 function showInterfaceChoice() {
   if (!state.lang1 || !state.lang2) return;
@@ -2816,6 +2838,11 @@ function showInterfaceChoice() {
   // Sauvegarder les langues dans localStorage
   localStorage.setItem('lang1', state.lang1);
   localStorage.setItem('lang2', state.lang2);
+
+  // Sauvegarder lang1 (langue préférée) sur le serveur si l'utilisateur est connecté
+  if (state.user) {
+    saveLanguagePreferenceToServer(state.lang1);
+  }
 
   // Afficher le bouton Admin uniquement pour les admins
   const adminBtn = document.getElementById('adminAccessBtn');
