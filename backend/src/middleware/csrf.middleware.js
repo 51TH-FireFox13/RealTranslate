@@ -31,6 +31,11 @@ export const CSRF_EXEMPT_PATHS = [
   // Endpoints publics
   '/api/health',
   '/api/detect-region',
+
+  // Services IA (protégés par Bearer token authentication)
+  '/api/translate',
+  '/api/transcribe',
+  '/api/speak',
 ];
 
 /**
@@ -53,9 +58,9 @@ export function csrfProtection(req, res, next) {
     return next();
   }
 
-  // Vérifier si la route est marquée comme exemptée via le helper
-  if (exemptCSRF(req.path)) {
-    logger.info('CSRF check bypassed via exemptCSRF', {
+  // Vérifier si la requête a été marquée comme exemptée par le middleware exemptFromCSRF
+  if (req.csrfExempt === true) {
+    logger.info('CSRF check bypassed via exemptFromCSRF middleware', {
       path: req.path
     });
     return next();
@@ -97,7 +102,7 @@ export function addCSRFExemptPath(path) {
  * @returns {boolean} true si exempté
  */
 export function isCSRFExempt(path) {
-  return CSRF_EXEMPT_PATHS.includes(path) || exemptCSRF(path);
+  return CSRF_EXEMPT_PATHS.includes(path);
 }
 
 /**
