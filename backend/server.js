@@ -30,6 +30,7 @@ import { initDatabase } from './database.js';
 import { csrfProtection } from './src/middleware/csrf.middleware.js';
 import { setupRoutes } from './src/routes/index.js';
 import { setupWebSocket } from './src/websocket/socket.js';
+import { authSocketMiddleware } from './src/websocket/middleware/auth.middleware.js';
 
 // Variables d'environnement
 const __filename = fileURLToPath(import.meta.url);
@@ -93,6 +94,9 @@ app.use('/api', apiRouter);
 // ===================================
 // WEBSOCKET
 // ===================================
+
+// Middleware d'authentification WebSocket
+io.use(authSocketMiddleware);
 
 // Configuration et handlers WebSocket
 setupWebSocket(io);
