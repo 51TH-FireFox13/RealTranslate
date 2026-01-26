@@ -14,7 +14,7 @@ import express from 'express';
 import { promises as fs } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { logger } from '../logger.js';
+import { logger } from '../utils/logger.js';
 import {
   authManager,
   authMiddleware,

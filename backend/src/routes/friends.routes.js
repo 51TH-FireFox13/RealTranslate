@@ -11,7 +11,7 @@
  */
 
 import express from 'express';
-import { logger } from '../logger.js';
+import { logger } from '../utils/logger.js';
 import { authManager, authMiddleware } from '../auth-sqlite.js';
 
 /**

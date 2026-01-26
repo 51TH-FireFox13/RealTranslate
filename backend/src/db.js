@@ -5,7 +5,7 @@
  */
 
 import Database from 'better-sqlite3';
-import { logger } from '../logger.js';
+import { logger } from './utils/logger.js';
 import {
   getDatabaseConfig,
   validateDatabasePaths,

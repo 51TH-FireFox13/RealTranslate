@@ -4,7 +4,7 @@
  */
 
 import cors from 'cors';
-import { logger } from '../../logger.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Origines autorisées par défaut

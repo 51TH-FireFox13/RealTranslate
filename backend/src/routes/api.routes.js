@@ -14,7 +14,7 @@ import express from 'express';
 import fetch from 'node-fetch';
 import FormData from 'form-data';
 import multer from 'multer';
-import { logger } from '../logger.js';
+import { logger } from '../utils/logger.js';
 import { authManager, authMiddleware, requirePermission } from '../auth-sqlite.js';
 
 // Configuration multer pour l'upload audio

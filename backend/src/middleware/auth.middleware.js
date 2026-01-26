@@ -11,7 +11,7 @@ import {
   ROLES,
   SUBSCRIPTION_TIERS
 } from '../../auth-sqlite.js';
-import { logger } from '../../logger.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Middleware d'authentification de base

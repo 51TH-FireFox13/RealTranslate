@@ -8,7 +8,7 @@ import {
   csrfTokenEndpoint,
   exemptCSRF
 } from '../../csrf-protection.js';
-import { logger } from '../../logger.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Routes exemptées de la vérification CSRF

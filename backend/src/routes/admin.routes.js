@@ -9,7 +9,7 @@
  */
 
 import express from 'express';
-import { logger } from '../logger.js';
+import { logger } from '../utils/logger.js';
 import { authMiddleware } from '../auth-sqlite.js';
 import { groupsDB } from '../database.js';
 import {

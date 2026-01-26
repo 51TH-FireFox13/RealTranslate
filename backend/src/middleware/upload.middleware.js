@@ -8,7 +8,7 @@ import crypto from 'crypto';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync, mkdirSync } from 'fs';
-import { logger } from '../../logger.js';
+import { logger } from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

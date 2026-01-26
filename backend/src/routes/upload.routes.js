@@ -12,7 +12,7 @@ import multer from 'multer';
 import crypto from 'crypto';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { logger } from '../logger.js';
+import { logger } from '../utils/logger.js';
 import { authManager, authMiddleware } from '../auth-sqlite.js';
 
 const __filename = fileURLToPath(import.meta.url);

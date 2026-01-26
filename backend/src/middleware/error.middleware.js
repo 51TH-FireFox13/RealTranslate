@@ -3,7 +3,7 @@
  * Capture et formate toutes les erreurs de l'application
  */
 
-import { logger } from '../../logger.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Classes d'erreurs personnalisées

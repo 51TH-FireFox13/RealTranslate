@@ -11,7 +11,7 @@
  */
 
 import express from 'express';
-import { logger } from '../logger.js';
+import { logger } from '../utils/logger.js';
 import { authManager, authMiddleware } from '../auth-sqlite.js';
 import stripePayment from '../stripe-payment.js';
 import { verifyPayPalIPN, verifyWeChatSignature, verifyWeChatV3Signature } from '../payment-security.js';

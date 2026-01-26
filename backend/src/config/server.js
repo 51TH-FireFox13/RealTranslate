@@ -7,7 +7,7 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { logger, accessLoggerMiddleware } from '../../logger.js';
+import { logger, accessLoggerMiddleware } from '../utils/logger.js';
 import { getCorsMiddleware } from './cors.js';
 import { verifyCSRFToken } from '../../csrf-protection.js';
 
