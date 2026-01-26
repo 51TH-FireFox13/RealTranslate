@@ -30,9 +30,12 @@ beforeAll(async () => {
   process.env.DB_FILE = TEST_DB;
 
   const { initDatabase } = await import('../database.js');
-  const authModule = await import('../auth-sqlite.js');
 
-  db = initDatabase();
+  // IMPORTANT: Passer explicitement le chemin de la DB de test
+  db = initDatabase(TEST_DB);
+
+  // Maintenant importer authModule APRÈS l'initialisation de la DB
+  const authModule = await import('../auth-sqlite.js');
   authManager = authModule.authManager;
 
   // Créer une mini-app Express pour les tests
