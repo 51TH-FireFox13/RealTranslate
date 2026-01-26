@@ -66,6 +66,17 @@ export function csrfProtection(req, res, next) {
     return next();
   }
 
+  // Exempter automatiquement les routes API protégées par Bearer token
+  // Ces routes sont déjà sécurisées par JWT et ne nécessitent pas de CSRF
+  const authHeader = req.headers.authorization;
+  if (req.path.startsWith('/api/') && authHeader && authHeader.startsWith('Bearer ')) {
+    logger.info('CSRF check bypassed for Bearer token authenticated API request', {
+      path: req.path,
+      method: req.method
+    });
+    return next();
+  }
+
   // Appliquer la vérification CSRF
   return baseVerifyCSRFToken(req, res, next);
 }

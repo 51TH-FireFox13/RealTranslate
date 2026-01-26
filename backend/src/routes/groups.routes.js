@@ -108,7 +108,10 @@ export default function groupsRoutes(dependencies = {}) {
       res.json({ success: true, group: createdGroup });
 
     } catch (error) {
-      logger.error('Error creating group', error);
+      logger.error('Error creating group', error, {
+        user: req.user?.email,
+        body: req.body
+      });
       res.status(500).json({ error: 'Erreur serveur' });
     }
   });
@@ -132,7 +135,9 @@ export default function groupsRoutes(dependencies = {}) {
       res.json({ groups: userGroups });
 
     } catch (error) {
-      logger.error('Error getting groups', error);
+      logger.error('Error getting groups', error, {
+        user: req.user?.email
+      });
       res.status(500).json({ error: 'Erreur serveur' });
     }
   });
@@ -163,7 +168,9 @@ export default function groupsRoutes(dependencies = {}) {
       res.json({ groups: publicGroups });
 
     } catch (error) {
-      logger.error('Error fetching public groups', error);
+      logger.error('Error fetching public groups', error, {
+        user: req.user?.email
+      });
       res.status(500).json({ error: 'Erreur serveur' });
     }
   });
@@ -212,7 +219,10 @@ export default function groupsRoutes(dependencies = {}) {
       res.json({ group });
 
     } catch (error) {
-      logger.error('Error getting group', error);
+      logger.error('Error getting group', error, {
+        user: req.user?.email,
+        groupId: req.params?.groupId
+      });
       res.status(500).json({ error: 'Erreur serveur' });
     }
   });
@@ -304,7 +314,11 @@ export default function groupsRoutes(dependencies = {}) {
       res.json({ success: true, group: updatedGroup });
 
     } catch (error) {
-      logger.error('Error adding member', error);
+      logger.error('Error adding member', error, {
+        user: req.user?.email,
+        groupId: req.params?.groupId,
+        memberEmail: req.body?.memberEmail
+      });
       res.status(500).json({ error: 'Erreur serveur' });
     }
   });
@@ -394,7 +408,10 @@ export default function groupsRoutes(dependencies = {}) {
       res.json({ success: true, group: updatedGroup });
 
     } catch (error) {
-      logger.error('Error joining group', error);
+      logger.error('Error joining group', error, {
+        user: req.user?.email,
+        groupId: req.params?.groupId
+      });
       res.status(500).json({ error: 'Erreur serveur' });
     }
   });
