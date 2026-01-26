@@ -21,22 +21,25 @@ export function authSocketMiddleware(socket, next) {
     }
 
     // Vérifier le token
-    const user = authManager.verifyToken(token);
+    const result = authManager.verifyToken(token);
 
-    if (!user) {
-      logger.warn('WebSocket connection attempt with invalid token', { socketId: socket.id });
+    if (!result.success) {
+      logger.warn('WebSocket connection attempt with invalid token', {
+        socketId: socket.id,
+        message: result.message
+      });
       return next(new Error('Invalid token'));
     }
 
     // Attacher l'utilisateur au socket
-    socket.userId = user.email;
-    socket.userEmail = user.email;
-    socket.displayName = user.displayName || user.email;
-    socket.tier = user.tier || 'free';
+    socket.userId = result.user.email;
+    socket.userEmail = result.user.email;
+    socket.displayName = result.user.displayName || result.user.email;
+    socket.tier = result.user.tier || 'free';
 
     logger.info('WebSocket authenticated', {
       socketId: socket.id,
-      userId: user.email
+      userId: result.user.email
     });
 
     next();
@@ -55,15 +58,16 @@ export function authSocketMiddleware(socket, next) {
  */
 export function handleAuthenticate(socket, token, callback) {
   try {
-    const user = authManager.verifyToken(token);
+    const result = authManager.verifyToken(token);
 
-    if (!user) {
+    if (!result.success) {
       logger.warn('Authentication attempt with invalid token', {
-        socketId: socket.id
+        socketId: socket.id,
+        message: result.message
       });
 
       if (callback) {
-        callback({ success: false, error: 'Invalid token' });
+        callback({ success: false, error: result.message || 'Invalid token' });
       }
 
       socket.emit('auth_error', { error: 'Token invalide' });
@@ -72,19 +76,19 @@ export function handleAuthenticate(socket, token, callback) {
     }
 
     // Attacher l'utilisateur au socket
-    socket.userId = user.email;
-    socket.userEmail = user.email;
-    socket.displayName = user.displayName || user.email;
-    socket.tier = user.tier || 'free';
+    socket.userId = result.user.email;
+    socket.userEmail = result.user.email;
+    socket.displayName = result.user.displayName || result.user.email;
+    socket.tier = result.user.tier || 'free';
 
     // Rejoindre la room personnelle
-    socket.join(`user:${user.email}`);
+    socket.join(`user:${result.user.email}`);
 
     // Mettre à jour le statut en ligne
-    statusesDB.upsert(user.email, 'online');
+    statusesDB.upsert(result.user.email, 'online');
 
     logger.info('Socket authenticated via event', {
-      userId: user.email,
+      userId: result.user.email,
       socketId: socket.id
     });
 
