@@ -51,6 +51,7 @@ import {
   clearMessagesCache,
   clearDMsCache
 } from './db-proxy.js';
+import { setupRoutes } from './src/routes/index.js';
 
 dotenv.config();
 
