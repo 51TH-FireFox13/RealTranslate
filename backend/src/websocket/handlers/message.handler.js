@@ -6,6 +6,7 @@
 import { logger } from '../../../logger.js';
 import { validateWebSocketData } from '../../../websocket-validation.js';
 import { groups } from '../../../db-proxy.js';
+import { messagesDB } from '../../database.js';
 import {
   createGroupMessage,
   createDirectMessage
@@ -208,9 +209,203 @@ export function handleLeaveRoom(socket, data) {
   }
 }
 
+/**
+ * Handler pour toggle reaction sur un message
+ * @param {Object} io - Instance Socket.IO
+ * @param {Object} socket - Socket client
+ * @param {Object} data - Données { groupId, messageId, emoji }
+ */
+export async function handleToggleReaction(io, socket, data) {
+  try {
+    if (!socket.userId) {
+      return socket.emit('error', { message: 'Non authentifié' });
+    }
+
+    // Valider les données
+    const validation = validateWebSocketData('toggle_reaction', data);
+    if (!validation.valid) {
+      return socket.emit('error', {
+        message: 'Données invalides',
+        errors: validation.errors
+      });
+    }
+
+    const { groupId, messageId, emoji } = data;
+    const userEmail = socket.userId;
+
+    // Vérifier que le groupe existe
+    const group = groups[groupId];
+    if (!group) {
+      return socket.emit('error', { message: 'Groupe introuvable' });
+    }
+
+    // Vérifier que l'utilisateur est membre
+    const isMember = group.members.some(m => m.email === userEmail);
+    if (!isMember) {
+      return socket.emit('error', { message: 'Accès refusé' });
+    }
+
+    // Récupérer le message depuis la DB
+    const message = messagesDB.get(messageId);
+    if (!message) {
+      return socket.emit('error', { message: 'Message introuvable' });
+    }
+
+    // Vérifier que le message appartient au groupe
+    if (message.group_id !== groupId) {
+      return socket.emit('error', { message: 'Message introuvable dans ce groupe' });
+    }
+
+    // Parser les réactions (stockées en JSON)
+    let reactions = message.reactions ? JSON.parse(message.reactions) : {};
+
+    // Initialiser la réaction pour cet emoji si elle n'existe pas
+    if (!reactions[emoji]) {
+      reactions[emoji] = [];
+    }
+
+    // Vérifier si l'utilisateur a déjà réagi avec cet emoji
+    const reactionIndex = reactions[emoji].findIndex(r => r.email === userEmail);
+
+    if (reactionIndex !== -1) {
+      // Retirer la réaction
+      reactions[emoji].splice(reactionIndex, 1);
+
+      // Supprimer l'emoji s'il n'y a plus de réactions
+      if (reactions[emoji].length === 0) {
+        delete reactions[emoji];
+      }
+    } else {
+      // Ajouter la réaction
+      const user = group.members.find(m => m.email === userEmail);
+      reactions[emoji].push({
+        email: userEmail,
+        displayName: user?.displayName || userEmail,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Sauvegarder dans la DB de manière atomique
+    // Le cache TTL expirera automatiquement, pas besoin de clearMessagesCache
+    messagesDB.update(messageId, { reactions });
+
+    // Diffuser la mise à jour à tous les membres du groupe
+    io.to(`group:${groupId}`).emit('message_reaction_updated', {
+      groupId,
+      messageId,
+      reactions
+    });
+
+    logger.info('Reaction toggled', {
+      groupId,
+      messageId,
+      emoji,
+      userEmail,
+      action: reactionIndex !== -1 ? 'removed' : 'added'
+    });
+
+  } catch (error) {
+    logger.error('Error toggling reaction', {
+      error: error.message,
+      stack: error.stack,
+      userId: socket.userId,
+      data
+    });
+    socket.emit('error', { message: 'Erreur lors de l\'ajout de la réaction' });
+  }
+}
+
+/**
+ * Handler pour supprimer un message
+ * @param {Object} io - Instance Socket.IO
+ * @param {Object} socket - Socket client
+ * @param {Object} data - Données { groupId, messageId }
+ */
+export async function handleDeleteMessage(io, socket, data) {
+  try {
+    if (!socket.userId) {
+      return socket.emit('error', { message: 'Non authentifié' });
+    }
+
+    // Valider les données
+    const validation = validateWebSocketData('delete_message', data);
+    if (!validation.valid) {
+      return socket.emit('error', {
+        message: 'Données invalides',
+        errors: validation.errors
+      });
+    }
+
+    const { groupId, messageId } = data;
+    const userEmail = socket.userId;
+
+    // Vérifier que le groupe existe
+    const group = groups[groupId];
+    if (!group) {
+      return socket.emit('error', { message: 'Groupe introuvable' });
+    }
+
+    // Vérifier que l'utilisateur est membre
+    const isMember = group.members.some(m => m.email === userEmail);
+    if (!isMember) {
+      return socket.emit('error', { message: 'Accès refusé' });
+    }
+
+    // Récupérer le message depuis la DB
+    const message = messagesDB.get(messageId);
+    if (!message) {
+      return socket.emit('error', { message: 'Message introuvable' });
+    }
+
+    // Vérifier que le message appartient au groupe
+    if (message.group_id !== groupId) {
+      return socket.emit('error', { message: 'Message introuvable dans ce groupe' });
+    }
+
+    // Vérifier les permissions (auteur du message ou admin du groupe)
+    const isAuthor = message.from_email === userEmail;
+    const isGroupAdmin = group.members.find(m => m.email === userEmail && m.role === 'admin');
+
+    if (!isAuthor && !isGroupAdmin) {
+      return socket.emit('error', {
+        message: 'Vous n\'avez pas la permission de supprimer ce message'
+      });
+    }
+
+    // Supprimer le message de la DB de manière atomique
+    // Le cache TTL expirera automatiquement, pas besoin de clearMessagesCache
+    messagesDB.delete(messageId);
+
+    // Diffuser la suppression à tous les membres du groupe
+    io.to(`group:${groupId}`).emit('message_deleted', {
+      groupId,
+      messageId
+    });
+
+    logger.info('Message deleted', {
+      groupId,
+      messageId,
+      deletedBy: userEmail,
+      wasAuthor: isAuthor,
+      wasAdmin: !!isGroupAdmin
+    });
+
+  } catch (error) {
+    logger.error('Error deleting message', {
+      error: error.message,
+      stack: error.stack,
+      userId: socket.userId,
+      data
+    });
+    socket.emit('error', { message: 'Erreur lors de la suppression du message' });
+  }
+}
+
 export default {
   handleGroupMessage,
   handleDirectMessage,
   handleJoinRooms,
-  handleLeaveRoom
+  handleLeaveRoom,
+  handleToggleReaction,
+  handleDeleteMessage
 };

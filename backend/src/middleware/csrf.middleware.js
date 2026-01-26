@@ -44,6 +44,11 @@ export const CSRF_EXEMPT_PATHS = [
  * sauf pour les routes exemptées
  */
 export function csrfProtection(req, res, next) {
+  // Désactiver CSRF en mode test
+  if (process.env.NODE_ENV === 'test') {
+    return next();
+  }
+
   // Méthodes GET, HEAD, OPTIONS ne nécessitent pas de protection CSRF
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
     return next();

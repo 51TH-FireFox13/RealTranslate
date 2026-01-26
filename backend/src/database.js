@@ -463,6 +463,11 @@ export const groupsDB = {
 // ===================================
 
 export const messagesDB = {
+  get(messageId) {
+    const stmt = globalDb.prepare('SELECT * FROM messages WHERE id = ?');
+    return stmt.get(messageId);
+  },
+
   getByGroup(groupId, limit = 100) {
     const stmt = globalDb.prepare(`
       SELECT * FROM messages

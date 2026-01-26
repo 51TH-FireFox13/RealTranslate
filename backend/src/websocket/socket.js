@@ -12,7 +12,9 @@ import {
   handleGroupMessage,
   handleDirectMessage,
   handleJoinRooms,
-  handleLeaveRoom
+  handleLeaveRoom,
+  handleToggleReaction,
+  handleDeleteMessage
 } from './handlers/message.handler.js';
 import {
   handleUserOnline,
@@ -121,6 +123,24 @@ export function setupWebSocket(io) {
 
     socket.on('stop_typing', (data) => {
       handleTypingStop(socket, data);
+    });
+
+    // ===================================
+    // ACTIONS SUR LES MESSAGES
+    // ===================================
+
+    /**
+     * Toggle reaction sur un message
+     */
+    socket.on('toggle_reaction', async (data) => {
+      await handleToggleReaction(io, socket, data);
+    });
+
+    /**
+     * Supprimer un message
+     */
+    socket.on('delete_message', async (data) => {
+      await handleDeleteMessage(io, socket, data);
     });
 
     // ===================================
