@@ -6,7 +6,7 @@
  * de manière modulaire.
  */
 
-import { logger } from '../../logger.js';
+import { logger } from '../utils/logger.js';
 import { handleAuthenticate } from './middleware/auth.middleware.js';
 import {
   handleGroupMessage,

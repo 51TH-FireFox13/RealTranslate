@@ -13,8 +13,8 @@
  * - Enterprise: Illimité
  */
 
-import { quotasDB } from '../../database.js';
-import { logger } from '../../logger.js';
+import { quotasDB } from '../database.js';
+import { logger } from '../utils/logger.js';
 
 // Limites par tier
 const QUOTA_LIMITS = {

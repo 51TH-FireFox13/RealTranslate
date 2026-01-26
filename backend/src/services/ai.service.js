@@ -9,7 +9,7 @@
  */
 
 import fetch from 'node-fetch';
-import { logger } from '../../logger.js';
+import { logger } from '../utils/logger.js';
 import FormData from 'form-data';
 
 /**

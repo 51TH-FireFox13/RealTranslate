@@ -3,9 +3,9 @@
  * @module websocket/handlers/message
  */
 
-import { logger } from '../../../logger.js';
+import { logger } from '../../utils/logger.js';
 import { validateWebSocketData } from '../../../websocket-validation.js';
-import { groups } from '../../../db-proxy.js';
+import { groups } from '../../db-proxy.js';
 import { messagesDB } from '../../database.js';
 import {
   createGroupMessage,

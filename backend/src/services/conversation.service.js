@@ -10,17 +10,17 @@
  */
 
 import crypto from 'crypto';
-import { logger } from '../../logger.js';
+import { logger } from '../utils/logger.js';
 import {
   addGroupMessage,
   addDirectMessage,
   getConversationMessages,
   getGroupMessages
-} from '../../db-helpers.js';
+} from '../db-helpers.js';
 import {
   clearMessagesCache,
   clearDMsCache
-} from '../../db-proxy.js';
+} from '../db-proxy.js';
 import { translateText } from './ai.service.js';
 
 /**

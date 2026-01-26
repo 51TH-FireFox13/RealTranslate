@@ -10,8 +10,8 @@
  */
 
 import Stripe from 'stripe';
-import { logger } from '../../logger.js';
-import { authManager } from '../../auth-sqlite.js';
+import { logger } from '../utils/logger.js';
+import { authManager } from '../auth-sqlite.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 

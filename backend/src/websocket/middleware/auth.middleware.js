@@ -3,9 +3,9 @@
  * @module websocket/middleware/auth
  */
 
-import { authManager } from '../../../auth-sqlite.js';
-import { logger } from '../../../logger.js';
-import { statusesDB } from '../../../database.js';
+import { authManager } from '../../auth-sqlite.js';
+import { logger } from '../../utils/logger.js';
+import { statusesDB } from '../../database.js';
 
 /**
  * Middleware d'authentification pour Socket.IO

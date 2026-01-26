@@ -7,10 +7,10 @@
  * - Indicateurs de frappe (typing)
  */
 
-import { logger } from '../../../logger.js';
-import { statusesDB } from '../../../database.js';
-import { authManager } from '../../../auth-sqlite.js';
-import { groups } from '../../../db-proxy.js';
+import { logger } from '../../utils/logger.js';
+import { statusesDB } from '../../database.js';
+import { authManager } from '../../auth-sqlite.js';
+import { groups } from '../../db-proxy.js';
 
 // Maps pour tracking des sockets utilisateurs
 const userSockets = new Map(); // email -> Set<socketId>
