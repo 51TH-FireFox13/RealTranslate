@@ -294,11 +294,14 @@ export default function groupsRoutes(dependencies = {}) {
         role: 'member'
       });
 
+      // Recharger le groupe depuis la DB pour obtenir la version à jour
+      const updatedGroup = groups[groupId];
+
       // Note: newMember.groups est calculé automatiquement depuis group_members
       // saveUsers() est un no-op dans la version SQLite
 
       logger.info(`Member added to group: ${memberEmail} -> ${groupId}`);
-      res.json({ success: true, group });
+      res.json({ success: true, group: updatedGroup });
 
     } catch (error) {
       logger.error('Error adding member', error);
@@ -334,11 +337,14 @@ export default function groupsRoutes(dependencies = {}) {
       // Retirer le membre de la DB
       groupsDB.removeMember(groupId, memberEmail);
 
+      // Recharger le groupe depuis la DB pour obtenir la version à jour
+      const updatedGroup = groups[groupId];
+
       // Note: member.groups est calculé automatiquement depuis group_members
       // saveUsers() est un no-op dans la version SQLite
 
       logger.info(`Member removed from group: ${memberEmail} <- ${groupId}`);
-      res.json({ success: true });
+      res.json({ success: true, group: updatedGroup });
 
     } catch (error) {
       logger.error('Error removing member', error);
@@ -378,11 +384,14 @@ export default function groupsRoutes(dependencies = {}) {
         role: 'member'
       });
 
+      // Recharger le groupe depuis la DB pour obtenir la version à jour
+      const updatedGroup = groups[groupId];
+
       // Note: user.groups est calculé automatiquement depuis group_members
       // saveUsers() est un no-op dans la version SQLite
 
       logger.info(`User joined public group: ${userEmail} -> ${groupId}`);
-      res.json({ success: true, group });
+      res.json({ success: true, group: updatedGroup });
 
     } catch (error) {
       logger.error('Error joining group', error);

@@ -567,47 +567,50 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Trouver le message
-      const groupMessages = messagesEnhanced[groupId] || [];
-      const message = groupMessages.find(m => m.id === messageId);
+      // Récupérer le message directement depuis la DB (pas le cache)
+      const message = messagesDB.get(messageId);
 
       if (!message) {
         socket.emit('error', { message: 'Message introuvable' });
         return;
       }
 
-      // Initialiser les réactions si elles n'existent pas
-      if (!message.reactions) {
-        message.reactions = {};
+      // Vérifier que le message appartient bien au groupe
+      if (message.group_id !== groupId) {
+        socket.emit('error', { message: 'Message introuvable dans ce groupe' });
+        return;
       }
 
+      // Parser les réactions (stockées en JSON)
+      let reactions = message.reactions ? JSON.parse(message.reactions) : {};
+
       // Initialiser la réaction pour cet emoji si elle n'existe pas
-      if (!message.reactions[emoji]) {
-        message.reactions[emoji] = [];
+      if (!reactions[emoji]) {
+        reactions[emoji] = [];
       }
 
       // Vérifier si l'utilisateur a déjà réagi avec cet emoji
-      const reactionIndex = message.reactions[emoji].findIndex(r => r.email === userEmail);
+      const reactionIndex = reactions[emoji].findIndex(r => r.email === userEmail);
 
       if (reactionIndex !== -1) {
         // Retirer la réaction
-        message.reactions[emoji].splice(reactionIndex, 1);
+        reactions[emoji].splice(reactionIndex, 1);
 
         // Supprimer l'emoji s'il n'y a plus de réactions
-        if (message.reactions[emoji].length === 0) {
-          delete message.reactions[emoji];
+        if (reactions[emoji].length === 0) {
+          delete reactions[emoji];
         }
       } else {
         // Ajouter la réaction
-        message.reactions[emoji].push({
+        reactions[emoji].push({
           email: userEmail,
           displayName: displayName,
           timestamp: new Date().toISOString()
         });
       }
 
-      // Sauvegarder les reactions dans la DB
-      messagesDB.update(messageId, { reactions: message.reactions });
+      // Sauvegarder les reactions dans la DB de manière atomique
+      messagesDB.update(messageId, { reactions });
 
       // Vider le cache pour forcer le rechargement
       clearMessagesCache();
@@ -616,7 +619,7 @@ io.on('connection', (socket) => {
       io.to(groupId).emit('message_reaction_updated', {
         groupId,
         messageId,
-        reactions: message.reactions
+        reactions
       });
 
       logger.info(`Reaction ${emoji} toggled on message ${messageId} by ${userEmail}`);
@@ -652,19 +655,22 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Trouver le message
-      const groupMessages = messagesEnhanced[groupId] || [];
-      const messageIndex = groupMessages.findIndex(m => m.id === messageId);
+      // Récupérer le message directement depuis la DB (pas le cache)
+      const message = messagesDB.get(messageId);
 
-      if (messageIndex === -1) {
+      if (!message) {
         socket.emit('error', { message: 'Message introuvable' });
         return;
       }
 
-      const message = groupMessages[messageIndex];
+      // Vérifier que le message appartient bien au groupe
+      if (message.group_id !== groupId) {
+        socket.emit('error', { message: 'Message introuvable dans ce groupe' });
+        return;
+      }
 
       // Vérifier que l'utilisateur est l'auteur du message ou admin du groupe
-      const isAuthor = message.from === userEmail;
+      const isAuthor = message.sender_email === userEmail;
       const isGroupAdmin = group.members.find(m => m.email === userEmail && m.role === 'admin');
 
       if (!isAuthor && !isGroupAdmin) {
@@ -672,10 +678,10 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Supprimer le message de la DB
+      // Supprimer le message de la DB de manière atomique
       messagesDB.delete(messageId);
 
-      // Vider le cache pour forcer le rechargement
+      // Vider le cache immédiatement après pour éviter toute incohérence
       clearMessagesCache();
 
       // Diffuser la suppression à tous les membres du groupe
