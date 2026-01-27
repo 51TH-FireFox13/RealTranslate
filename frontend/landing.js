@@ -1,3 +1,139 @@
+// ===== INTERNATIONALIZATION (i18n) SYSTEM =====
+let translations = {};
+let currentLang = 'fr';
+
+// Detect user's preferred language
+function detectLanguage() {
+  // Try to get language from localStorage (user preference)
+  const savedLang = localStorage.getItem('preferredLanguage');
+  if (savedLang) {
+    return savedLang;
+  }
+
+  // Try to detect from browser language
+  const browserLang = navigator.language || navigator.userLanguage;
+  const langCode = browserLang.split('-')[0]; // Get 'fr' from 'fr-FR'
+
+  // Check if we support this language
+  const supportedLanguages = ['fr', 'en', 'es', 'it', 'de', 'zh', 'ja', 'pt', 'ar', 'ru'];
+  if (supportedLanguages.includes(langCode)) {
+    return langCode;
+  }
+
+  // Default to English if language not supported
+  return 'en';
+}
+
+// Load translations from JSON file
+async function loadTranslations() {
+  try {
+    const response = await fetch('translations.json');
+    translations = await response.json();
+    console.log('Translations loaded successfully');
+  } catch (error) {
+    console.error('Error loading translations:', error);
+  }
+}
+
+// Apply translations to the page
+function applyTranslations(lang) {
+  if (!translations[lang]) {
+    console.error(`Language ${lang} not found in translations`);
+    return;
+  }
+
+  currentLang = lang;
+
+  // Update HTML lang attribute
+  document.documentElement.lang = lang;
+
+  // Update all elements with data-i18n attribute
+  document.querySelectorAll('[data-i18n]').forEach(element => {
+    const key = element.getAttribute('data-i18n');
+    const translation = getNestedTranslation(translations[lang], key);
+
+    if (translation) {
+      element.textContent = translation;
+    }
+  });
+
+  // Update language selector
+  const languageSelector = document.getElementById('language-selector');
+  if (languageSelector) {
+    languageSelector.value = lang;
+  }
+
+  // Save preference
+  localStorage.setItem('preferredLanguage', lang);
+
+  // Update page title and meta description
+  updateMetadata(lang);
+}
+
+// Helper function to get nested translation (e.g., "nav.pricing")
+function getNestedTranslation(obj, path) {
+  return path.split('.').reduce((current, key) => current?.[key], obj);
+}
+
+// Update page metadata based on language
+function updateMetadata(lang) {
+  const titles = {
+    fr: 'RealTranslate - Brisez les barrières linguistiques en temps réel',
+    en: 'RealTranslate - Break language barriers in real-time',
+    es: 'RealTranslate - Rompe las barreras lingüísticas en tiempo real',
+    it: 'RealTranslate - Abbatti le barriere linguistiche in tempo reale',
+    de: 'RealTranslate - Sprachbarrieren in Echtzeit überwinden',
+    zh: 'RealTranslate - 实时打破语言障碍',
+    ja: 'RealTranslate - リアルタイムで言語の壁を打ち破る',
+    pt: 'RealTranslate - Quebre as barreiras linguísticas em tempo real',
+    ar: 'RealTranslate - كسر الحواجز اللغوية في الوقت الفعلي',
+    ru: 'RealTranslate - Преодолевайте языковые барьеры в реальном времени'
+  };
+
+  document.title = titles[lang] || titles.en;
+
+  const metaDescription = document.querySelector('meta[name="description"]');
+  if (metaDescription) {
+    const descriptions = {
+      fr: 'Communiquez sans limites avec RealTranslate. Traduction instantanée et fluide pour vos conversations, messages et appels.',
+      en: 'Communicate without limits with RealTranslate. Instant and smooth translation for your conversations, messages and calls.',
+      es: 'Comunícate sin límites con RealTranslate. Traducción instantánea y fluida para tus conversaciones, mensajes y llamadas.',
+      it: 'Comunica senza limiti con RealTranslate. Traduzione istantanea e fluida per le tue conversazioni, messaggi e chiamate.',
+      de: 'Kommunizieren Sie grenzenlos mit RealTranslate. Sofortige und reibungslose Übersetzung für Ihre Gespräche, Nachrichten und Anrufe.',
+      zh: '使用 RealTranslate 无限沟通。为您的对话、消息和通话提供即时流畅的翻译。',
+      ja: 'RealTranslate で制限なくコミュニケーション。会話、メッセージ、通話のための即座でスムーズな翻訳。',
+      pt: 'Comunique sem limites com RealTranslate. Tradução instantânea e fluida para suas conversas, mensagens e chamadas.',
+      ar: 'تواصل بلا حدود مع RealTranslate. ترجمة فورية وسلسة لمحادثاتك ورسائلك ومكالماتك.',
+      ru: 'Общайтесь без ограничений с RealTranslate. Мгновенный и плавный перевод для ваших разговоров, сообщений и звонков.'
+    };
+    metaDescription.content = descriptions[lang] || descriptions.en;
+  }
+}
+
+// Initialize i18n system
+async function initializeI18n() {
+  await loadTranslations();
+  const detectedLang = detectLanguage();
+  applyTranslations(detectedLang);
+
+  // Setup language selector event listener
+  const languageSelector = document.getElementById('language-selector');
+  if (languageSelector) {
+    languageSelector.addEventListener('change', (e) => {
+      applyTranslations(e.target.value);
+    });
+  }
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeI18n);
+} else {
+  initializeI18n();
+}
+
+// ===== EXISTING FUNCTIONALITY =====
+
 // Smooth scroll for anchor links
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', function (e) {
