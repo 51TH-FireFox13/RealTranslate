@@ -105,6 +105,11 @@ setupWebSocket(io);
 // ROUTE CATCH-ALL (FRONTEND SPA)
 // ===================================
 
+// Servir la landing page pour la racine
+app.get('/', (req, res) => {
+  res.sendFile(join(__dirname, '../frontend/landing.html'));
+});
+
 // Servir le frontend pour toutes les autres routes
 app.get('*', (req, res) => {
   res.sendFile(join(__dirname, '../frontend/index.html'));
