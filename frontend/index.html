@@ -1964,6 +1964,19 @@
         content: '...';
       }
     }
+
+    /* Visually hidden but accessible to screen readers */
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
   </style>
 
   <!-- Stripe.js -->
@@ -2048,7 +2061,7 @@
       <form id="registerForm" onsubmit="return false;">
         <div class="input-group">
           <label for="registerName">Nom d'affichage</label>
-          <input type="text" id="registerName" placeholder="Votre nom" required>
+          <input type="text" id="registerName" placeholder="Votre nom" autocomplete="name" required>
         </div>
 
         <div class="input-group">
@@ -2158,7 +2171,7 @@
 
       <div class="input-group">
         <label for="accessTokenInput">Jeton d'accès</label>
-        <input type="text" id="accessTokenInput" placeholder="AT-xxxxxxxxxxxxxxxxxx" style="font-family: monospace;">
+        <input type="text" id="accessTokenInput" placeholder="AT-xxxxxxxxxxxxxxxxxx" autocomplete="off" style="font-family: monospace;">
       </div>
 
       <div style="display: flex; gap: 10px; margin-top: 20px;">
@@ -2708,10 +2721,12 @@
         <div id="adminMessage" class="hidden" style="margin-bottom: 15px;"></div>
         <form class="create-user-form" onsubmit="return false;">
           <div class="input-group" style="margin-bottom: 0;">
-            <input type="email" id="newUserEmail" placeholder="Email" required>
+            <label for="newUserEmail" class="visually-hidden">Email</label>
+            <input type="email" id="newUserEmail" placeholder="Email" autocomplete="email" required>
           </div>
           <div class="input-group" style="margin-bottom: 0;">
-            <input type="password" id="newUserPassword" placeholder="Mot de passe" required>
+            <label for="newUserPassword" class="visually-hidden">Mot de passe</label>
+            <input type="password" id="newUserPassword" placeholder="Mot de passe" autocomplete="new-password" required>
           </div>
           <div class="input-group" style="margin-bottom: 0;">
             <select id="newUserRole">
@@ -2751,14 +2766,17 @@
               <option value="admin">👑 Admin</option>
             </select>
             <div style="flex: 1; min-width: 150px;">
-              <label style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Max utilisations</label>
-              <input type="number" id="tokenMaxUses" value="1" min="1" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+              <label for="tokenMaxUses" style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Max utilisations</label>
+              <input type="number" id="tokenMaxUses" value="1" min="1" autocomplete="off" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
             </div>
             <div style="flex: 1; min-width: 150px;">
-              <label style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Validité (jours)</label>
-              <input type="number" id="tokenExpiryDays" value="30" min="1" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+              <label for="tokenExpiryDays" style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Validité (jours)</label>
+              <input type="number" id="tokenExpiryDays" value="30" min="1" autocomplete="off" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
             </div>
-            <input type="text" id="tokenDescription" placeholder="Description (optionnelle)" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+            <div style="flex: 1; min-width: 200px;">
+              <label for="tokenDescription" class="visually-hidden">Description</label>
+              <input type="text" id="tokenDescription" placeholder="Description (optionnelle)" autocomplete="off" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+            </div>
             <button class="create-user-btn" onclick="generateAccessToken()" style="margin: 0; align-self: flex-end;">🎫 Générer</button>
           </div>
         </div>
@@ -2784,7 +2802,8 @@
           <div style="margin-bottom: 15px;">
             <p style="color: #888; font-size: 0.9em; margin-bottom: 10px;">Mettre à jour l'abonnement d'un utilisateur</p>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-              <input type="email" id="subscriptionEmail" placeholder="Email de l'utilisateur" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+              <label for="subscriptionEmail" class="visually-hidden">Email de l'utilisateur</label>
+              <input type="email" id="subscriptionEmail" placeholder="Email de l'utilisateur" autocomplete="email" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
               <select id="subscriptionTier" style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
                 <option value="free">🆓 Gratuit (5/25/5)</option>
                 <option value="premium">⭐ Premium (20/100/20) - 9.99€</option>
@@ -2864,8 +2883,8 @@
                 </select>
               </div>
               <div style="flex: 1; min-width: 200px;">
-                <label style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Filtrer par date/heure (optionnel)</label>
-                <input type="datetime-local" id="logDateFilter" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+                <label for="logDateFilter" style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Filtrer par date/heure (optionnel)</label>
+                <input type="datetime-local" id="logDateFilter" autocomplete="off" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
               </div>
               <button class="create-user-btn" onclick="loadLogs()" style="margin: 0;">🔄 Actualiser</button>
               <button class="create-user-btn" onclick="exportLogs()" style="margin: 0; background: #ffd43b; color: #000;">📥 Exporter</button>
@@ -2940,7 +2959,7 @@
                 ?
               </div>
               <div style="flex: 1;">
-                <input type="file" id="avatarInput" accept="image/*" style="display: none;" onchange="handleAvatarSelection(event)">
+                <input type="file" id="avatarInput" accept="image/*" aria-label="Choisir une photo de profil" style="display: none;" onchange="handleAvatarSelection(event)">
                 <button class="create-user-btn" onclick="document.getElementById('avatarInput').click()" style="margin-bottom: 10px;">
                   📷 Choisir une photo
                 </button>
@@ -2959,7 +2978,8 @@
           <div id="displayNameMessage" class="hidden" style="margin-bottom: 15px;"></div>
           <form class="create-user-form" onsubmit="return false;">
             <div class="input-group" style="margin-bottom: 0;">
-              <input type="text" id="newDisplayName" placeholder="Nouveau nom d'affichage" required minlength="2" maxlength="50">
+              <label for="newDisplayName" class="visually-hidden">Nouveau nom d'affichage</label>
+              <input type="text" id="newDisplayName" placeholder="Nouveau nom d'affichage" autocomplete="name" required minlength="2" maxlength="50">
             </div>
             <button class="create-user-btn" onclick="updateDisplayName()">Mettre à jour</button>
           </form>
@@ -2976,13 +2996,16 @@
           <div id="changePasswordMessage" class="hidden" style="margin-bottom: 15px;"></div>
           <form class="create-user-form" onsubmit="return false;">
             <div class="input-group" style="margin-bottom: 0;">
-              <input type="password" id="currentPassword" placeholder="Mot de passe actuel" required>
+              <label for="currentPassword" class="visually-hidden">Mot de passe actuel</label>
+              <input type="password" id="currentPassword" placeholder="Mot de passe actuel" autocomplete="current-password" required>
             </div>
             <div class="input-group" style="margin-bottom: 0;">
-              <input type="password" id="newPassword" placeholder="Nouveau mot de passe" required>
+              <label for="newPassword" class="visually-hidden">Nouveau mot de passe</label>
+              <input type="password" id="newPassword" placeholder="Nouveau mot de passe" autocomplete="new-password" required>
             </div>
             <div class="input-group" style="margin-bottom: 0;">
-              <input type="password" id="confirmNewPassword" placeholder="Confirmer le nouveau mot de passe" required>
+              <label for="confirmNewPassword" class="visually-hidden">Confirmer le nouveau mot de passe</label>
+              <input type="password" id="confirmNewPassword" placeholder="Confirmer le nouveau mot de passe" autocomplete="new-password" required>
             </div>
             <button class="create-user-btn" onclick="changePassword()">Changer le mot de passe</button>
           </form>
@@ -3014,7 +3037,8 @@
           <div id="deleteAccountMessage" class="hidden" style="margin-bottom: 15px;"></div>
           <form class="create-user-form" onsubmit="return false;">
             <div class="input-group" style="margin-bottom: 0;">
-              <input type="password" id="deleteAccountPassword" placeholder="Confirmer avec votre mot de passe" required>
+              <label for="deleteAccountPassword" class="visually-hidden">Confirmer avec votre mot de passe</label>
+              <input type="password" id="deleteAccountPassword" placeholder="Confirmer avec votre mot de passe" autocomplete="current-password" required>
             </div>
             <button class="create-user-btn" onclick="deleteAccount()" style="background: #ff6b6b; color: #fff;">🗑️ Supprimer mon compte</button>
           </form>
@@ -3037,7 +3061,8 @@
         <div style="margin-bottom: 15px;">
           <p id="searchUsersDesc" style="color: #888; font-size: 0.9em; margin-bottom: 10px;">Recherchez des utilisateurs par leur nom d'affichage exact pour leur envoyer une demande d'ami.</p>
           <div style="display: flex; gap: 10px;">
-            <input type="text" id="searchUserInput" placeholder="Nom d'affichage exact" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;">
+            <label for="searchUserInput" class="visually-hidden">Nom d'affichage exact</label>
+            <input type="text" id="searchUserInput" placeholder="Nom d'affichage exact" autocomplete="off" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;">
             <button class="create-user-btn" id="searchUsersBtn" onclick="searchUsers()" style="margin: 0;">Rechercher</button>
           </div>
         </div>
@@ -3145,11 +3170,12 @@
       <!-- Message Input -->
       <div class="admin-section" style="flex-shrink: 0;">
         <div style="display: flex; gap: 10px; align-items: stretch;">
-          <input type="file" id="dmFileInput" accept="image/*,.pdf,.doc,.docx,.txt,.mp3,.mp4,.webm,.ogg" style="display: none;" onchange="handleDMFileSelection(event)">
+          <input type="file" id="dmFileInput" accept="image/*,.pdf,.doc,.docx,.txt,.mp3,.mp4,.webm,.ogg" aria-label="Sélectionner un fichier" style="display: none;" onchange="handleDMFileSelection(event)">
           <button id="dmFileBtn" class="create-user-btn" onclick="document.getElementById('dmFileInput').click()" style="margin: 0; padding: 12px 16px; background: #4CAF50; min-width: 60px; display: flex; align-items: center; justify-content: center; font-size: 1.2em;" title="Partager un fichier">
             📎
           </button>
-          <input type="text" id="dmMessageInput" placeholder="Tapez votre message..." style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;" onkeypress="if(event.key === 'Enter') sendDM()" oninput="handleDMTyping()">
+          <label for="dmMessageInput" class="visually-hidden">Tapez votre message</label>
+          <input type="text" id="dmMessageInput" placeholder="Tapez votre message..." autocomplete="off" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;" onkeypress="if(event.key === 'Enter') sendDM()" oninput="handleDMTyping()">
           <button class="create-user-btn" id="dmSendBtn" onclick="sendDM()" style="margin: 0; padding: 12px 24px;">Envoyer</button>
         </div>
 
@@ -3178,7 +3204,8 @@
         <div id="createGroupMessage" class="hidden" style="margin-bottom: 15px;"></div>
         <form class="create-user-form" onsubmit="return false;">
           <div class="input-group" style="margin-bottom: 0;">
-            <input type="text" id="groupName" placeholder="Nom du groupe" required minlength="2" maxlength="50">
+            <label for="groupName" class="visually-hidden">Nom du groupe</label>
+            <input type="text" id="groupName" placeholder="Nom du groupe" autocomplete="off" required minlength="2" maxlength="50">
           </div>
           <div style="margin: 15px 0;">
             <label style="color: #888; font-size: 0.9em; display: block; margin-bottom: 10px;">Visibilité du groupe:</label>
@@ -3255,7 +3282,8 @@
       <!-- Search Bar -->
       <div class="admin-section" style="flex-shrink: 0; padding: 10px 0;">
         <div style="display: flex; gap: 10px; align-items: center;">
-          <input type="text" id="chatSearchInput" placeholder="🔍 Rechercher dans les messages..." style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 0.9em;" oninput="searchMessages()">
+          <label for="chatSearchInput" class="visually-hidden">Rechercher dans les messages</label>
+          <input type="text" id="chatSearchInput" placeholder="🔍 Rechercher dans les messages..." autocomplete="off" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 0.9em;" oninput="searchMessages()">
           <button id="clearSearchBtn" onclick="clearSearch()" style="display: none; background: rgba(255,107,107,0.2); border: 1px solid #ff6b6b; color: #ff6b6b; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9em;">✕</button>
           <span id="searchResultsCount" style="color: #888; font-size: 0.85em; white-space: nowrap; display: none;"></span>
         </div>
@@ -3273,14 +3301,15 @@
 
         <!-- Message Input -->
         <div style="display: flex; gap: 10px; align-items: stretch;">
-          <input type="file" id="chatFileInput" accept="image/*,.pdf,.doc,.docx,.txt,.mp3,.mp4,.webm,.ogg" style="display: none;" onchange="handleFileSelection(event)">
+          <input type="file" id="chatFileInput" accept="image/*,.pdf,.doc,.docx,.txt,.mp3,.mp4,.webm,.ogg" aria-label="Sélectionner un fichier" style="display: none;" onchange="handleFileSelection(event)">
           <button id="chatFileBtn" class="create-user-btn" onclick="document.getElementById('chatFileInput').click()" style="margin: 0; padding: 12px 16px; background: #4CAF50; min-width: 60px; display: flex; align-items: center; justify-content: center; font-size: 1.2em;" title="Partager un fichier">
             📎
           </button>
           <button id="chatPttBtn" class="create-user-btn" onmousedown="startChatPTT()" onmouseup="stopChatPTT()" ontouchstart="startChatPTT(event)" ontouchend="stopChatPTT(event)" style="margin: 0; padding: 12px 16px; background: #ff6b6b; min-width: 60px; display: flex; align-items: center; justify-content: center; font-size: 1.2em;">
             🎤
           </button>
-          <input type="text" id="chatMessageInput" placeholder="Tapez votre message..." style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;" onkeypress="if(event.key === 'Enter') sendMessage()">
+          <label for="chatMessageInput" class="visually-hidden">Tapez votre message</label>
+          <input type="text" id="chatMessageInput" placeholder="Tapez votre message..." autocomplete="off" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;" onkeypress="if(event.key === 'Enter') sendMessage()">
           <button class="create-user-btn" id="chatSendBtn" onclick="sendMessage()" style="margin: 0; padding: 12px 24px;">Envoyer</button>
         </div>
 
