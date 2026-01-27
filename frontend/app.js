@@ -394,6 +394,7 @@ const UI_TRANSLATIONS = {
     // Pricing
     'pricing-subtitle': 'Choisissez le plan adapté à vos besoins',
     'pricing-free-title': 'GRATUIT',
+    'pricing-personnel-title': 'PERSONNEL',
     'pricing-premium-title': 'PREMIUM',
     'pricing-enterprise-title': 'ENTERPRISE',
     'pricing-per-month': '/mois',
@@ -482,6 +483,7 @@ const UI_TRANSLATIONS = {
     // Pricing
     'pricing-subtitle': 'Choose the plan that fits your needs',
     'pricing-free-title': 'FREE',
+    'pricing-personnel-title': 'PERSONAL',
     'pricing-premium-title': 'PREMIUM',
     'pricing-enterprise-title': 'ENTERPRISE',
     'pricing-per-month': '/month',
@@ -570,6 +572,7 @@ const UI_TRANSLATIONS = {
     // Pricing
     'pricing-subtitle': '选择适合您需求的套餐',
     'pricing-free-title': '免费',
+    'pricing-personnel-title': '个人',
     'pricing-premium-title': '高级',
     'pricing-enterprise-title': '企业',
     'pricing-per-month': '/月',
@@ -605,6 +608,7 @@ const UI_TRANSLATIONS = {
     // Pricing
     'pricing-subtitle': 'Wählen Sie den Plan, der Ihren Bedürfnissen entspricht',
     'pricing-free-title': 'KOSTENLOS',
+    'pricing-personnel-title': 'PERSÖNLICH',
     'pricing-premium-title': 'PREMIUM',
     'pricing-enterprise-title': 'ENTERPRISE',
     'pricing-per-month': '/Monat',
@@ -640,6 +644,7 @@ const UI_TRANSLATIONS = {
     // Pricing
     'pricing-subtitle': 'Elija el plan que se adapte a sus necesidades',
     'pricing-free-title': 'GRATIS',
+    'pricing-personnel-title': 'PERSONAL',
     'pricing-premium-title': 'PREMIUM',
     'pricing-enterprise-title': 'ENTERPRISE',
     'pricing-per-month': '/mes',
@@ -675,6 +680,7 @@ const UI_TRANSLATIONS = {
     // Pricing
     'pricing-subtitle': 'Scegli il piano più adatto alle tue esigenze',
     'pricing-free-title': 'GRATUITO',
+    'pricing-personnel-title': 'PERSONALE',
     'pricing-premium-title': 'PREMIUM',
     'pricing-enterprise-title': 'ENTERPRISE',
     'pricing-per-month': '/mese',
@@ -710,6 +716,7 @@ const UI_TRANSLATIONS = {
     // Pricing
     'pricing-subtitle': 'Escolha o plano que se adapta às suas necessidades',
     'pricing-free-title': 'GRATUITO',
+    'pricing-personnel-title': 'PESSOAL',
     'pricing-premium-title': 'PREMIUM',
     'pricing-enterprise-title': 'ENTERPRISE',
     'pricing-per-month': '/mês',
@@ -1164,11 +1171,13 @@ async function loadUsers() {
       const subscription = user.subscription || { tier: 'free', status: 'active' };
       const tierColors = {
         free: '#888',
+        personnel: '#4a9eff',
         premium: '#ffd43b',
         enterprise: '#00ff9d'
       };
       const tierIcons = {
         free: '🆓',
+        personnel: '👤',
         premium: '⭐',
         enterprise: '💎'
       };
@@ -4169,8 +4178,8 @@ async function showProfilePanel() {
       const sub = data.subscription;
 
       // Afficher le palier
-      const tierIcons = { free: '🆓', premium: '⭐', enterprise: '💎', admin: '👑' };
-      const tierNames = { free: 'Gratuit', premium: 'Premium', enterprise: 'Enterprise', admin: 'Admin' };
+      const tierIcons = { free: '🆓', personnel: '👤', premium: '⭐', enterprise: '💎', admin: '👑' };
+      const tierNames = { free: 'Gratuit', personnel: 'Personnel', premium: 'Premium', enterprise: 'Enterprise', admin: 'Admin' };
       document.getElementById('profileTier').textContent =
         `${tierIcons[sub.tier] || '📦'} ${tierNames[sub.tier] || sub.tier.toUpperCase()}`;
 

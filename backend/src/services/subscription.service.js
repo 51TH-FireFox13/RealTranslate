@@ -26,19 +26,29 @@ const SUBSCRIPTION_TIERS = {
       speak: 50
     }
   },
-  premium: {
-    name: 'Premium',
+  personnel: {
+    name: 'Personnel',
     price: 9.99,
-    priceId: process.env.STRIPE_PRICE_PREMIUM,
+    priceId: process.env.STRIPE_PRICE_PERSONNEL,
     quotas: {
       transcribe: 500,
       translate: 2000,
       speak: 500
     }
   },
+  premium: {
+    name: 'Premium',
+    price: 49.99,
+    priceId: process.env.STRIPE_PRICE_PREMIUM,
+    quotas: {
+      transcribe: 2000,
+      translate: 10000,
+      speak: 2000
+    }
+  },
   enterprise: {
     name: 'Enterprise',
-    price: 49.99,
+    price: 99.99,
     priceId: process.env.STRIPE_PRICE_ENTERPRISE,
     quotas: {
       transcribe: Infinity,
@@ -58,7 +68,7 @@ export function getSubscriptionTiers() {
 
 /**
  * Récupère les informations d'un tier spécifique
- * @param {string} tierName - Nom du tier (free, premium, enterprise)
+ * @param {string} tierName - Nom du tier (free, personnel, premium, enterprise)
  * @returns {Object|null} - Informations du tier
  */
 export function getTierInfo(tierName) {
@@ -68,7 +78,7 @@ export function getTierInfo(tierName) {
 /**
  * Crée une session Stripe Checkout
  * @param {string} userEmail - Email de l'utilisateur
- * @param {string} tier - Tier souhaité (premium ou enterprise)
+ * @param {string} tier - Tier souhaité (personnel, premium ou enterprise)
  * @param {string} successUrl - URL de redirection en cas de succès
  * @param {string} cancelUrl - URL de redirection en cas d'annulation
  * @returns {Promise<Object>} - Session Stripe { sessionId, url }

@@ -18,22 +18,27 @@ function getStripe() {
 // Configuration des tiers d'abonnement
 // À synchroniser avec les prix créés dans le Dashboard Stripe
 const SUBSCRIPTION_TIERS = {
-  premium: {
-    priceId: process.env.STRIPE_PRICE_PREMIUM, // Prix mensuel Premium (€9.99)
-    name: 'Premium',
+  personnel: {
+    priceId: process.env.STRIPE_PRICE_PERSONNEL, // Prix mensuel Personnel (€9.99)
+    name: 'Personnel',
     amount: 999, // centimes
   },
-  enterprise: {
-    priceId: process.env.STRIPE_PRICE_ENTERPRISE, // Prix mensuel Enterprise (€49.99)
-    name: 'Enterprise',
+  premium: {
+    priceId: process.env.STRIPE_PRICE_PREMIUM, // Prix mensuel Premium (€49.99)
+    name: 'Premium',
     amount: 4999, // centimes
+  },
+  enterprise: {
+    priceId: process.env.STRIPE_PRICE_ENTERPRISE, // Prix mensuel Enterprise (€99.99)
+    name: 'Enterprise',
+    amount: 9999, // centimes
   },
 };
 
 /**
  * Crée une session Stripe Checkout
  * @param {string} userEmail - Email de l'utilisateur
- * @param {string} tier - Tier d'abonnement ('premium' ou 'enterprise')
+ * @param {string} tier - Tier d'abonnement ('personnel', 'premium' ou 'enterprise')
  * @param {string} successUrl - URL de redirection après succès
  * @param {string} cancelUrl - URL de redirection après annulation
  * @returns {Promise<{sessionId: string, url: string}>}
