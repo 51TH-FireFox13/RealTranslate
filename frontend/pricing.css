@@ -1,0 +1,345 @@
+/* Pricing specific styles */
+
+.pricing-header {
+  padding: 140px 0 60px;
+  text-align: center;
+}
+
+.pricing-title {
+  font-size: 48px;
+  font-weight: 800;
+  margin-bottom: 16px;
+}
+
+.pricing-subtitle {
+  font-size: 20px;
+  color: var(--color-text-secondary);
+  margin-bottom: 40px;
+}
+
+/* Billing Toggle */
+.billing-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.toggle-label {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: var(--gradient-primary);
+  color: var(--color-dark);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 8px;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 28px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-card);
+  border: 2px solid var(--color-border);
+  transition: var(--transition);
+  border-radius: 28px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 2px;
+  background: var(--color-text-secondary);
+  transition: var(--transition);
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background: var(--gradient-primary);
+  border-color: transparent;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+  background: var(--color-dark);
+}
+
+/* Pricing Grid */
+.pricing-section {
+  padding: 60px 0 100px;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pricing-card {
+  background: var(--color-card);
+  border: 2px solid var(--color-border);
+  border-radius: 20px;
+  padding: 40px 32px;
+  position: relative;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+}
+
+.pricing-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-glow);
+}
+
+.pricing-card.featured {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-glow);
+  transform: scale(1.05);
+}
+
+.pricing-card.featured:hover {
+  transform: scale(1.05) translateY(-8px);
+}
+
+.featured-badge {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gradient-primary);
+  color: var(--color-dark);
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.plan-header {
+  margin-bottom: 24px;
+}
+
+.plan-name {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.plan-description {
+  color: var(--color-text-secondary);
+  font-size: 16px;
+}
+
+.plan-price {
+  margin-bottom: 32px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.price {
+  font-size: 48px;
+  font-weight: 800;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.period {
+  font-size: 18px;
+  color: var(--color-text-secondary);
+}
+
+.plan-button {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 32px;
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: none;
+  transition: var(--transition);
+  display: inline-block;
+}
+
+.pricing-card .btn-primary {
+  background: var(--gradient-primary);
+  color: var(--color-dark);
+  border: none;
+  box-shadow: var(--shadow-glow);
+  width: 100%;
+  margin-bottom: 32px;
+}
+
+.pricing-card .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 40px rgba(0, 255, 157, 0.6);
+}
+
+.pricing-card .btn-secondary {
+  background: transparent;
+  color: var(--color-text);
+  border: 2px solid var(--color-border);
+  width: 100%;
+  margin-bottom: 32px;
+}
+
+.pricing-card .btn-secondary:hover {
+  border-color: var(--color-primary);
+  background: rgba(0, 255, 157, 0.1);
+}
+
+.plan-features {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex-grow: 1;
+}
+
+.feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.feature strong {
+  color: var(--color-text);
+}
+
+.feature-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* FAQ Section */
+.faq-section {
+  padding: 80px 0;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.faq-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 32px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.faq-item {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 24px;
+  transition: var(--transition);
+}
+
+.faq-item:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-4px);
+}
+
+.faq-question {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--color-text);
+}
+
+.faq-answer {
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  font-size: 15px;
+}
+
+/* Nav link active state */
+.nav-link.active {
+  color: var(--color-primary);
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+  .pricing-title {
+    font-size: 36px;
+  }
+
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    max-width: 500px;
+  }
+
+  .pricing-card.featured {
+    transform: scale(1);
+  }
+
+  .pricing-card.featured:hover {
+    transform: translateY(-8px);
+  }
+
+  .faq-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .pricing-header {
+    padding: 120px 0 40px;
+  }
+
+  .pricing-title {
+    font-size: 28px;
+  }
+
+  .pricing-subtitle {
+    font-size: 16px;
+  }
+
+  .billing-toggle {
+    flex-wrap: wrap;
+  }
+
+  .price {
+    font-size: 36px;
+  }
+
+  .plan-name {
+    font-size: 24px;
+  }
+}
