@@ -266,29 +266,29 @@ ctaButtons.forEach(button => {
   });
 });
 
-// Add typing effect to hero title (optional)
+// Add typing effect to hero title (fixed version)
 const heroTitle = document.querySelector('.hero-title');
 if (heroTitle) {
-  const originalText = heroTitle.innerHTML;
+  const originalHTML = heroTitle.innerHTML;
   heroTitle.innerHTML = '';
   heroTitle.style.opacity = '1';
 
   let charIndex = 0;
   const typingSpeed = 30;
-  let isTag = false;
 
   const typeWriter = () => {
-    if (charIndex < originalText.length) {
-      const char = originalText.charAt(charIndex);
-
-      if (char === '<') isTag = true;
-      if (char === '>') isTag = false;
-
-      heroTitle.innerHTML += char;
+    if (charIndex <= originalHTML.length) {
+      // Use substring to properly render HTML
+      heroTitle.innerHTML = originalHTML.substring(0, charIndex);
       charIndex++;
 
-      if (isTag) {
-        typeWriter(); // Skip typing effect for HTML tags
+      // Check if we're inside a tag to speed through it
+      const currentChar = originalHTML.charAt(charIndex - 1);
+      const nextChar = originalHTML.charAt(charIndex);
+
+      if (currentChar === '<' || (heroTitle.innerHTML.lastIndexOf('<') > heroTitle.innerHTML.lastIndexOf('>'))) {
+        // Inside a tag, continue immediately
+        typeWriter();
       } else {
         setTimeout(typeWriter, typingSpeed);
       }
