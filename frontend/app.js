@@ -3003,7 +3003,7 @@ function displayCommunicationGroups(groups) {
   const container = document.getElementById('commGroupsList');
 
   if (groups.length === 0) {
-    container.innerHTML = '<p style="color: #888; padding: 20px 0;">Aucun groupe pour le moment.<br>Créez votre premier groupe ou rejoignez-en un !</p>';
+    container.innerHTML = '<p class="comm-empty-message">Aucun groupe pour le moment.<br>Créez votre premier groupe ou rejoignez-en un !</p>';
     return;
   }
 
@@ -3019,15 +3019,15 @@ function displayCommunicationGroups(groups) {
     const visibilityText = group.visibility === 'public' ? 'Public' : 'Privé';
 
     return `
-      <div style="position: relative; background: rgba(255,255,255,0.08); padding: 16px; border-radius: 12px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1);" onclick="openGroupChat('${group.id}')" onmouseover="this.style.background='rgba(255,255,255,0.15)'; this.style.borderColor='rgba(0,255,157,0.3)';" onmouseout="this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.1)';">
+      <div class="comm-group-item" onclick="openGroupChat('${group.id}')">
         ${badgeHTML}
-        <div style="color: #fff; font-weight: bold; font-size: 1.1em; margin-bottom: 8px;">
+        <div class="group-name">
           <span title="${visibilityText}">${visibilityIcon}</span> ${group.name}
         </div>
-        <div style="color: #888; font-size: 0.9em; margin-bottom: 4px;">
+        <div class="group-info">
           👥 ${group.members.length} membre${group.members.length > 1 ? 's' : ''}
         </div>
-        <div style="color: #666; font-size: 0.85em;">
+        <div class="group-date">
           📅 Créé le ${new Date(group.createdAt).toLocaleDateString()}
         </div>
       </div>
@@ -3040,7 +3040,7 @@ function displayCommunicationDMs(conversations) {
   const container = document.getElementById('commDMsList');
 
   if (conversations.length === 0) {
-    container.innerHTML = '<p style="color: #888; padding: 20px 0;">Aucune conversation.<br>Envoyez un message à un ami pour démarrer !</p>';
+    container.innerHTML = '<p class="comm-empty-message">Aucune conversation.<br>Envoyez un message à un ami pour démarrer !</p>';
     return;
   }
 
@@ -3051,18 +3051,18 @@ function displayCommunicationDMs(conversations) {
     const onlineIndicator = getOnlineIndicator(conv.otherUser.email);
 
     return `
-      <div onclick="openDMChat('${conv.otherUser.email}')" style="padding: 16px; background: rgba(255,255,255,0.08); border-radius: 12px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1);" onmouseover="this.style.background='rgba(255,255,255,0.15)'; this.style.borderColor='rgba(100,180,255,0.3)';" onmouseout="this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.1)';">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 50px; height: 50px; position: relative; flex-shrink: 0;">
+      <div class="comm-dm-item" onclick="openDMChat('${conv.otherUser.email}')">
+        <div class="dm-container">
+          <div class="dm-avatar">
             ${generateAvatarHTML(conv.otherUser, 50)}
           </div>
-          <div style="flex: 1; min-width: 0;">
-            <div style="font-weight: bold; color: #fff; margin-bottom: 4px; display: flex; align-items: center; font-size: 1.05em;">
+          <div class="dm-content">
+            <div class="dm-name">
               ${onlineIndicator}${conv.otherUser.displayName}
             </div>
-            <div style="color: #888; font-size: 0.9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lastMsgText}</div>
+            <div class="dm-message">${lastMsgText}</div>
           </div>
-          <div style="color: #888; font-size: 0.85em; white-space: nowrap;">${lastMsgTime}</div>
+          <div class="dm-time">${lastMsgTime}</div>
         </div>
       </div>
     `;
@@ -5350,7 +5350,7 @@ function archiveCurrentDM() {
 
   // Générer le conversationId (même logique que le backend)
   const emails = [state.user.email, currentDMUser.email].sort();
-  const conversationId = emails.join('_');
+  const conversationId = emails.join('|||');
 
   archiveDM(conversationId);
 }

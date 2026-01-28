@@ -27,3 +27,6 @@ backend/test-*.db-wal
 
 # Coverage
 backend/coverage/
+
+# Bundle files
+*.bundle
