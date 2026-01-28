@@ -198,15 +198,8 @@ cards.forEach((card, index) => {
   observer.observe(card);
 });
 
-// Add parallax effect to hero
-const hero = document.querySelector('.hero');
-if (hero) {
-  window.addEventListener('scroll', () => {
-    const scrolled = window.pageYOffset;
-    const parallax = scrolled * 0.5;
-    hero.style.transform = `translateY(${parallax}px)`;
-  });
-}
+// Parallax effect removed - was causing clipping issues on scroll
+// The hero section now stays fixed in its position
 
 // Counter animation for stats
 const animateCounter = (element, target, duration = 2000) => {

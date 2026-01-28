@@ -2026,32 +2026,36 @@ async function revokeAccessToken(token) {
 }
 
 // Gestionnaire de formulaire de connexion
-elements.loginForm.addEventListener('submit', (e) => {
-  e.preventDefault();
+if (elements.loginForm) {
+  elements.loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
 
-  if (loginMode === 'email') {
-    const email = elements.email.value;
-    const password = elements.password.value;
-    login(email, password);
-  } else {
-    const accessToken = document.getElementById('accessTokenInput').value.trim();
-    if (!accessToken) {
-      elements.loginError.textContent = 'Veuillez entrer un jeton d\'accès';
-      elements.loginError.classList.remove('hidden');
-      return;
+    if (loginMode === 'email') {
+      const email = elements.email.value;
+      const password = elements.password.value;
+      login(email, password);
+    } else {
+      const accessToken = document.getElementById('accessTokenInput').value.trim();
+      if (!accessToken) {
+        elements.loginError.textContent = 'Veuillez entrer un jeton d\'accès';
+        elements.loginError.classList.remove('hidden');
+        return;
+      }
+      login(null, null, accessToken);
     }
-    login(null, null, accessToken);
-  }
-});
+  });
+}
 
 // Gestionnaire de formulaire d'inscription
-document.getElementById('registerForm').addEventListener('submit', (e) => {
-  e.preventDefault();
+const registerForm = document.getElementById('registerForm');
+if (registerForm) {
+  registerForm.addEventListener('submit', (e) => {
+    e.preventDefault();
 
-  const displayName = document.getElementById('registerName').value.trim();
-  const email = document.getElementById('registerEmail').value.trim();
-  const password = document.getElementById('registerPassword').value;
-  const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+    const displayName = document.getElementById('registerName').value.trim();
+    const email = document.getElementById('registerEmail').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
 
   // Validation
   if (!displayName || !email || !password || !passwordConfirm) {
@@ -2074,7 +2078,8 @@ document.getElementById('registerForm').addEventListener('submit', (e) => {
 
   // Appeler la fonction d'inscription
   register(email, password, displayName);
-});
+  });
+}
 
 // ===================================
 // SÉLECTION DE LANGUES
