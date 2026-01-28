@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tarifs - RealTranslate</title>
+  <meta name="description" content="Choisissez le plan RealTranslate qui correspond à vos besoins. Essai gratuit 14 jours.">
+  <link rel="stylesheet" href="landing.css">
+  <link rel="stylesheet" href="pricing.css">
+  <link rel="manifest" href="/manifest.json">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="landing.html" class="logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="14" stroke="url(#gradient)" stroke-width="2"/>
+          <path d="M10 16L14 20L22 12" stroke="url(#gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+              <stop offset="0%" stop-color="#00ff9d"/>
+              <stop offset="100%" stop-color="#00a2ff"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="logo-text">RealTranslate</span>
+      </a>
+      <div class="nav-links">
+        <a href="landing.html" class="nav-link">Accueil</a>
+        <a href="pricing.html" class="nav-link active">Tarifs</a>
+        <a href="index.html" class="btn-login">Se connecter</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Pricing Header -->
+  <section class="pricing-header">
+    <div class="container">
+      <h1 class="pricing-title">Des tarifs simples et transparents</h1>
+      <p class="pricing-subtitle">Commencez gratuitement, évoluez selon vos besoins. Aucune carte bancaire requise.</p>
+
+      <!-- Billing Toggle -->
+      <div class="billing-toggle">
+        <span class="toggle-label">Mensuel</span>
+        <label class="toggle-switch" for="billing-toggle">
+          <input type="checkbox" id="billing-toggle" autocomplete="off">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label">Annuel <span class="badge">-20%</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Cards -->
+  <section class="pricing-section">
+    <div class="container">
+      <div class="pricing-grid">
+        <!-- Free Plan -->
+        <div class="pricing-card">
+          <div class="plan-header">
+            <h3 class="plan-name">Gratuit</h3>
+            <p class="plan-description">Pour découvrir RealTranslate</p>
+          </div>
+          <div class="plan-price">
+            <span class="price">0€</span>
+            <span class="period">/mois</span>
+          </div>
+          <a href="index.html" class="plan-button btn-secondary">Commencer gratuitement</a>
+          <div class="plan-features">
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>100 messages traduits / mois</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>3 langues maximum</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>1 conversation de groupe</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Historique 7 jours</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Support communautaire</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personnel Plan (Featured) -->
+        <div class="pricing-card featured">
+          <div class="featured-badge">Plus populaire</div>
+          <div class="plan-header">
+            <h3 class="plan-name">Personnel</h3>
+            <p class="plan-description">Pour un usage individuel</p>
+          </div>
+          <div class="plan-price">
+            <span class="price monthly-price">9.99€</span>
+            <span class="price yearly-price" style="display: none;">7.99€</span>
+            <span class="period">/mois</span>
+          </div>
+          <a href="index.html" class="plan-button btn-primary">Essayer 14 jours gratuit</a>
+          <div class="plan-features">
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span><strong>Messages illimités</strong></span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span><strong>50+ langues</strong></span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Groupes illimités</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Historique illimité</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Traduction vocale</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Export des conversations</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Support prioritaire</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>API Access</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Premium Plan -->
+        <div class="pricing-card">
+          <div class="plan-header">
+            <h3 class="plan-name">Premium</h3>
+            <p class="plan-description">Pour les équipes professionnelles</p>
+          </div>
+          <div class="plan-price">
+            <span class="price monthly-price">49.99€</span>
+            <span class="price yearly-price" style="display: none;">39.99€</span>
+            <span class="period">/mois</span>
+          </div>
+          <a href="index.html" class="plan-button btn-secondary">Commencer</a>
+          <div class="plan-features">
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span><strong>Tout du plan Personnel</strong></span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Jusqu'à 10 utilisateurs</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Gestion d'équipe avancée</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Statistiques d'utilisation</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Support prioritaire</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Intégrations tierces</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Enterprise Plan -->
+        <div class="pricing-card">
+          <div class="plan-header">
+            <h3 class="plan-name">Enterprise</h3>
+            <p class="plan-description">Pour les grandes organisations</p>
+          </div>
+          <div class="plan-price">
+            <span class="price monthly-price">99.99€</span>
+            <span class="price yearly-price" style="display: none;">79.99€</span>
+            <span class="period">/mois</span>
+          </div>
+          <a href="mailto:contact@realtranslate.com" class="plan-button btn-secondary">Nous contacter</a>
+          <div class="plan-features">
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span><strong>Tout du plan Premium</strong></span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Utilisateurs illimités</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>SSO & SAML</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Serveur dédié</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>SLA 99.9%</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Formation équipe</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Support dédié 24/7</span>
+            </div>
+            <div class="feature">
+              <svg class="feature-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Intégrations custom</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="faq-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Questions fréquentes</h2>
+      </div>
+      <div class="faq-grid">
+        <div class="faq-item">
+          <h4 class="faq-question">Puis-je changer de plan à tout moment ?</h4>
+          <p class="faq-answer">Oui, vous pouvez passer à un plan supérieur ou inférieur à tout moment. Les changements prennent effet immédiatement.</p>
+        </div>
+        <div class="faq-item">
+          <h4 class="faq-question">Comment fonctionne l'essai gratuit ?</h4>
+          <p class="faq-answer">L'essai gratuit de 14 jours vous donne accès à toutes les fonctionnalités du plan Pro sans avoir besoin de carte bancaire.</p>
+        </div>
+        <div class="faq-item">
+          <h4 class="faq-question">Quels moyens de paiement acceptez-vous ?</h4>
+          <p class="faq-answer">Nous acceptons toutes les cartes bancaires (Visa, Mastercard, Amex) ainsi que PayPal et les virements bancaires pour les plans Entreprise.</p>
+        </div>
+        <div class="faq-item">
+          <h4 class="faq-question">Puis-je annuler mon abonnement ?</h4>
+          <p class="faq-answer">Oui, vous pouvez annuler à tout moment. Votre accès aux fonctionnalités premium reste actif jusqu'à la fin de votre période de facturation.</p>
+        </div>
+        <div class="faq-item">
+          <h4 class="faq-question">Mes données sont-elles sécurisées ?</h4>
+          <p class="faq-answer">Absolument. Nous utilisons un chiffrement de bout en bout et sommes conformes au RGPD. Vos conversations sont privées et sécurisées.</p>
+        </div>
+        <div class="faq-item">
+          <h4 class="faq-question">Proposez-vous des réductions pour les associations ?</h4>
+          <p class="faq-answer">Oui, nous offrons des réductions jusqu'à 50% pour les organisations à but non lucratif et les établissements éducatifs. Contactez-nous pour en savoir plus.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="section cta-section">
+    <div class="container">
+      <div class="cta-content">
+        <h2 class="cta-title">Prêt à commencer ?</h2>
+        <p class="cta-subtitle">Essayez RealTranslate gratuitement pendant 14 jours. Aucune carte bancaire requise.</p>
+        <div class="cta-buttons">
+          <a href="index.html" class="btn-primary large">Commencer gratuitement</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-column">
+          <div class="footer-logo">
+            <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="16" r="14" stroke="url(#gradient3)" stroke-width="2"/>
+              <path d="M10 16L14 20L22 12" stroke="url(#gradient3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <defs>
+                <linearGradient id="gradient3" x1="0" y1="0" x2="32" y2="32">
+                  <stop offset="0%" stop-color="#00ff9d"/>
+                  <stop offset="100%" stop-color="#00a2ff"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <span class="logo-text">RealTranslate</span>
+          </div>
+          <p class="footer-tagline">Communication sans frontières</p>
+        </div>
+        <div class="footer-column">
+          <h4>Produit</h4>
+          <a href="landing.html">Accueil</a>
+          <a href="pricing.html">Tarifs</a>
+          <a href="index.html">Se connecter</a>
+        </div>
+        <div class="footer-column">
+          <h4>Ressources</h4>
+          <a href="#">Documentation</a>
+          <a href="#">Blog</a>
+          <a href="#">Support</a>
+        </div>
+        <div class="footer-column">
+          <h4>Légal</h4>
+          <a href="#">Confidentialité</a>
+          <a href="#">Conditions</a>
+          <a href="#">Sécurité</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 RealTranslate. Tous droits réservés.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="pricing.js"></script>
+</body>
+</html>

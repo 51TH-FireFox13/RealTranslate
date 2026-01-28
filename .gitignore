@@ -2,7 +2,9 @@ node_modules/
 .env
 *.log
 .DS_Store
-backend/uploads/
+backend/uploads/*
+!backend/uploads/.gitkeep
+!backend/uploads/.gitignore
 
 # Fichiers de données (ne pas versionner)
 backend/users.json
@@ -10,4 +12,21 @@ backend/tokens.json
 backend/access-tokens.json
 backend/groups.json
 backend/messages.json
+backend/dms.json
+backend/statuses.json
+
+# Base de données SQLite
+backend/realtranslate.db
+backend/realtranslate.db-shm
+backend/realtranslate.db-wal
+
+# Bases de test
+backend/test-*.db
+backend/test-*.db-shm
+backend/test-*.db-wal
+
+# Coverage
+backend/coverage/
+
+# Bundle files
 *.bundle
