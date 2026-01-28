@@ -14,6 +14,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { logger } from '../utils/logger.js';
 import { authManager, authMiddleware } from '../auth-sqlite.js';
+import { uploadLimiter } from '../middleware/ratelimit.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -87,8 +88,9 @@ export default function uploadRoutes(dependencies = {}) {
   /**
    * POST /api/upload-file
    * Upload de fichier pour le chat
+   * Rate limited: 20 uploads/5min par utilisateur
    */
-  router.post('/upload-file', authMiddleware, fileUpload.single('file'), async (req, res) => {
+  router.post('/upload-file', authMiddleware, uploadLimiter, fileUpload.single('file'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'Aucun fichier fourni' });
@@ -118,8 +120,9 @@ export default function uploadRoutes(dependencies = {}) {
   /**
    * POST /api/upload-avatar
    * Upload d'avatar utilisateur
+   * Rate limited: 20 uploads/5min par utilisateur
    */
-  router.post('/upload-avatar', authMiddleware, avatarUpload.single('avatar'), async (req, res) => {
+  router.post('/upload-avatar', authMiddleware, uploadLimiter, avatarUpload.single('avatar'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'Aucune image fournie' });

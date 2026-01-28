@@ -51,19 +51,22 @@ export const DB_PRAGMAS = {
   // Active l'intégrité référentielle (FOREIGN KEYS)
   foreign_keys: 'ON',
 
-  // Synchronisation : NORMAL est un bon compromis sécurité/performance
-  // FULL = plus sûr mais plus lent, OFF = plus rapide mais moins sûr
-  synchronous: 'NORMAL',
+  // Synchronisation :
+  // - FULL (production) : garantit l'intégrité des données, plus lent
+  // - NORMAL (dev) : bon compromis, légèrement moins sûr en cas de crash
+  // - OFF : rapide mais risque de perte de données
+  synchronous: process.env.NODE_ENV === 'production' ? 'FULL' : 'NORMAL',
 
-  // Cache size : -2000 = 2MB de cache (négatif = taille en KB)
-  cache_size: -2000,
+  // Cache size : -4000 = 4MB de cache (négatif = taille en KB)
+  // Augmenté pour de meilleures performances en lecture
+  cache_size: -4000,
 
   // Temp store : mémoire pour les tables temporaires
   temp_store: 'MEMORY',
 
   // Mmap size : utilise memory-mapped I/O pour améliorer les performances
-  // 30000000 = ~30MB
-  mmap_size: 30000000,
+  // 30000000 = ~30MB (réduit en production pour stabilité)
+  mmap_size: process.env.NODE_ENV === 'production' ? 10000000 : 30000000,
 
   // Page size : taille des pages en octets (4096 = 4KB)
   // Doit être une puissance de 2 entre 512 et 65536

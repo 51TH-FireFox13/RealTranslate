@@ -16,6 +16,7 @@ import FormData from 'form-data';
 import multer from 'multer';
 import { logger } from '../utils/logger.js';
 import { authManager, authMiddleware, requirePermission } from '../auth-sqlite.js';
+import { transcribeLimiter, translateLimiter, speakLimiter } from '../middleware/ratelimit.middleware.js';
 
 // Configuration multer pour l'upload audio
 const upload = multer({
@@ -70,8 +71,9 @@ export default function apiRoutes(dependencies = {}) {
   /**
    * POST /api/transcribe
    * Transcrire un fichier audio en texte
+   * Rate limited: 10 req/min par utilisateur
    */
-  router.post('/transcribe', authMiddleware, requirePermission('transcribe'), upload.single('audio'), async (req, res) => {
+  router.post('/transcribe', authMiddleware, transcribeLimiter, requirePermission('transcribe'), upload.single('audio'), async (req, res) => {
     try {
       // Vérifier le quota
       const quotaCheck = authManager.consumeQuota(req.user.email, 'transcribe');
@@ -135,8 +137,9 @@ export default function apiRoutes(dependencies = {}) {
   /**
    * POST /api/translate
    * Traduire un texte dans une langue cible
+   * Rate limited: 30 req/min par utilisateur
    */
-  router.post('/translate', authMiddleware, requirePermission('translate'), async (req, res) => {
+  router.post('/translate', authMiddleware, translateLimiter, requirePermission('translate'), async (req, res) => {
     try {
       // Vérifier le quota
       const quotaCheck = authManager.consumeQuota(req.user.email, 'translate');
@@ -252,8 +255,9 @@ Réponds UNIQUEMENT avec la traduction, sans explications.`;
   /**
    * POST /api/speak
    * Convertir du texte en audio
+   * Rate limited: 15 req/min par utilisateur
    */
-  router.post('/speak', authMiddleware, requirePermission('speak'), async (req, res) => {
+  router.post('/speak', authMiddleware, speakLimiter, requirePermission('speak'), async (req, res) => {
     try {
       // Vérifier le quota
       const quotaCheck = authManager.consumeQuota(req.user.email, 'speak');

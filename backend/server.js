@@ -15,6 +15,7 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -59,6 +60,35 @@ const io = new SocketIOServer(httpServer, {
 // ===================================
 // MIDDLEWARES GLOBAUX
 // ===================================
+
+// Headers de sécurité avec Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // inline pour l'app frontend
+      styleSrc: ["'self'", "'unsafe-inline'"], // inline styles nécessaires
+      imgSrc: ["'self'", "data:", "blob:", "https:"], // avatars, images uploadées
+      connectSrc: [
+        "'self'",
+        "wss:", // WebSocket
+        "ws:",
+        "https://api.openai.com",
+        "https://api.deepseek.com",
+        "https://api.stripe.com"
+      ],
+      fontSrc: ["'self'", "https:", "data:"],
+      mediaSrc: ["'self'", "blob:", "data:"], // Audio TTS
+      objectSrc: ["'none'"],
+      frameSrc: ["https://js.stripe.com", "https://hooks.stripe.com"], // Stripe iframe
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
+    }
+  },
+  crossOriginEmbedderPolicy: false, // Désactivé pour compatibilité avec ressources externes
+  crossOriginResourcePolicy: { policy: "cross-origin" } // Pour les uploads
+}));
 
 // CORS
 app.use(cors({

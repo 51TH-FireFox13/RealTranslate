@@ -127,53 +127,91 @@ function accessLoggerMiddleware(req, res, next) {
   next();
 }
 
+// Configuration de la rotation des logs
+const LOG_CONFIG = {
+  maxSizeMB: 5,          // Rotation si le fichier dépasse 5MB
+  maxAgeDays: 14,        // Garder les logs pendant 14 jours
+  maxFiles: 50,          // Garder max 50 fichiers archivés
+  rotateOnStartup: true  // Vérifier la rotation au démarrage
+};
+
 // Rotation des logs (fonction utilitaire)
 function rotateLogs() {
-  const files = fs.readdirSync(LOG_DIR);
-  const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  try {
+    const files = fs.readdirSync(LOG_DIR);
+    const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const timeStr = new Date().toISOString().split('T')[1].split('.')[0].replace(/:/g, '-');
 
-  files.forEach(file => {
-    if (file.endsWith('.log')) {
-      const filePath = path.join(LOG_DIR, file);
-      const stats = fs.statSync(filePath);
-      const sizeInMB = stats.size / (1024 * 1024);
+    files.forEach(file => {
+      // Ne rotate que les fichiers .log principaux (pas les archives)
+      if (file.endsWith('.log') && !file.includes('_20')) {
+        const filePath = path.join(LOG_DIR, file);
+        const stats = fs.statSync(filePath);
+        const sizeInMB = stats.size / (1024 * 1024);
 
-      // Rotation si le fichier dépasse 10MB
-      if (sizeInMB > 10) {
-        const newName = file.replace('.log', `_${timestamp}.log`);
-        fs.renameSync(filePath, path.join(LOG_DIR, newName));
-        logger.info(`Log rotated: ${file} -> ${newName}`);
+        // Rotation si le fichier dépasse la taille max
+        if (sizeInMB > LOG_CONFIG.maxSizeMB) {
+          const newName = file.replace('.log', `_${timestamp}_${timeStr}.log`);
+          fs.renameSync(filePath, path.join(LOG_DIR, newName));
+          console.log(`📁 Log rotated: ${file} -> ${newName} (${sizeInMB.toFixed(2)}MB)`);
+        }
       }
-    }
-  });
+    });
+  } catch (error) {
+    console.error('Erreur rotation logs:', error.message);
+  }
 }
 
-// Nettoyer les vieux logs (garder 30 jours)
-function cleanOldLogs(days = 30) {
-  const files = fs.readdirSync(LOG_DIR);
-  const now = Date.now();
-  const maxAge = days * 24 * 60 * 60 * 1000;
+// Nettoyer les vieux logs
+function cleanOldLogs() {
+  try {
+    const files = fs.readdirSync(LOG_DIR);
+    const now = Date.now();
+    const maxAge = LOG_CONFIG.maxAgeDays * 24 * 60 * 60 * 1000;
 
-  files.forEach(file => {
-    const filePath = path.join(LOG_DIR, file);
-    const stats = fs.statSync(filePath);
-    const age = now - stats.mtime.getTime();
+    // Trier les fichiers archivés par date (les plus récents d'abord)
+    const archivedFiles = files
+      .filter(f => f.includes('_20') && f.endsWith('.log'))
+      .map(f => ({
+        name: f,
+        path: path.join(LOG_DIR, f),
+        mtime: fs.statSync(path.join(LOG_DIR, f)).mtime.getTime()
+      }))
+      .sort((a, b) => b.mtime - a.mtime);
 
-    if (age > maxAge) {
-      fs.unlinkSync(filePath);
-      console.log(`🗑️  Log supprimé: ${file}`);
+    let deletedCount = 0;
+
+    // Supprimer les fichiers trop vieux ou en excès
+    archivedFiles.forEach((file, index) => {
+      const age = now - file.mtime;
+      const isTooOld = age > maxAge;
+      const isExcess = index >= LOG_CONFIG.maxFiles;
+
+      if (isTooOld || isExcess) {
+        fs.unlinkSync(file.path);
+        deletedCount++;
+      }
+    });
+
+    if (deletedCount > 0) {
+      console.log(`🗑️  ${deletedCount} vieux log(s) supprimé(s)`);
     }
-  });
+  } catch (error) {
+    console.error('Erreur nettoyage logs:', error.message);
+  }
 }
 
 // Instance du logger
 const logger = new Logger();
 
 // Rotation des logs au démarrage et toutes les heures
-rotateLogs();
-setInterval(rotateLogs, 60 * 60 * 1000);
+if (LOG_CONFIG.rotateOnStartup) {
+  rotateLogs();
+  cleanOldLogs();
+}
+setInterval(rotateLogs, 60 * 60 * 1000); // Toutes les heures
 
-// Nettoyage des vieux logs quotidiennement
-setInterval(() => cleanOldLogs(30), 24 * 60 * 60 * 1000);
+// Nettoyage des vieux logs toutes les 6 heures
+setInterval(cleanOldLogs, 6 * 60 * 60 * 1000);
 
 export { logger, accessLoggerMiddleware, LOG_TYPES };
