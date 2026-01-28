@@ -3662,6 +3662,11 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- ES6 Modules (charge les utilitaires, config, thèmes, notifications) -->
+  <script type="module" src="js/main.js"></script>
+
+  <!-- Application principale (legacy - migration progressive) -->
+  <!-- Note: defer garantit que app.js s'exécute après le parsing HTML -->
+  <script defer src="app.js"></script>
 </body>
 </html>

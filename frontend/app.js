@@ -1,50 +1,51 @@
 // Configuration
-const API_BASE_URL = window.location.origin;
+// NOTE: Ces valeurs peuvent être définies par js/state.js et js/config.js (modules ES6)
+const API_BASE_URL = window.API_BASE_URL || window.location.origin;
 
 // ===================================
 // SÉCURITÉ XSS - Échappement HTML
 // ===================================
+// NOTE: Ces fonctions sont maintenant définies dans js/utils.js (module ES6)
 
-/**
- * Échappe les caractères HTML spéciaux pour prévenir les attaques XSS
- * @param {string} str - Chaîne à échapper
- * @returns {string} - Chaîne échappée
- */
-function escapeHtml(str) {
-  if (str === null || str === undefined) return '';
-  const div = document.createElement('div');
-  div.textContent = String(str);
-  return div.innerHTML;
+// Échapper les caractères HTML spéciaux pour prévenir les attaques XSS
+if (typeof window.escapeHtml !== 'function') {
+  window.escapeHtml = function(str) {
+    if (str === null || str === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
+  };
 }
+const escapeHtml = window.escapeHtml;
 
-/**
- * Échappe les attributs HTML (pour les valeurs d'attributs)
- * @param {string} str - Chaîne à échapper
- * @returns {string} - Chaîne échappée pour utilisation dans attributs
- */
-function escapeAttr(str) {
-  if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+// Échapper les attributs HTML (pour les valeurs d'attributs)
+if (typeof window.escapeAttr !== 'function') {
+  window.escapeAttr = function(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  };
 }
+const escapeAttr = window.escapeAttr;
 
-const VAD_CONFIG = {
-  VOLUME_THRESHOLD: 0.015,     // Seuil de détection de voix (plus sensible)
-  SILENCE_DURATION: 1000,      // Durée de silence pour arrêter (ms) - plus rapide
-  MIN_RECORDING_DURATION: 600, // Durée minimale d'enregistrement (ms) - plus rapide
-  RECORDING_INTERVAL: 80       // Intervalle d'analyse (ms) - plus réactif
+// Configuration VAD - utiliser version module si disponible
+const VAD_CONFIG = window.VAD_CONFIG || {
+  VOLUME_THRESHOLD: 0.015,
+  SILENCE_DURATION: 1000,
+  MIN_RECORDING_DURATION: 600,
+  RECORDING_INTERVAL: 80
 };
 
-// Configuration des notifications
-const NOTIFICATION_CONFIG = {
+// Configuration des notifications - utiliser version module si disponible
+const NOTIFICATION_CONFIG = window.NOTIFICATION_CONFIG || {
   enabled: true,
   sound: true,
-  desktop: true, // Notifications navigateur
-  toastDuration: 4000 // Durée d'affichage du toast (ms)
+  desktop: true,
+  toastDuration: 4000
 };
 
 // Tracker des messages non lus par groupe
@@ -59,77 +60,94 @@ let loginMode = 'email';
 // ===================================
 // GESTION DU THÈME (DARK/LIGHT MODE)
 // ===================================
+// NOTE: Ces fonctions sont maintenant définies dans js/theme.js (module ES6)
+// Les versions ci-dessous sont des fallbacks pour compatibilité
 
 // Initialiser le thème au démarrage
-function initTheme() {
-  const savedTheme = localStorage.getItem('theme') || 'dark';
-  if (savedTheme === 'light') {
-    document.body.classList.add('light-theme');
-    updateThemeIcon('light');
-  } else {
-    document.body.classList.remove('light-theme');
-    updateThemeIcon('dark');
-  }
+if (typeof window.initTheme !== 'function') {
+  window.initTheme = function() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') {
+      document.body.classList.add('light-theme');
+      updateThemeIcon('light');
+    } else {
+      document.body.classList.remove('light-theme');
+      updateThemeIcon('dark');
+    }
+  };
 }
+const initTheme = window.initTheme;
 
 // Toggle entre dark et light mode
-function toggleTheme() {
-  const isLight = document.body.classList.toggle('light-theme');
-  const theme = isLight ? 'light' : 'dark';
-  localStorage.setItem('theme', theme);
-  updateThemeIcon(theme);
-
-  // Animation de transition douce
-  document.body.style.transition = 'background 0.3s ease, color 0.3s ease';
+if (typeof window.toggleTheme !== 'function') {
+  window.toggleTheme = function() {
+    const isLight = document.body.classList.toggle('light-theme');
+    const theme = isLight ? 'light' : 'dark';
+    localStorage.setItem('theme', theme);
+    updateThemeIcon(theme);
+    document.body.style.transition = 'background 0.3s ease, color 0.3s ease';
+  };
 }
+const toggleTheme = window.toggleTheme;
 
 // Mettre à jour l'icône du bouton de thème
-function updateThemeIcon(theme) {
-  const themeBtn = document.getElementById('themeToggleBtn');
-  if (themeBtn) {
-    themeBtn.textContent = theme === 'light' ? '☀️' : '🌙';
-    themeBtn.title = theme === 'light' ? 'Mode sombre' : 'Mode clair';
-  }
+if (typeof window.updateThemeIcon !== 'function') {
+  window.updateThemeIcon = function(theme) {
+    const themeBtn = document.getElementById('themeToggleBtn');
+    if (themeBtn) {
+      themeBtn.textContent = theme === 'light' ? '☀️' : '🌙';
+      themeBtn.title = theme === 'light' ? 'Mode sombre' : 'Mode clair';
+    }
+  };
 }
+const updateThemeIcon = window.updateThemeIcon;
 
 // ===================================
 // GESTION DES THÈMES DE COULEUR
 // ===================================
+// NOTE: Ces fonctions sont maintenant définies dans js/theme.js (module ES6)
 
 // Initialiser le thème de couleur au démarrage
-function initColorTheme() {
-  const savedColorTheme = localStorage.getItem('colorTheme') || 'green';
-  applyColorTheme(savedColorTheme);
+if (typeof window.initColorTheme !== 'function') {
+  window.initColorTheme = function() {
+    const savedColorTheme = localStorage.getItem('colorTheme') || 'green';
+    applyColorTheme(savedColorTheme);
+  };
 }
+const initColorTheme = window.initColorTheme;
 
 // Changer de thème de couleur
-function changeColorTheme(colorTheme) {
-  applyColorTheme(colorTheme);
-  localStorage.setItem('colorTheme', colorTheme);
-
-  // Fermer le menu
-  const menu = document.getElementById('colorThemeMenu');
-  if (menu) {
-    menu.style.display = 'none';
-  }
+if (typeof window.changeColorTheme !== 'function') {
+  window.changeColorTheme = function(colorTheme) {
+    applyColorTheme(colorTheme);
+    localStorage.setItem('colorTheme', colorTheme);
+    const menu = document.getElementById('colorThemeMenu');
+    if (menu) {
+      menu.style.display = 'none';
+    }
+  };
 }
+const changeColorTheme = window.changeColorTheme;
 
 // Appliquer un thème de couleur
-function applyColorTheme(colorTheme) {
-  // Retirer tous les thèmes de couleur
-  document.body.classList.remove('theme-green', 'theme-blue', 'theme-purple', 'theme-pink', 'theme-orange');
-
-  // Appliquer le nouveau thème
-  document.body.classList.add(`theme-${colorTheme}`);
+if (typeof window.applyColorTheme !== 'function') {
+  window.applyColorTheme = function(colorTheme) {
+    document.body.classList.remove('theme-green', 'theme-blue', 'theme-purple', 'theme-pink', 'theme-orange');
+    document.body.classList.add(`theme-${colorTheme}`);
+  };
 }
+const applyColorTheme = window.applyColorTheme;
 
 // Toggle le menu de sélection de couleur
-function toggleColorThemeMenu() {
-  const menu = document.getElementById('colorThemeMenu');
-  if (menu) {
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-  }
+if (typeof window.toggleColorThemeMenu !== 'function') {
+  window.toggleColorThemeMenu = function() {
+    const menu = document.getElementById('colorThemeMenu');
+    if (menu) {
+      menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+  };
 }
+const toggleColorThemeMenu = window.toggleColorThemeMenu;
 
 // Fermer le menu quand on clique ailleurs
 document.addEventListener('click', (event) => {
@@ -355,8 +373,8 @@ function refreshOnlineIndicators() {
   }
 }
 
-// Configuration des langues
-const LANGUAGES = {
+// Configuration des langues - utiliser version module si disponible
+const LANGUAGES = window.LANGUAGES || {
   fr: { name: 'Français', flag: '🇫🇷', nativeName: 'Français', code: 'fr', voice: 'onyx' },
   en: { name: 'English', flag: '🇬🇧', nativeName: 'English', code: 'en', voice: 'alloy' },
   zh: { name: '中文', flag: '🇨🇳', nativeName: '中文', code: 'zh', voice: 'nova' },
@@ -367,7 +385,8 @@ const LANGUAGES = {
 };
 
 // Traductions de l'interface de sélection et pricing
-const UI_TRANSLATIONS = {
+// Traductions de l'UI - utiliser version module si disponible, sinon fallback local
+const UI_TRANSLATIONS = window.UI_TRANSLATIONS || {
   fr: {
     title: 'RealTranslate',
     subtitle: 'Choisissez vos langues de traduction',
@@ -1741,12 +1760,7 @@ function exportLogs() {
   console.log(`✅ Export de ${currentLogs.length} lignes vers ${filename}`);
 }
 
-// Fonction utilitaire pour échapper le HTML
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+// NOTE: escapeHtml est maintenant défini en début de fichier (js/utils.js)
 
 // ===================================
 // GESTION DES ABONNEMENTS
@@ -2143,174 +2157,165 @@ function applyUITranslations() {
 // ===================================
 // SYSTÈME DE NOTIFICATIONS
 // ===================================
+// NOTE: Ces fonctions sont maintenant définies dans js/notifications.js (module ES6)
+// Les versions ci-dessous sont des fallbacks pour compatibilité
 
 // Demander la permission pour les notifications navigateur
-function requestNotificationPermission() {
-  if (!('Notification' in window)) {
-    console.warn('Ce navigateur ne supporte pas les notifications desktop');
-    NOTIFICATION_CONFIG.desktop = false;
-    return;
-  }
+if (typeof window.requestNotificationPermission !== 'function') {
+  window.requestNotificationPermission = function() {
+    if (!('Notification' in window)) {
+      console.warn('Ce navigateur ne supporte pas les notifications desktop');
+      NOTIFICATION_CONFIG.desktop = false;
+      return;
+    }
 
-  if (Notification.permission === 'default') {
-    Notification.requestPermission().then(permission => {
-      console.log(`🔔 Permission notifications: ${permission}`);
-      NOTIFICATION_CONFIG.desktop = (permission === 'granted');
-    });
-  } else if (Notification.permission === 'granted') {
-    NOTIFICATION_CONFIG.desktop = true;
-  } else {
-    NOTIFICATION_CONFIG.desktop = false;
-  }
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        console.log(`Permission notifications: ${permission}`);
+        NOTIFICATION_CONFIG.desktop = (permission === 'granted');
+      });
+    } else if (Notification.permission === 'granted') {
+      NOTIFICATION_CONFIG.desktop = true;
+    } else {
+      NOTIFICATION_CONFIG.desktop = false;
+    }
+  };
 }
+const requestNotificationPermission = window.requestNotificationPermission;
 
 // Jouer un son de notification
-function playNotificationSound() {
-  if (!NOTIFICATION_CONFIG.sound) return;
+if (typeof window.playNotificationSound !== 'function') {
+  window.playNotificationSound = function() {
+    if (!NOTIFICATION_CONFIG.sound) return;
 
-  try {
-    // Créer un son simple avec Web Audio API
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
 
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
 
-    oscillator.frequency.value = 800; // Fréquence en Hz
-    oscillator.type = 'sine';
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
 
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
 
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.3);
-  } catch (error) {
-    console.warn('Impossible de jouer le son de notification:', error);
-  }
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (error) {
+      console.warn('Impossible de jouer le son de notification:', error);
+    }
+  };
 }
+const playNotificationSound = window.playNotificationSound;
 
 // Afficher une notification toast dans l'UI
-function showNotificationToast(message) {
-  if (!NOTIFICATION_CONFIG.enabled) return;
+// NOTE: Version complète dans js/notifications.js - ceci est un fallback
+if (typeof window.showNotificationToast !== 'function') {
+  window.showNotificationToast = function(message, type = 'info') {
+    if (!NOTIFICATION_CONFIG.enabled) return;
 
-  // Créer ou réutiliser le conteneur de toast
-  let toastContainer = document.getElementById('notificationToastContainer');
-  if (!toastContainer) {
-    toastContainer = document.createElement('div');
-    toastContainer.id = 'notificationToastContainer';
-    toastContainer.style.cssText = `
-      position: fixed;
-      top: 80px;
-      right: 20px;
-      z-index: 10000;
-      max-width: 400px;
+    let toastContainer = document.getElementById('notificationToastContainer');
+    if (!toastContainer) {
+      toastContainer = document.createElement('div');
+      toastContainer.id = 'notificationToastContainer';
+      toastContainer.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 10000;
+        max-width: 400px;
+      `;
+      document.body.appendChild(toastContainer);
+    }
+
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      background: ${type === 'error' ? 'rgba(255, 107, 107, 0.95)' : 'linear-gradient(135deg, #00ff9d, #00a2ff)'};
+      color: ${type === 'error' ? '#fff' : '#000'};
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 8px 32px rgba(0, 255, 157, 0.3);
+      animation: slideInRight 0.3s ease-out;
+      font-weight: 600;
+      font-size: 0.95em;
+      cursor: pointer;
+      transition: transform 0.2s, opacity 0.3s;
     `;
-    document.body.appendChild(toastContainer);
-  }
+    toast.textContent = message;
 
-  // Créer le toast
-  const toast = document.createElement('div');
-  toast.style.cssText = `
-    background: linear-gradient(135deg, #00ff9d, #00a2ff);
-    color: #000;
-    padding: 16px 20px;
-    border-radius: 12px;
-    margin-bottom: 10px;
-    box-shadow: 0 8px 32px rgba(0, 255, 157, 0.3);
-    animation: slideInRight 0.3s ease-out;
-    font-weight: 600;
-    font-size: 0.95em;
-    cursor: pointer;
-    transition: transform 0.2s, opacity 0.3s;
-  `;
-  toast.textContent = `🔔 ${message}`;
-
-  // Animation CSS
-  if (!document.getElementById('notificationToastStyles')) {
-    const style = document.createElement('style');
-    style.id = 'notificationToastStyles';
-    style.textContent = `
-      @keyframes slideInRight {
-        from {
-          transform: translateX(400px);
-          opacity: 0;
+    if (!document.getElementById('notificationToastStyles')) {
+      const style = document.createElement('style');
+      style.id = 'notificationToastStyles';
+      style.textContent = `
+        @keyframes slideInRight {
+          from { transform: translateX(400px); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
         }
-        to {
-          transform: translateX(0);
-          opacity: 1;
+        @keyframes slideOutRight {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(400px); opacity: 0; }
         }
-      }
-      @keyframes slideOutRight {
-        from {
-          transform: translateX(0);
-          opacity: 1;
-        }
-        to {
-          transform: translateX(400px);
-          opacity: 0;
-        }
-      }
-    `;
-    document.head.appendChild(style);
-  }
+      `;
+      document.head.appendChild(style);
+    }
 
-  // Hover effect
-  toast.addEventListener('mouseenter', () => {
-    toast.style.transform = 'scale(1.02)';
-  });
-  toast.addEventListener('mouseleave', () => {
-    toast.style.transform = 'scale(1)';
-  });
-
-  // Click to dismiss
-  toast.addEventListener('click', () => {
-    toast.style.animation = 'slideOutRight 0.3s ease-out';
-    setTimeout(() => toast.remove(), 300);
-  });
-
-  toastContainer.appendChild(toast);
-
-  // Auto-remove après durée configurée
-  setTimeout(() => {
-    if (toast.parentElement) {
+    toast.addEventListener('mouseenter', () => toast.style.transform = 'scale(1.02)');
+    toast.addEventListener('mouseleave', () => toast.style.transform = 'scale(1)');
+    toast.addEventListener('click', () => {
       toast.style.animation = 'slideOutRight 0.3s ease-out';
       setTimeout(() => toast.remove(), 300);
-    }
-  }, NOTIFICATION_CONFIG.toastDuration);
-}
-
-// Afficher une notification navigateur
-function showDesktopNotification(title, body, groupId) {
-  if (!NOTIFICATION_CONFIG.desktop || Notification.permission !== 'granted') {
-    return;
-  }
-
-  try {
-    const notification = new Notification(title, {
-      body: body,
-      icon: '/favicon.ico',
-      badge: '/favicon.ico',
-      tag: `group-${groupId}`, // Permet de grouper les notifications
-      requireInteraction: false,
-      silent: true // On joue notre propre son
     });
 
-    notification.onclick = () => {
-      window.focus();
-      // Ouvrir le groupe si possible
-      if (groupId && typeof openGroupChat === 'function') {
-        openGroupChat(groupId);
-      }
-      notification.close();
-    };
+    toastContainer.appendChild(toast);
 
-    // Auto-close après 5 secondes
-    setTimeout(() => notification.close(), 5000);
-  } catch (error) {
-    console.warn('Erreur notification desktop:', error);
-  }
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => toast.remove(), 300);
+      }
+    }, NOTIFICATION_CONFIG.toastDuration);
+  };
 }
+const showNotificationToast = window.showNotificationToast;
+
+// Afficher une notification navigateur
+// NOTE: Version complète dans js/notifications.js - ceci est un fallback
+if (typeof window.showDesktopNotification !== 'function') {
+  window.showDesktopNotification = function(title, body, data = {}) {
+    if (!NOTIFICATION_CONFIG.desktop || Notification.permission !== 'granted') {
+      return;
+    }
+
+    try {
+      const groupId = data.groupId || data;
+      const notification = new Notification(title, {
+        body: body,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: `group-${groupId}`,
+        requireInteraction: false,
+        silent: true
+      });
+
+      notification.onclick = () => {
+        window.focus();
+        if (groupId && typeof openGroupChat === 'function') {
+          openGroupChat(groupId);
+        }
+        notification.close();
+      };
+
+      setTimeout(() => notification.close(), 5000);
+    } catch (error) {
+      console.warn('Erreur notification desktop:', error);
+    }
+  };
+}
+const showDesktopNotification = window.showDesktopNotification;
 
 // Incrémenter le compteur de messages non lus
 function incrementUnreadCount(groupId) {
@@ -2486,8 +2491,8 @@ function removeMessageFromDOM(messageId) {
 // RÉACTIONS SUR LES MESSAGES
 // ===================================
 
-// Emojis disponibles pour les réactions
-const REACTION_EMOJIS = ['👍', '❤️', '😂', '🎉', '😮', '😢'];
+// Emojis disponibles pour les réactions - utiliser version module si disponible
+const REACTION_EMOJIS = window.REACTION_EMOJIS || ['👍', '❤️', '😂', '🎉', '😮', '😢'];
 
 // Générer l'HTML des boutons de réaction
 function generateReactionButtons(messageId) {
