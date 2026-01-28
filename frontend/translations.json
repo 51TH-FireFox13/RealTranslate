@@ -1,0 +1,1292 @@
+{
+  "fr": {
+    "nav": {
+      "pricing": "Tarifs",
+      "login": "Se connecter"
+    },
+    "hero": {
+      "title": "Parlez au monde,",
+      "titleHighlight": "sans barrières",
+      "subtitle": "La traduction instantanée qui comprend vraiment vos conversations. RealTranslate traduit en temps réel pour que vous puissiez vous concentrer sur l'essentiel : communiquer.",
+      "ctaPrimary": "Commencer gratuitement",
+      "ctaSecondary": "Voir comment ça marche",
+      "stats": {
+        "languages": "Langues supportées",
+        "speed": "Temps de traduction",
+        "availability": "Disponibilité"
+      }
+    },
+    "what": {
+      "title": "Qu'est-ce que RealTranslate ?",
+      "description": "Une plateforme de communication intelligente qui brise les barrières linguistiques",
+      "features": {
+        "instant": {
+          "title": "Traduction instantanée",
+          "description": "Vos messages sont traduits en temps réel, sans délai perceptible. L'IA s'adapte au contexte de votre conversation."
+        },
+        "multilingual": {
+          "title": "Chat multilingue",
+          "description": "Créez des groupes où chaque membre parle sa langue. RealTranslate traduit automatiquement pour tout le monde."
+        },
+        "context": {
+          "title": "Contexte intelligent",
+          "description": "Notre IA comprend le ton, les expressions idiomatiques et le contexte culturel pour des traductions naturelles."
+        },
+        "security": {
+          "title": "Sécurité garantie",
+          "description": "Chiffrement de bout en bout. Vos conversations restent privées et sécurisées."
+        }
+      }
+    },
+    "why": {
+      "title": "Pourquoi RealTranslate ?",
+      "items": {
+        "noMisunderstandings": {
+          "title": "Fini les malentendus",
+          "description": "Plus besoin de copier-coller dans un traducteur. Tout se fait naturellement."
+        },
+        "saveTime": {
+          "title": "Gagnez du temps",
+          "description": "Concentrez-vous sur votre message, pas sur la traduction. Jusqu'à 80% de temps gagné."
+        },
+        "workGlobally": {
+          "title": "Travaillez globalement",
+          "description": "Collaborez avec des équipes internationales sans friction linguistique."
+        },
+        "stayNatural": {
+          "title": "Restez naturel",
+          "description": "Parlez dans votre langue maternelle. Vos interlocuteurs aussi."
+        }
+      },
+      "stats": {
+        "timeSaved": "de temps gagné en communication",
+        "accuracy": "de précision contextuelle",
+        "barriers": "barrière linguistique"
+      }
+    },
+    "how": {
+      "title": "Comment ça marche ?",
+      "description": "3 étapes simples pour commencer à communiquer sans limites",
+      "steps": {
+        "step1": {
+          "title": "Créez votre compte",
+          "description": "Inscrivez-vous en 30 secondes. Choisissez votre langue préférée."
+        },
+        "step2": {
+          "title": "Invitez vos contacts",
+          "description": "Ajoutez vos collègues, amis ou partenaires. Créez des groupes multilingues."
+        },
+        "step3": {
+          "title": "Communiquez naturellement",
+          "description": "Écrivez dans votre langue. RealTranslate fait le reste automatiquement."
+        }
+      }
+    },
+    "who": {
+      "title": "Pour qui ?",
+      "description": "RealTranslate s'adapte à tous vos besoins de communication",
+      "personas": {
+        "professionals": {
+          "title": "Professionnels",
+          "description": "Équipes internationales, réunions multilingues, support client global. Collaborez sans friction."
+        },
+        "students": {
+          "title": "Étudiants",
+          "description": "Projets internationaux, échanges académiques, apprentissage des langues. Étudiez sans limites."
+        },
+        "travelers": {
+          "title": "Voyageurs",
+          "description": "Guides locaux, rencontres internationales, immersion culturelle. Voyagez en toute confiance."
+        },
+        "entrepreneurs": {
+          "title": "Entrepreneurs",
+          "description": "Clients internationaux, partenaires étrangers, expansion globale. Développez votre business partout."
+        }
+      }
+    },
+    "cta": {
+      "title": "Prêt à communiquer sans limites ?",
+      "subtitle": "Rejoignez des milliers d'utilisateurs qui ont déjà brisé les barrières linguistiques",
+      "primary": "Commencer gratuitement",
+      "secondary": "Voir les tarifs",
+      "note": "Aucune carte bancaire requise • Essai gratuit 14 jours"
+    },
+    "footer": {
+      "tagline": "Communication sans frontières",
+      "product": "Produit",
+      "howItWorks": "Comment ça marche",
+      "pricing": "Tarifs",
+      "login": "Se connecter",
+      "resources": "Ressources",
+      "documentation": "Documentation",
+      "blog": "Blog",
+      "support": "Support",
+      "legal": "Légal",
+      "privacy": "Confidentialité",
+      "terms": "Conditions",
+      "security": "Sécurité",
+      "copyright": "Tous droits réservés."
+    }
+  },
+  "en": {
+    "nav": {
+      "pricing": "Pricing",
+      "login": "Sign in"
+    },
+    "hero": {
+      "title": "Talk to the world,",
+      "titleHighlight": "without barriers",
+      "subtitle": "Instant translation that truly understands your conversations. RealTranslate translates in real-time so you can focus on what matters: communicating.",
+      "ctaPrimary": "Start for free",
+      "ctaSecondary": "See how it works",
+      "stats": {
+        "languages": "Supported languages",
+        "speed": "Translation time",
+        "availability": "Availability"
+      }
+    },
+    "what": {
+      "title": "What is RealTranslate?",
+      "description": "An intelligent communication platform that breaks down language barriers",
+      "features": {
+        "instant": {
+          "title": "Instant translation",
+          "description": "Your messages are translated in real-time, with no noticeable delay. The AI adapts to your conversation context."
+        },
+        "multilingual": {
+          "title": "Multilingual chat",
+          "description": "Create groups where each member speaks their language. RealTranslate automatically translates for everyone."
+        },
+        "context": {
+          "title": "Smart context",
+          "description": "Our AI understands tone, idiomatic expressions, and cultural context for natural translations."
+        },
+        "security": {
+          "title": "Guaranteed security",
+          "description": "End-to-end encryption. Your conversations remain private and secure."
+        }
+      }
+    },
+    "why": {
+      "title": "Why RealTranslate?",
+      "items": {
+        "noMisunderstandings": {
+          "title": "No more misunderstandings",
+          "description": "No need to copy-paste into a translator. Everything happens naturally."
+        },
+        "saveTime": {
+          "title": "Save time",
+          "description": "Focus on your message, not the translation. Save up to 80% of time."
+        },
+        "workGlobally": {
+          "title": "Work globally",
+          "description": "Collaborate with international teams without linguistic friction."
+        },
+        "stayNatural": {
+          "title": "Stay natural",
+          "description": "Speak in your native language. So do your interlocutors."
+        }
+      },
+      "stats": {
+        "timeSaved": "time saved in communication",
+        "accuracy": "contextual accuracy",
+        "barriers": "language barrier"
+      }
+    },
+    "how": {
+      "title": "How does it work?",
+      "description": "3 simple steps to start communicating without limits",
+      "steps": {
+        "step1": {
+          "title": "Create your account",
+          "description": "Sign up in 30 seconds. Choose your preferred language."
+        },
+        "step2": {
+          "title": "Invite your contacts",
+          "description": "Add your colleagues, friends or partners. Create multilingual groups."
+        },
+        "step3": {
+          "title": "Communicate naturally",
+          "description": "Write in your language. RealTranslate does the rest automatically."
+        }
+      }
+    },
+    "who": {
+      "title": "For whom?",
+      "description": "RealTranslate adapts to all your communication needs",
+      "personas": {
+        "professionals": {
+          "title": "Professionals",
+          "description": "International teams, multilingual meetings, global customer support. Collaborate without friction."
+        },
+        "students": {
+          "title": "Students",
+          "description": "International projects, academic exchanges, language learning. Study without limits."
+        },
+        "travelers": {
+          "title": "Travelers",
+          "description": "Local guides, international encounters, cultural immersion. Travel with confidence."
+        },
+        "entrepreneurs": {
+          "title": "Entrepreneurs",
+          "description": "International clients, foreign partners, global expansion. Grow your business everywhere."
+        }
+      }
+    },
+    "cta": {
+      "title": "Ready to communicate without limits?",
+      "subtitle": "Join thousands of users who have already broken down language barriers",
+      "primary": "Start for free",
+      "secondary": "See pricing",
+      "note": "No credit card required • 14-day free trial"
+    },
+    "footer": {
+      "tagline": "Communication without borders",
+      "product": "Product",
+      "howItWorks": "How it works",
+      "pricing": "Pricing",
+      "login": "Sign in",
+      "resources": "Resources",
+      "documentation": "Documentation",
+      "blog": "Blog",
+      "support": "Support",
+      "legal": "Legal",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "security": "Security",
+      "copyright": "All rights reserved."
+    }
+  },
+  "es": {
+    "nav": {
+      "pricing": "Precios",
+      "login": "Iniciar sesión"
+    },
+    "hero": {
+      "title": "Habla con el mundo,",
+      "titleHighlight": "sin barreras",
+      "subtitle": "Traducción instantánea que realmente entiende tus conversaciones. RealTranslate traduce en tiempo real para que puedas concentrarte en lo esencial: comunicarte.",
+      "ctaPrimary": "Comenzar gratis",
+      "ctaSecondary": "Ver cómo funciona",
+      "stats": {
+        "languages": "Idiomas soportados",
+        "speed": "Tiempo de traducción",
+        "availability": "Disponibilidad"
+      }
+    },
+    "what": {
+      "title": "¿Qué es RealTranslate?",
+      "description": "Una plataforma de comunicación inteligente que rompe las barreras lingüísticas",
+      "features": {
+        "instant": {
+          "title": "Traducción instantánea",
+          "description": "Tus mensajes se traducen en tiempo real, sin retraso perceptible. La IA se adapta al contexto de tu conversación."
+        },
+        "multilingual": {
+          "title": "Chat multilingüe",
+          "description": "Crea grupos donde cada miembro hable su idioma. RealTranslate traduce automáticamente para todos."
+        },
+        "context": {
+          "title": "Contexto inteligente",
+          "description": "Nuestra IA comprende el tono, las expresiones idiomáticas y el contexto cultural para traducciones naturales."
+        },
+        "security": {
+          "title": "Seguridad garantizada",
+          "description": "Cifrado de extremo a extremo. Tus conversaciones permanecen privadas y seguras."
+        }
+      }
+    },
+    "why": {
+      "title": "¿Por qué RealTranslate?",
+      "items": {
+        "noMisunderstandings": {
+          "title": "Se acabaron los malentendidos",
+          "description": "Ya no necesitas copiar y pegar en un traductor. Todo sucede naturalmente."
+        },
+        "saveTime": {
+          "title": "Ahorra tiempo",
+          "description": "Concéntrate en tu mensaje, no en la traducción. Hasta un 80% de tiempo ahorrado."
+        },
+        "workGlobally": {
+          "title": "Trabaja globalmente",
+          "description": "Colabora con equipos internacionales sin fricción lingüística."
+        },
+        "stayNatural": {
+          "title": "Mantente natural",
+          "description": "Habla en tu idioma nativo. Tus interlocutores también."
+        }
+      },
+      "stats": {
+        "timeSaved": "de tiempo ahorrado en comunicación",
+        "accuracy": "de precisión contextual",
+        "barriers": "barrera lingüística"
+      }
+    },
+    "how": {
+      "title": "¿Cómo funciona?",
+      "description": "3 pasos simples para comenzar a comunicarte sin límites",
+      "steps": {
+        "step1": {
+          "title": "Crea tu cuenta",
+          "description": "Regístrate en 30 segundos. Elige tu idioma preferido."
+        },
+        "step2": {
+          "title": "Invita a tus contactos",
+          "description": "Agrega a tus colegas, amigos o socios. Crea grupos multilingües."
+        },
+        "step3": {
+          "title": "Comunícate naturalmente",
+          "description": "Escribe en tu idioma. RealTranslate hace el resto automáticamente."
+        }
+      }
+    },
+    "who": {
+      "title": "¿Para quién?",
+      "description": "RealTranslate se adapta a todas tus necesidades de comunicación",
+      "personas": {
+        "professionals": {
+          "title": "Profesionales",
+          "description": "Equipos internacionales, reuniones multilingües, soporte global al cliente. Colabora sin fricción."
+        },
+        "students": {
+          "title": "Estudiantes",
+          "description": "Proyectos internacionales, intercambios académicos, aprendizaje de idiomas. Estudia sin límites."
+        },
+        "travelers": {
+          "title": "Viajeros",
+          "description": "Guías locales, encuentros internacionales, inmersión cultural. Viaja con confianza."
+        },
+        "entrepreneurs": {
+          "title": "Emprendedores",
+          "description": "Clientes internacionales, socios extranjeros, expansión global. Desarrolla tu negocio en todas partes."
+        }
+      }
+    },
+    "cta": {
+      "title": "¿Listo para comunicarte sin límites?",
+      "subtitle": "Únete a miles de usuarios que ya han roto las barreras lingüísticas",
+      "primary": "Comenzar gratis",
+      "secondary": "Ver precios",
+      "note": "No se requiere tarjeta de crédito • Prueba gratuita de 14 días"
+    },
+    "footer": {
+      "tagline": "Comunicación sin fronteras",
+      "product": "Producto",
+      "howItWorks": "Cómo funciona",
+      "pricing": "Precios",
+      "login": "Iniciar sesión",
+      "resources": "Recursos",
+      "documentation": "Documentación",
+      "blog": "Blog",
+      "support": "Soporte",
+      "legal": "Legal",
+      "privacy": "Privacidad",
+      "terms": "Condiciones",
+      "security": "Seguridad",
+      "copyright": "Todos los derechos reservados."
+    }
+  },
+  "it": {
+    "nav": {
+      "pricing": "Prezzi",
+      "login": "Accedi"
+    },
+    "hero": {
+      "title": "Parla al mondo,",
+      "titleHighlight": "senza barriere",
+      "subtitle": "Traduzione istantanea che capisce veramente le tue conversazioni. RealTranslate traduce in tempo reale così puoi concentrarti sull'essenziale: comunicare.",
+      "ctaPrimary": "Inizia gratuitamente",
+      "ctaSecondary": "Vedi come funziona",
+      "stats": {
+        "languages": "Lingue supportate",
+        "speed": "Tempo di traduzione",
+        "availability": "Disponibilità"
+      }
+    },
+    "what": {
+      "title": "Cos'è RealTranslate?",
+      "description": "Una piattaforma di comunicazione intelligente che abbatte le barriere linguistiche",
+      "features": {
+        "instant": {
+          "title": "Traduzione istantanea",
+          "description": "I tuoi messaggi vengono tradotti in tempo reale, senza ritardi percettibili. L'IA si adatta al contesto della tua conversazione."
+        },
+        "multilingual": {
+          "title": "Chat multilingue",
+          "description": "Crea gruppi dove ogni membro parla la propria lingua. RealTranslate traduce automaticamente per tutti."
+        },
+        "context": {
+          "title": "Contesto intelligente",
+          "description": "La nostra IA comprende il tono, le espressioni idiomatiche e il contesto culturale per traduzioni naturali."
+        },
+        "security": {
+          "title": "Sicurezza garantita",
+          "description": "Crittografia end-to-end. Le tue conversazioni rimangono private e sicure."
+        }
+      }
+    },
+    "why": {
+      "title": "Perché RealTranslate?",
+      "items": {
+        "noMisunderstandings": {
+          "title": "Basta malintesi",
+          "description": "Non serve più copiare e incollare in un traduttore. Tutto avviene naturalmente."
+        },
+        "saveTime": {
+          "title": "Risparmia tempo",
+          "description": "Concentrati sul tuo messaggio, non sulla traduzione. Fino all'80% di tempo risparmiato."
+        },
+        "workGlobally": {
+          "title": "Lavora globalmente",
+          "description": "Collabora con team internazionali senza attriti linguistici."
+        },
+        "stayNatural": {
+          "title": "Rimani naturale",
+          "description": "Parla nella tua lingua madre. Anche i tuoi interlocutori."
+        }
+      },
+      "stats": {
+        "timeSaved": "di tempo risparmiato nella comunicazione",
+        "accuracy": "di precisione contestuale",
+        "barriers": "barriera linguistica"
+      }
+    },
+    "how": {
+      "title": "Come funziona?",
+      "description": "3 semplici passaggi per iniziare a comunicare senza limiti",
+      "steps": {
+        "step1": {
+          "title": "Crea il tuo account",
+          "description": "Registrati in 30 secondi. Scegli la tua lingua preferita."
+        },
+        "step2": {
+          "title": "Invita i tuoi contatti",
+          "description": "Aggiungi colleghi, amici o partner. Crea gruppi multilingue."
+        },
+        "step3": {
+          "title": "Comunica naturalmente",
+          "description": "Scrivi nella tua lingua. RealTranslate fa il resto automaticamente."
+        }
+      }
+    },
+    "who": {
+      "title": "Per chi?",
+      "description": "RealTranslate si adatta a tutte le tue esigenze di comunicazione",
+      "personas": {
+        "professionals": {
+          "title": "Professionisti",
+          "description": "Team internazionali, riunioni multilingue, supporto clienti globale. Collabora senza attriti."
+        },
+        "students": {
+          "title": "Studenti",
+          "description": "Progetti internazionali, scambi accademici, apprendimento delle lingue. Studia senza limiti."
+        },
+        "travelers": {
+          "title": "Viaggiatori",
+          "description": "Guide locali, incontri internazionali, immersione culturale. Viaggia con fiducia."
+        },
+        "entrepreneurs": {
+          "title": "Imprenditori",
+          "description": "Clienti internazionali, partner stranieri, espansione globale. Sviluppa il tuo business ovunque."
+        }
+      }
+    },
+    "cta": {
+      "title": "Pronto a comunicare senza limiti?",
+      "subtitle": "Unisciti a migliaia di utenti che hanno già abbattuto le barriere linguistiche",
+      "primary": "Inizia gratuitamente",
+      "secondary": "Vedi i prezzi",
+      "note": "Nessuna carta di credito richiesta • Prova gratuita di 14 giorni"
+    },
+    "footer": {
+      "tagline": "Comunicazione senza confini",
+      "product": "Prodotto",
+      "howItWorks": "Come funziona",
+      "pricing": "Prezzi",
+      "login": "Accedi",
+      "resources": "Risorse",
+      "documentation": "Documentazione",
+      "blog": "Blog",
+      "support": "Supporto",
+      "legal": "Legale",
+      "privacy": "Privacy",
+      "terms": "Condizioni",
+      "security": "Sicurezza",
+      "copyright": "Tutti i diritti riservati."
+    }
+  },
+  "de": {
+    "nav": {
+      "pricing": "Preise",
+      "login": "Anmelden"
+    },
+    "hero": {
+      "title": "Sprechen Sie mit der Welt,",
+      "titleHighlight": "ohne Grenzen",
+      "subtitle": "Sofortige Übersetzung, die Ihre Gespräche wirklich versteht. RealTranslate übersetzt in Echtzeit, damit Sie sich auf das Wesentliche konzentrieren können: die Kommunikation.",
+      "ctaPrimary": "Kostenlos starten",
+      "ctaSecondary": "So funktioniert's",
+      "stats": {
+        "languages": "Unterstützte Sprachen",
+        "speed": "Übersetzungszeit",
+        "availability": "Verfügbarkeit"
+      }
+    },
+    "what": {
+      "title": "Was ist RealTranslate?",
+      "description": "Eine intelligente Kommunikationsplattform, die Sprachbarrieren abbaut",
+      "features": {
+        "instant": {
+          "title": "Sofortige Übersetzung",
+          "description": "Ihre Nachrichten werden in Echtzeit übersetzt, ohne spürbare Verzögerung. Die KI passt sich dem Kontext Ihrer Konversation an."
+        },
+        "multilingual": {
+          "title": "Mehrsprachiger Chat",
+          "description": "Erstellen Sie Gruppen, in denen jedes Mitglied seine Sprache spricht. RealTranslate übersetzt automatisch für alle."
+        },
+        "context": {
+          "title": "Intelligenter Kontext",
+          "description": "Unsere KI versteht Tonfall, idiomatische Ausdrücke und kulturellen Kontext für natürliche Übersetzungen."
+        },
+        "security": {
+          "title": "Garantierte Sicherheit",
+          "description": "Ende-zu-Ende-Verschlüsselung. Ihre Gespräche bleiben privat und sicher."
+        }
+      }
+    },
+    "why": {
+      "title": "Warum RealTranslate?",
+      "items": {
+        "noMisunderstandings": {
+          "title": "Keine Missverständnisse mehr",
+          "description": "Kein Kopieren und Einfügen in einen Übersetzer mehr nötig. Alles geschieht natürlich."
+        },
+        "saveTime": {
+          "title": "Zeit sparen",
+          "description": "Konzentrieren Sie sich auf Ihre Nachricht, nicht auf die Übersetzung. Bis zu 80% Zeitersparnis."
+        },
+        "workGlobally": {
+          "title": "Global arbeiten",
+          "description": "Arbeiten Sie mit internationalen Teams ohne sprachliche Reibung zusammen."
+        },
+        "stayNatural": {
+          "title": "Bleiben Sie natürlich",
+          "description": "Sprechen Sie in Ihrer Muttersprache. Ihre Gesprächspartner auch."
+        }
+      },
+      "stats": {
+        "timeSaved": "Zeitersparnis bei der Kommunikation",
+        "accuracy": "kontextuelle Genauigkeit",
+        "barriers": "Sprachbarriere"
+      }
+    },
+    "how": {
+      "title": "Wie funktioniert es?",
+      "description": "3 einfache Schritte, um grenzenlos zu kommunizieren",
+      "steps": {
+        "step1": {
+          "title": "Erstellen Sie Ihr Konto",
+          "description": "Registrieren Sie sich in 30 Sekunden. Wählen Sie Ihre bevorzugte Sprache."
+        },
+        "step2": {
+          "title": "Laden Sie Ihre Kontakte ein",
+          "description": "Fügen Sie Kollegen, Freunde oder Partner hinzu. Erstellen Sie mehrsprachige Gruppen."
+        },
+        "step3": {
+          "title": "Kommunizieren Sie natürlich",
+          "description": "Schreiben Sie in Ihrer Sprache. RealTranslate erledigt den Rest automatisch."
+        }
+      }
+    },
+    "who": {
+      "title": "Für wen?",
+      "description": "RealTranslate passt sich allen Ihren Kommunikationsbedürfnissen an",
+      "personas": {
+        "professionals": {
+          "title": "Profis",
+          "description": "Internationale Teams, mehrsprachige Meetings, globaler Kundensupport. Arbeiten Sie reibungslos zusammen."
+        },
+        "students": {
+          "title": "Studenten",
+          "description": "Internationale Projekte, akademischer Austausch, Sprachenlernen. Studieren Sie grenzenlos."
+        },
+        "travelers": {
+          "title": "Reisende",
+          "description": "Lokale Führer, internationale Begegnungen, kulturelles Eintauchen. Reisen Sie mit Zuversicht."
+        },
+        "entrepreneurs": {
+          "title": "Unternehmer",
+          "description": "Internationale Kunden, ausländische Partner, globale Expansion. Entwickeln Sie Ihr Geschäft überall."
+        }
+      }
+    },
+    "cta": {
+      "title": "Bereit, grenzenlos zu kommunizieren?",
+      "subtitle": "Schließen Sie sich Tausenden von Nutzern an, die bereits Sprachbarrieren überwunden haben",
+      "primary": "Kostenlos starten",
+      "secondary": "Preise ansehen",
+      "note": "Keine Kreditkarte erforderlich • 14 Tage kostenlose Testversion"
+    },
+    "footer": {
+      "tagline": "Kommunikation ohne Grenzen",
+      "product": "Produkt",
+      "howItWorks": "So funktioniert's",
+      "pricing": "Preise",
+      "login": "Anmelden",
+      "resources": "Ressourcen",
+      "documentation": "Dokumentation",
+      "blog": "Blog",
+      "support": "Support",
+      "legal": "Rechtliches",
+      "privacy": "Datenschutz",
+      "terms": "Bedingungen",
+      "security": "Sicherheit",
+      "copyright": "Alle Rechte vorbehalten."
+    }
+  },
+  "zh": {
+    "nav": {
+      "pricing": "价格",
+      "login": "登录"
+    },
+    "hero": {
+      "title": "与世界对话，",
+      "titleHighlight": "无障碍",
+      "subtitle": "真正理解您对话的即时翻译。RealTranslate 实时翻译，让您专注于最重要的事情：沟通。",
+      "ctaPrimary": "免费开始",
+      "ctaSecondary": "了解工作原理",
+      "stats": {
+        "languages": "支持的语言",
+        "speed": "翻译时间",
+        "availability": "可用性"
+      }
+    },
+    "what": {
+      "title": "什么是 RealTranslate？",
+      "description": "一个打破语言障碍的智能通信平台",
+      "features": {
+        "instant": {
+          "title": "即时翻译",
+          "description": "您的消息实时翻译，没有明显延迟。AI 适应您的对话上下文。"
+        },
+        "multilingual": {
+          "title": "多语言聊天",
+          "description": "创建每个成员都说自己语言的群组。RealTranslate 自动为所有人翻译。"
+        },
+        "context": {
+          "title": "智能上下文",
+          "description": "我们的 AI 理解语气、习语和文化背景，提供自然的翻译。"
+        },
+        "security": {
+          "title": "安全保障",
+          "description": "端到端加密。您的对话保持私密和安全。"
+        }
+      }
+    },
+    "why": {
+      "title": "为什么选择 RealTranslate？",
+      "items": {
+        "noMisunderstandings": {
+          "title": "不再有误解",
+          "description": "无需复制粘贴到翻译器。一切自然发生。"
+        },
+        "saveTime": {
+          "title": "节省时间",
+          "description": "专注于您的消息，而不是翻译。节省高达 80% 的时间。"
+        },
+        "workGlobally": {
+          "title": "全球工作",
+          "description": "与国际团队协作，没有语言摩擦。"
+        },
+        "stayNatural": {
+          "title": "保持自然",
+          "description": "用您的母语说话。您的对话者也一样。"
+        }
+      },
+      "stats": {
+        "timeSaved": "沟通时间节省",
+        "accuracy": "上下文准确性",
+        "barriers": "语言障碍"
+      }
+    },
+    "how": {
+      "title": "如何运作？",
+      "description": "3 个简单步骤开始无限沟通",
+      "steps": {
+        "step1": {
+          "title": "创建您的账户",
+          "description": "30 秒内注册。选择您的首选语言。"
+        },
+        "step2": {
+          "title": "邀请您的联系人",
+          "description": "添加您的同事、朋友或合作伙伴。创建多语言群组。"
+        },
+        "step3": {
+          "title": "自然交流",
+          "description": "用您的语言书写。RealTranslate 自动完成其余工作。"
+        }
+      }
+    },
+    "who": {
+      "title": "适合谁？",
+      "description": "RealTranslate 适应您所有的沟通需求",
+      "personas": {
+        "professionals": {
+          "title": "专业人士",
+          "description": "国际团队、多语言会议、全球客户支持。无摩擦协作。"
+        },
+        "students": {
+          "title": "学生",
+          "description": "国际项目、学术交流、语言学习。无限学习。"
+        },
+        "travelers": {
+          "title": "旅行者",
+          "description": "当地导游、国际交流、文化沉浸。自信旅行。"
+        },
+        "entrepreneurs": {
+          "title": "企业家",
+          "description": "国际客户、外国合作伙伴、全球扩张。在任何地方发展您的业务。"
+        }
+      }
+    },
+    "cta": {
+      "title": "准备好无限沟通了吗？",
+      "subtitle": "加入已经打破语言障碍的数千名用户",
+      "primary": "免费开始",
+      "secondary": "查看价格",
+      "note": "无需信用卡 • 14 天免费试用"
+    },
+    "footer": {
+      "tagline": "无国界沟通",
+      "product": "产品",
+      "howItWorks": "工作原理",
+      "pricing": "价格",
+      "login": "登录",
+      "resources": "资源",
+      "documentation": "文档",
+      "blog": "博客",
+      "support": "支持",
+      "legal": "法律",
+      "privacy": "隐私",
+      "terms": "条款",
+      "security": "安全",
+      "copyright": "保留所有权利。"
+    }
+  },
+  "ja": {
+    "nav": {
+      "pricing": "料金",
+      "login": "ログイン"
+    },
+    "hero": {
+      "title": "世界と話す、",
+      "titleHighlight": "障壁なく",
+      "subtitle": "あなたの会話を本当に理解する即時翻訳。RealTranslateはリアルタイムで翻訳するので、最も重要なことに集中できます：コミュニケーション。",
+      "ctaPrimary": "無料で始める",
+      "ctaSecondary": "仕組みを見る",
+      "stats": {
+        "languages": "サポート言語",
+        "speed": "翻訳時間",
+        "availability": "可用性"
+      }
+    },
+    "what": {
+      "title": "RealTranslateとは？",
+      "description": "言語の壁を打ち破るインテリジェントなコミュニケーションプラットフォーム",
+      "features": {
+        "instant": {
+          "title": "即時翻訳",
+          "description": "メッセージはリアルタイムで翻訳され、目立った遅延はありません。AIが会話のコンテキストに適応します。"
+        },
+        "multilingual": {
+          "title": "多言語チャット",
+          "description": "各メンバーが自分の言語を話すグループを作成します。RealTranslateがすべての人のために自動的に翻訳します。"
+        },
+        "context": {
+          "title": "スマートコンテキスト",
+          "description": "私たちのAIは、トーン、慣用表現、文化的コンテキストを理解し、自然な翻訳を提供します。"
+        },
+        "security": {
+          "title": "保証されたセキュリティ",
+          "description": "エンドツーエンド暗号化。会話はプライベートで安全なまま。"
+        }
+      }
+    },
+    "why": {
+      "title": "なぜRealTranslate？",
+      "items": {
+        "noMisunderstandings": {
+          "title": "誤解はもうない",
+          "description": "翻訳ツールにコピー＆ペーストする必要はありません。すべてが自然に起こります。"
+        },
+        "saveTime": {
+          "title": "時間を節約",
+          "description": "翻訳ではなく、メッセージに集中してください。最大80%の時間節約。"
+        },
+        "workGlobally": {
+          "title": "グローバルに働く",
+          "description": "言語的な摩擦なく国際チームと協力します。"
+        },
+        "stayNatural": {
+          "title": "自然のまま",
+          "description": "母国語で話してください。対話者も同様に。"
+        }
+      },
+      "stats": {
+        "timeSaved": "コミュニケーションの時間節約",
+        "accuracy": "文脈の正確さ",
+        "barriers": "言語の壁"
+      }
+    },
+    "how": {
+      "title": "どのように機能しますか？",
+      "description": "制限なくコミュニケーションを始めるための3つの簡単なステップ",
+      "steps": {
+        "step1": {
+          "title": "アカウントを作成",
+          "description": "30秒で登録。好みの言語を選択。"
+        },
+        "step2": {
+          "title": "連絡先を招待",
+          "description": "同僚、友人、パートナーを追加。多言語グループを作成。"
+        },
+        "step3": {
+          "title": "自然にコミュニケーション",
+          "description": "自分の言語で書く。RealTranslateが自動的に残りを行います。"
+        }
+      }
+    },
+    "who": {
+      "title": "誰のため？",
+      "description": "RealTranslateはあなたのすべてのコミュニケーションニーズに適応します",
+      "personas": {
+        "professionals": {
+          "title": "プロフェッショナル",
+          "description": "国際チーム、多言語会議、グローバルカスタマーサポート。摩擦なく協力。"
+        },
+        "students": {
+          "title": "学生",
+          "description": "国際プロジェクト、学術交流、言語学習。制限なく学ぶ。"
+        },
+        "travelers": {
+          "title": "旅行者",
+          "description": "現地ガイド、国際的な出会い、文化的な没入。自信を持って旅行。"
+        },
+        "entrepreneurs": {
+          "title": "起業家",
+          "description": "国際的なクライアント、外国のパートナー、グローバル展開。どこでもビジネスを拡大。"
+        }
+      }
+    },
+    "cta": {
+      "title": "制限なくコミュニケーションする準備はできましたか？",
+      "subtitle": "すでに言語の壁を打ち破った何千人ものユーザーに参加してください",
+      "primary": "無料で始める",
+      "secondary": "料金を見る",
+      "note": "クレジットカード不要 • 14日間無料トライアル"
+    },
+    "footer": {
+      "tagline": "国境のないコミュニケーション",
+      "product": "製品",
+      "howItWorks": "仕組み",
+      "pricing": "料金",
+      "login": "ログイン",
+      "resources": "リソース",
+      "documentation": "ドキュメント",
+      "blog": "ブログ",
+      "support": "サポート",
+      "legal": "法的事項",
+      "privacy": "プライバシー",
+      "terms": "利用規約",
+      "security": "セキュリティ",
+      "copyright": "全著作権所有。"
+    }
+  },
+  "pt": {
+    "nav": {
+      "pricing": "Preços",
+      "login": "Entrar"
+    },
+    "hero": {
+      "title": "Fale com o mundo,",
+      "titleHighlight": "sem barreiras",
+      "subtitle": "Tradução instantânea que realmente entende suas conversas. RealTranslate traduz em tempo real para que você possa se concentrar no essencial: comunicar.",
+      "ctaPrimary": "Começar gratuitamente",
+      "ctaSecondary": "Ver como funciona",
+      "stats": {
+        "languages": "Idiomas suportados",
+        "speed": "Tempo de tradução",
+        "availability": "Disponibilidade"
+      }
+    },
+    "what": {
+      "title": "O que é RealTranslate?",
+      "description": "Uma plataforma de comunicação inteligente que quebra as barreiras linguísticas",
+      "features": {
+        "instant": {
+          "title": "Tradução instantânea",
+          "description": "Suas mensagens são traduzidas em tempo real, sem atraso perceptível. A IA se adapta ao contexto da sua conversa."
+        },
+        "multilingual": {
+          "title": "Chat multilíngue",
+          "description": "Crie grupos onde cada membro fala sua língua. RealTranslate traduz automaticamente para todos."
+        },
+        "context": {
+          "title": "Contexto inteligente",
+          "description": "Nossa IA compreende o tom, expressões idiomáticas e contexto cultural para traduções naturais."
+        },
+        "security": {
+          "title": "Segurança garantida",
+          "description": "Criptografia de ponta a ponta. Suas conversas permanecem privadas e seguras."
+        }
+      }
+    },
+    "why": {
+      "title": "Por que RealTranslate?",
+      "items": {
+        "noMisunderstandings": {
+          "title": "Sem mais mal-entendidos",
+          "description": "Não precisa mais copiar e colar em um tradutor. Tudo acontece naturalmente."
+        },
+        "saveTime": {
+          "title": "Economize tempo",
+          "description": "Concentre-se na sua mensagem, não na tradução. Até 80% de tempo economizado."
+        },
+        "workGlobally": {
+          "title": "Trabalhe globalmente",
+          "description": "Colabore com equipes internacionais sem atrito linguístico."
+        },
+        "stayNatural": {
+          "title": "Permaneça natural",
+          "description": "Fale na sua língua nativa. Seus interlocutores também."
+        }
+      },
+      "stats": {
+        "timeSaved": "de tempo economizado na comunicação",
+        "accuracy": "de precisão contextual",
+        "barriers": "barreira linguística"
+      }
+    },
+    "how": {
+      "title": "Como funciona?",
+      "description": "3 passos simples para começar a comunicar sem limites",
+      "steps": {
+        "step1": {
+          "title": "Crie sua conta",
+          "description": "Registre-se em 30 segundos. Escolha sua língua preferida."
+        },
+        "step2": {
+          "title": "Convide seus contatos",
+          "description": "Adicione colegas, amigos ou parceiros. Crie grupos multilíngues."
+        },
+        "step3": {
+          "title": "Comunique naturalmente",
+          "description": "Escreva na sua língua. RealTranslate faz o resto automaticamente."
+        }
+      }
+    },
+    "who": {
+      "title": "Para quem?",
+      "description": "RealTranslate se adapta a todas as suas necessidades de comunicação",
+      "personas": {
+        "professionals": {
+          "title": "Profissionais",
+          "description": "Equipes internacionais, reuniões multilíngues, suporte ao cliente global. Colabore sem atrito."
+        },
+        "students": {
+          "title": "Estudantes",
+          "description": "Projetos internacionais, intercâmbios acadêmicos, aprendizado de idiomas. Estude sem limites."
+        },
+        "travelers": {
+          "title": "Viajantes",
+          "description": "Guias locais, encontros internacionais, imersão cultural. Viaje com confiança."
+        },
+        "entrepreneurs": {
+          "title": "Empreendedores",
+          "description": "Clientes internacionais, parceiros estrangeiros, expansão global. Desenvolva seu negócio em qualquer lugar."
+        }
+      }
+    },
+    "cta": {
+      "title": "Pronto para comunicar sem limites?",
+      "subtitle": "Junte-se a milhares de usuários que já quebraram as barreiras linguísticas",
+      "primary": "Começar gratuitamente",
+      "secondary": "Ver preços",
+      "note": "Nenhum cartão de crédito necessário • Teste gratuito de 14 dias"
+    },
+    "footer": {
+      "tagline": "Comunicação sem fronteiras",
+      "product": "Produto",
+      "howItWorks": "Como funciona",
+      "pricing": "Preços",
+      "login": "Entrar",
+      "resources": "Recursos",
+      "documentation": "Documentação",
+      "blog": "Blog",
+      "support": "Suporte",
+      "legal": "Legal",
+      "privacy": "Privacidade",
+      "terms": "Termos",
+      "security": "Segurança",
+      "copyright": "Todos os direitos reservados."
+    }
+  },
+  "ar": {
+    "nav": {
+      "pricing": "الأسعار",
+      "login": "تسجيل الدخول"
+    },
+    "hero": {
+      "title": "تحدث مع العالم،",
+      "titleHighlight": "بدون حواجز",
+      "subtitle": "ترجمة فورية تفهم محادثاتك حقًا. RealTranslate يترجم في الوقت الفعلي حتى تتمكن من التركيز على الأساسيات: التواصل.",
+      "ctaPrimary": "ابدأ مجانًا",
+      "ctaSecondary": "شاهد كيف يعمل",
+      "stats": {
+        "languages": "اللغات المدعومة",
+        "speed": "وقت الترجمة",
+        "availability": "التوفر"
+      }
+    },
+    "what": {
+      "title": "ما هو RealTranslate؟",
+      "description": "منصة اتصالات ذكية تكسر الحواجز اللغوية",
+      "features": {
+        "instant": {
+          "title": "ترجمة فورية",
+          "description": "يتم ترجمة رسائلك في الوقت الفعلي، بدون تأخير ملحوظ. يتكيف الذكاء الاصطناعي مع سياق محادثتك."
+        },
+        "multilingual": {
+          "title": "دردشة متعددة اللغات",
+          "description": "أنشئ مجموعات حيث يتحدث كل عضو بلغته. RealTranslate يترجم تلقائيًا للجميع."
+        },
+        "context": {
+          "title": "سياق ذكي",
+          "description": "يفهم الذكاء الاصطناعي لدينا النبرة والتعابير الاصطلاحية والسياق الثقافي للترجمات الطبيعية."
+        },
+        "security": {
+          "title": "أمان مضمون",
+          "description": "تشفير من طرف إلى طرف. تبقى محادثاتك خاصة وآمنة."
+        }
+      }
+    },
+    "why": {
+      "title": "لماذا RealTranslate؟",
+      "items": {
+        "noMisunderstandings": {
+          "title": "لا مزيد من سوء الفهم",
+          "description": "لا حاجة للنسخ واللصق في مترجم. كل شيء يحدث بشكل طبيعي."
+        },
+        "saveTime": {
+          "title": "وفر الوقت",
+          "description": "ركز على رسالتك، وليس على الترجمة. توفير يصل إلى 80٪ من الوقت."
+        },
+        "workGlobally": {
+          "title": "اعمل عالميًا",
+          "description": "تعاون مع فرق دولية بدون احتكاك لغوي."
+        },
+        "stayNatural": {
+          "title": "ابق طبيعيًا",
+          "description": "تحدث بلغتك الأم. محاوروك أيضًا."
+        }
+      },
+      "stats": {
+        "timeSaved": "من الوقت الموفر في التواصل",
+        "accuracy": "من الدقة السياقية",
+        "barriers": "حاجز لغوي"
+      }
+    },
+    "how": {
+      "title": "كيف يعمل؟",
+      "description": "3 خطوات بسيطة للبدء في التواصل بلا حدود",
+      "steps": {
+        "step1": {
+          "title": "أنشئ حسابك",
+          "description": "سجل في 30 ثانية. اختر لغتك المفضلة."
+        },
+        "step2": {
+          "title": "ادعُ جهات اتصالك",
+          "description": "أضف زملاءك أو أصدقائك أو شركائك. أنشئ مجموعات متعددة اللغات."
+        },
+        "step3": {
+          "title": "تواصل بشكل طبيعي",
+          "description": "اكتب بلغتك. RealTranslate يقوم بالباقي تلقائيًا."
+        }
+      }
+    },
+    "who": {
+      "title": "لمن؟",
+      "description": "RealTranslate يتكيف مع جميع احتياجاتك في التواصل",
+      "personas": {
+        "professionals": {
+          "title": "المهنيون",
+          "description": "فرق دولية، اجتماعات متعددة اللغات، دعم عملاء عالمي. تعاون بدون احتكاك."
+        },
+        "students": {
+          "title": "الطلاب",
+          "description": "مشاريع دولية، تبادلات أكاديمية، تعلم اللغات. ادرس بلا حدود."
+        },
+        "travelers": {
+          "title": "المسافرون",
+          "description": "مرشدون محليون، لقاءات دولية، انغماس ثقافي. سافر بثقة."
+        },
+        "entrepreneurs": {
+          "title": "رواد الأعمال",
+          "description": "عملاء دوليون، شركاء أجانب، توسع عالمي. نمِّ عملك في كل مكان."
+        }
+      }
+    },
+    "cta": {
+      "title": "هل أنت مستعد للتواصل بلا حدود؟",
+      "subtitle": "انضم إلى آلاف المستخدمين الذين كسروا بالفعل الحواجز اللغوية",
+      "primary": "ابدأ مجانًا",
+      "secondary": "عرض الأسعار",
+      "note": "لا حاجة لبطاقة ائتمان • تجربة مجانية لمدة 14 يومًا"
+    },
+    "footer": {
+      "tagline": "التواصل بلا حدود",
+      "product": "المنتج",
+      "howItWorks": "كيف يعمل",
+      "pricing": "الأسعار",
+      "login": "تسجيل الدخول",
+      "resources": "الموارد",
+      "documentation": "الوثائق",
+      "blog": "المدونة",
+      "support": "الدعم",
+      "legal": "القانونية",
+      "privacy": "الخصوصية",
+      "terms": "الشروط",
+      "security": "الأمان",
+      "copyright": "جميع الحقوق محفوظة."
+    }
+  },
+  "ru": {
+    "nav": {
+      "pricing": "Цены",
+      "login": "Войти"
+    },
+    "hero": {
+      "title": "Говорите с миром,",
+      "titleHighlight": "без барьеров",
+      "subtitle": "Мгновенный перевод, который действительно понимает ваши разговоры. RealTranslate переводит в реальном времени, чтобы вы могли сосредоточиться на главном: общении.",
+      "ctaPrimary": "Начать бесплатно",
+      "ctaSecondary": "Как это работает",
+      "stats": {
+        "languages": "Поддерживаемые языки",
+        "speed": "Время перевода",
+        "availability": "Доступность"
+      }
+    },
+    "what": {
+      "title": "Что такое RealTranslate?",
+      "description": "Интеллектуальная платформа связи, разрушающая языковые барьеры",
+      "features": {
+        "instant": {
+          "title": "Мгновенный перевод",
+          "description": "Ваши сообщения переводятся в реальном времени без заметной задержки. ИИ адаптируется к контексту вашего разговора."
+        },
+        "multilingual": {
+          "title": "Многоязычный чат",
+          "description": "Создавайте группы, где каждый член говорит на своем языке. RealTranslate автоматически переводит для всех."
+        },
+        "context": {
+          "title": "Умный контекст",
+          "description": "Наш ИИ понимает тон, идиоматические выражения и культурный контекст для естественных переводов."
+        },
+        "security": {
+          "title": "Гарантированная безопасность",
+          "description": "Сквозное шифрование. Ваши разговоры остаются конфиденциальными и безопасными."
+        }
+      }
+    },
+    "why": {
+      "title": "Почему RealTranslate?",
+      "items": {
+        "noMisunderstandings": {
+          "title": "Больше никаких недоразумений",
+          "description": "Не нужно копировать и вставлять в переводчик. Все происходит естественно."
+        },
+        "saveTime": {
+          "title": "Экономьте время",
+          "description": "Сосредоточьтесь на своем сообщении, а не на переводе. До 80% экономии времени."
+        },
+        "workGlobally": {
+          "title": "Работайте глобально",
+          "description": "Сотрудничайте с международными командами без языковых трений."
+        },
+        "stayNatural": {
+          "title": "Оставайтесь естественными",
+          "description": "Говорите на своем родном языке. Ваши собеседники тоже."
+        }
+      },
+      "stats": {
+        "timeSaved": "времени сэкономлено на общении",
+        "accuracy": "точности с учетом контекста",
+        "barriers": "языковой барьер"
+      }
+    },
+    "how": {
+      "title": "Как это работает?",
+      "description": "3 простых шага, чтобы начать общаться без ограничений",
+      "steps": {
+        "step1": {
+          "title": "Создайте свой аккаунт",
+          "description": "Зарегистрируйтесь за 30 секунд. Выберите предпочитаемый язык."
+        },
+        "step2": {
+          "title": "Пригласите контакты",
+          "description": "Добавьте коллег, друзей или партнеров. Создайте многоязычные группы."
+        },
+        "step3": {
+          "title": "Общайтесь естественно",
+          "description": "Пишите на своем языке. RealTranslate сделает все остальное автоматически."
+        }
+      }
+    },
+    "who": {
+      "title": "Для кого?",
+      "description": "RealTranslate адаптируется ко всем вашим потребностям в общении",
+      "personas": {
+        "professionals": {
+          "title": "Профессионалы",
+          "description": "Международные команды, многоязычные встречи, глобальная поддержка клиентов. Сотрудничайте без трений."
+        },
+        "students": {
+          "title": "Студенты",
+          "description": "Международные проекты, академические обмены, изучение языков. Учитесь без ограничений."
+        },
+        "travelers": {
+          "title": "Путешественники",
+          "description": "Местные гиды, международные встречи, культурное погружение. Путешествуйте с уверенностью."
+        },
+        "entrepreneurs": {
+          "title": "Предприниматели",
+          "description": "Международные клиенты, иностранные партнеры, глобальная экспансия. Развивайте свой бизнес повсюду."
+        }
+      }
+    },
+    "cta": {
+      "title": "Готовы общаться без ограничений?",
+      "subtitle": "Присоединяйтесь к тысячам пользователей, которые уже разрушили языковые барьеры",
+      "primary": "Начать бесплатно",
+      "secondary": "Посмотреть цены",
+      "note": "Кредитная карта не требуется • Бесплатная пробная версия на 14 дней"
+    },
+    "footer": {
+      "tagline": "Общение без границ",
+      "product": "Продукт",
+      "howItWorks": "Как это работает",
+      "pricing": "Цены",
+      "login": "Войти",
+      "resources": "Ресурсы",
+      "documentation": "Документация",
+      "blog": "Блог",
+      "support": "Поддержка",
+      "legal": "Правовая информация",
+      "privacy": "Конфиденциальность",
+      "terms": "Условия",
+      "security": "Безопасность",
+      "copyright": "Все права защищены."
+    }
+  }
+}

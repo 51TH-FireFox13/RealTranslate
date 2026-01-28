@@ -394,6 +394,7 @@ const UI_TRANSLATIONS = {
     // Pricing
     'pricing-subtitle': 'Choisissez le plan adapté à vos besoins',
     'pricing-free-title': 'GRATUIT',
+    'pricing-personnel-title': 'PERSONNEL',
     'pricing-premium-title': 'PREMIUM',
     'pricing-enterprise-title': 'ENTERPRISE',
     'pricing-per-month': '/mois',
@@ -482,6 +483,7 @@ const UI_TRANSLATIONS = {
     // Pricing
     'pricing-subtitle': 'Choose the plan that fits your needs',
     'pricing-free-title': 'FREE',
+    'pricing-personnel-title': 'PERSONAL',
     'pricing-premium-title': 'PREMIUM',
     'pricing-enterprise-title': 'ENTERPRISE',
     'pricing-per-month': '/month',
@@ -570,6 +572,7 @@ const UI_TRANSLATIONS = {
     // Pricing
     'pricing-subtitle': '选择适合您需求的套餐',
     'pricing-free-title': '免费',
+    'pricing-personnel-title': '个人',
     'pricing-premium-title': '高级',
     'pricing-enterprise-title': '企业',
     'pricing-per-month': '/月',
@@ -605,6 +608,7 @@ const UI_TRANSLATIONS = {
     // Pricing
     'pricing-subtitle': 'Wählen Sie den Plan, der Ihren Bedürfnissen entspricht',
     'pricing-free-title': 'KOSTENLOS',
+    'pricing-personnel-title': 'PERSÖNLICH',
     'pricing-premium-title': 'PREMIUM',
     'pricing-enterprise-title': 'ENTERPRISE',
     'pricing-per-month': '/Monat',
@@ -640,6 +644,7 @@ const UI_TRANSLATIONS = {
     // Pricing
     'pricing-subtitle': 'Elija el plan que se adapte a sus necesidades',
     'pricing-free-title': 'GRATIS',
+    'pricing-personnel-title': 'PERSONAL',
     'pricing-premium-title': 'PREMIUM',
     'pricing-enterprise-title': 'ENTERPRISE',
     'pricing-per-month': '/mes',
@@ -675,6 +680,7 @@ const UI_TRANSLATIONS = {
     // Pricing
     'pricing-subtitle': 'Scegli il piano più adatto alle tue esigenze',
     'pricing-free-title': 'GRATUITO',
+    'pricing-personnel-title': 'PERSONALE',
     'pricing-premium-title': 'PREMIUM',
     'pricing-enterprise-title': 'ENTERPRISE',
     'pricing-per-month': '/mese',
@@ -710,6 +716,7 @@ const UI_TRANSLATIONS = {
     // Pricing
     'pricing-subtitle': 'Escolha o plano que se adapta às suas necessidades',
     'pricing-free-title': 'GRATUITO',
+    'pricing-personnel-title': 'PESSOAL',
     'pricing-premium-title': 'PREMIUM',
     'pricing-enterprise-title': 'ENTERPRISE',
     'pricing-per-month': '/mês',
@@ -804,7 +811,10 @@ function checkAuth() {
 // Afficher l'application
 function showApp() {
   elements.loginContainer.classList.add('hidden');
+
+  // Afficher mainApp
   elements.mainApp.classList.remove('hidden');
+
   elements.userInfo.textContent = state.user.email;
 
   // Afficher le bouton admin si c'est un admin
@@ -819,11 +829,50 @@ function showApp() {
   // Demander la permission pour les notifications
   requestNotificationPermission();
 
-  // Initialiser la sélection de langues
-  initLanguageSelection();
+  // Vérifier si l'utilisateur a déjà sélectionné ses langues et son mode
+  const savedLang1 = localStorage.getItem('lang1');
+  const savedLang2 = localStorage.getItem('lang2');
+  const savedInterfaceMode = localStorage.getItem('interface_mode');
+
+  if (savedLang1 && savedLang2 && savedInterfaceMode) {
+    // L'utilisateur a déjà tout configuré, aller directement au mode
+    state.lang1 = savedLang1;
+    state.lang2 = savedLang2;
+
+    if (savedInterfaceMode === 'translation') {
+      startTranslation();
+    } else if (savedInterfaceMode === 'communication') {
+      startCommunication();
+    } else {
+      // Fallback: afficher interfaceChoice
+      showInterfaceChoiceFromApp();
+    }
+  } else {
+    // Première utilisation ou pas de config sauvegardée
+    // Afficher interfaceChoice (menu principal)
+    showInterfaceChoiceFromApp();
+  }
 
   // Charger les statuts des utilisateurs
   fetchUserStatuses();
+}
+
+// Afficher interfaceChoice (menu principal) depuis l'app
+function showInterfaceChoiceFromApp() {
+  // Masquer tous les écrans
+  document.getElementById('languageSelection').classList.add('hidden');
+  document.getElementById('communicationHome').classList.add('hidden');
+
+  // Afficher interfaceChoice (2 cartes)
+  document.getElementById('interfaceChoice').classList.remove('hidden');
+
+  // Afficher le bouton admin si nécessaire
+  const adminBtn = document.getElementById('adminAccessBtn');
+  if (adminBtn && state.user && state.user.role === 'admin') {
+    adminBtn.style.display = 'inline-block';
+  } else if (adminBtn) {
+    adminBtn.style.display = 'none';
+  }
 }
 
 // ===================================
@@ -1122,19 +1171,27 @@ async function loadUsers() {
       const subscription = user.subscription || { tier: 'free', status: 'active' };
       const tierColors = {
         free: '#888',
+        personnel: '#4a9eff',
         premium: '#ffd43b',
         enterprise: '#00ff9d'
       };
       const tierIcons = {
         free: '🆓',
+        personnel: '👤',
         premium: '⭐',
         enterprise: '💎'
       };
 
+      const isProtected = user.email === 'admin@realtranslate.com';
+      const canChangeRole = !isProtected && !isCurrentUser;
+
       html += `
         <tr>
           <td>${user.email} ${isCurrentUser ? '<span style="color: #00ff9d;">(vous)</span>' : ''}</td>
-          <td><span class="role-badge ${user.role}">${user.role}</span></td>
+          <td>
+            <span class="role-badge ${user.role}">${user.role}</span>
+            ${canChangeRole ? `<button onclick="toggleUserRole('${user.email}', '${user.role}')" style="margin-left: 8px; background: rgba(0,255,157,0.2); border: 1px solid #00ff9d; color: #00ff9d; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75em;" title="Changer le rôle">🔄</button>` : ''}
+          </td>
           <td>
             <span style="color: ${tierColors[subscription.tier] || '#888'};">
               ${tierIcons[subscription.tier] || '🆓'} ${subscription.tier.toUpperCase()}
@@ -1145,7 +1202,7 @@ async function loadUsers() {
             <button
               class="delete-user-btn"
               onclick="deleteUser('${user.email}')"
-              ${isCurrentUser ? 'disabled title="Vous ne pouvez pas vous supprimer"' : ''}>
+              ${isCurrentUser || isProtected ? 'disabled title="' + (isCurrentUser ? 'Vous ne pouvez pas vous supprimer' : 'Compte protégé') + '"' : ''}>
               🗑️ Supprimer
             </button>
           </td>
@@ -1253,6 +1310,40 @@ async function deleteUser(email) {
   }
 }
 
+// Changer le rôle d'un utilisateur (admin <-> user)
+async function toggleUserRole(email, currentRole) {
+  const newRole = currentRole === 'admin' ? 'user' : 'admin';
+  const roleText = newRole === 'admin' ? 'administrateur' : 'utilisateur';
+
+  if (!confirm(`Voulez-vous changer le rôle de ${email} vers ${roleText} ?`)) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/users/${encodeURIComponent(email)}/role`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({ role: newRole })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Erreur lors du changement de rôle');
+    }
+
+    showAdminMessage(`✅ Rôle de ${email} changé vers ${roleText}`, 'success');
+    await loadUsers();
+
+  } catch (error) {
+    console.error('Erreur changement rôle:', error);
+    showAdminMessage(`❌ ${error.message}`, 'error');
+  }
+}
+
 // Afficher un message dans le panneau admin
 function showAdminMessage(message, type) {
   const messageDiv = document.getElementById('adminMessage');
@@ -1274,10 +1365,11 @@ function switchAdminTab(tab) {
   // Masquer tous les onglets
   document.getElementById('adminTabUsers').style.display = 'none';
   document.getElementById('adminTabSubscriptions').style.display = 'none';
+  document.getElementById('adminTabGroups').style.display = 'none';
   document.getElementById('adminTabLogs').style.display = 'none';
 
   // Réinitialiser les styles des boutons
-  const buttons = ['tabUsers', 'tabSubscriptions', 'tabLogs'];
+  const buttons = ['tabUsers', 'tabSubscriptions', 'tabGroups', 'tabLogs'];
   buttons.forEach(btnId => {
     const btn = document.getElementById(btnId);
     btn.style.background = 'rgba(255,255,255,0.1)';
@@ -1296,6 +1388,11 @@ function switchAdminTab(tab) {
     document.getElementById('tabSubscriptions').style.background = '#00ff9d';
     document.getElementById('tabSubscriptions').style.color = '#000';
     document.getElementById('tabSubscriptions').style.fontWeight = 'bold';
+  } else if (tab === 'groups') {
+    document.getElementById('adminTabGroups').style.display = 'block';
+    document.getElementById('tabGroups').style.background = '#00ff9d';
+    document.getElementById('tabGroups').style.color = '#000';
+    document.getElementById('tabGroups').style.fontWeight = 'bold';
   } else if (tab === 'logs') {
     document.getElementById('adminTabLogs').style.display = 'block';
     document.getElementById('tabLogs').style.background = '#00ff9d';
@@ -1349,6 +1446,161 @@ function switchProfileTab(tab) {
 
 // ===================================
 // VISUALISATION DES LOGS
+// ===================================
+
+// ===================================
+// ADMIN - GESTION DES GROUPES
+// ===================================
+
+// Charger tous les groupes (admin only)
+async function loadAllGroupsAdmin() {
+  const container = document.getElementById('adminGroupsContainer');
+  const filterType = document.getElementById('groupFilterType').value;
+
+  try {
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #888;">Chargement...</div>';
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/groups`, {
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors du chargement');
+    }
+
+    const data = await response.json();
+    let groupsToDisplay = data.groups || [];
+
+    // Appliquer le filtre
+    if (filterType === 'public') {
+      groupsToDisplay = groupsToDisplay.filter(g => g.visibility === 'public');
+    } else if (filterType === 'private') {
+      groupsToDisplay = groupsToDisplay.filter(g => g.visibility === 'private');
+    }
+
+    // Mettre à jour les statistiques
+    const totalGroups = data.groups.length;
+    const publicGroups = data.groups.filter(g => g.visibility === 'public').length;
+    const privateGroups = data.groups.filter(g => g.visibility === 'private').length;
+    const totalMembers = data.groups.reduce((sum, g) => sum + g.memberCount, 0);
+
+    document.getElementById('totalGroupsCount').textContent = totalGroups;
+    document.getElementById('publicGroupsCount').textContent = publicGroups;
+    document.getElementById('privateGroupsCount').textContent = privateGroups;
+    document.getElementById('totalMembersCount').textContent = totalMembers;
+
+    // Afficher les groupes
+    displayAdminGroups(groupsToDisplay);
+
+  } catch (error) {
+    console.error('Error loading groups:', error);
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ff6b6b;">❌ Erreur lors du chargement des groupes</div>';
+  }
+}
+
+// Afficher les groupes dans l'interface admin
+function displayAdminGroups(groups) {
+  const container = document.getElementById('adminGroupsContainer');
+
+  if (groups.length === 0) {
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #888;">Aucun groupe trouvé</div>';
+    return;
+  }
+
+  container.innerHTML = groups.map(group => {
+    const visibilityIcon = group.visibility === 'public' ? '🌐' : '🔒';
+    const createdDate = new Date(group.createdAt).toLocaleDateString('fr-FR');
+
+    return `
+      <div style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px; margin-bottom: 10px; border-left: 4px solid ${group.visibility === 'public' ? '#00ff9d' : '#64b4ff'};">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+          <div style="flex: 1;">
+            <div style="font-weight: bold; color: #fff; font-size: 1.1em; margin-bottom: 5px;">
+              ${visibilityIcon} ${group.name}
+            </div>
+            <div style="color: #888; font-size: 0.9em;">
+              <span>👤 Créateur: ${group.creator}</span>
+              <span style="margin-left: 15px;">👥 ${group.memberCount} membre(s)</span>
+              <span style="margin-left: 15px;">📅 ${createdDate}</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button onclick="viewGroupDetails('${group.id}')" style="padding: 8px 15px; background: rgba(100,180,255,0.2); border: 1px solid #64b4ff; color: #64b4ff; border-radius: 6px; cursor: pointer; font-size: 0.9em; transition: all 0.2s;" onmouseover="this.style.background='rgba(100,180,255,0.3)'" onmouseout="this.style.background='rgba(100,180,255,0.2)'">
+              📊 Détails
+            </button>
+            <button onclick="deleteGroupAdmin('${group.id}', '${group.name.replace(/'/g, "\\'")}'))" style="padding: 8px 15px; background: rgba(255,107,107,0.2); border: 1px solid #ff6b6b; color: #ff6b6b; border-radius: 6px; cursor: pointer; font-size: 0.9em; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,107,107,0.3)'" onmouseout="this.style.background='rgba(255,107,107,0.2)'">
+              🗑️ Supprimer
+            </button>
+          </div>
+        </div>
+        <div style="font-size: 0.85em; color: #aaa;">
+          ID: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px; font-family: monospace;">${group.id}</code>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Voir les détails d'un groupe (admin)
+async function viewGroupDetails(groupId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/groups/${groupId}`, {
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors du chargement');
+    }
+
+    const data = await response.json();
+    const group = data.group;
+
+    // Afficher les détails dans une alerte formatée
+    const membersList = group.members.map(m => `  - ${m.displayName || m.name} (${m.email})`).join('\n');
+
+    alert(`Détails du groupe: ${group.name}\n\nID: ${group.id}\nVisibilité: ${group.visibility === 'public' ? '🌐 Public' : '🔒 Privé'}\nCréateur: ${group.creator}\nDate de création: ${new Date(group.createdAt).toLocaleString('fr-FR')}\n\nMembres (${group.members.length}):\n${membersList}\n\nMessages: ${group.messageCount || 0}`);
+
+  } catch (error) {
+    console.error('Error loading group details:', error);
+    alert('❌ Erreur lors du chargement des détails du groupe');
+  }
+}
+
+// Supprimer un groupe (admin)
+async function deleteGroupAdmin(groupId, groupName) {
+  if (!confirm(`⚠️ Êtes-vous sûr de vouloir supprimer le groupe "${groupName}" ?\n\nCette action est irréversible et supprimera:\n- Le groupe\n- Tous les messages du groupe\n- L'accès pour tous les membres`)) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/groups/${groupId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert(`✅ Groupe "${groupName}" supprimé avec succès`);
+      loadAllGroupsAdmin(); // Recharger la liste
+    } else {
+      alert(`❌ ${data.error}`);
+    }
+
+  } catch (error) {
+    console.error('Error deleting group:', error);
+    alert('❌ Erreur lors de la suppression du groupe');
+  }
+}
+
+// ===================================
+// LOGS SYSTEM
 // ===================================
 
 // Variable globale pour stocker les logs actuels (pour export)
@@ -2566,6 +2818,28 @@ function selectLang2(langCode) {
 // NAVIGATION ENTRE LES ÉCRANS (Étapes B et C)
 // ===================================
 
+// Sauvegarder la préférence de langue sur le serveur
+async function saveLanguagePreferenceToServer(language) {
+  if (!state.user) return;
+
+  try {
+    const response = await fetch('/api/profile/language', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({ language })
+    });
+
+    if (!response.ok) {
+      console.error('Failed to save language preference to server');
+    }
+  } catch (error) {
+    console.error('Error saving language preference:', error);
+  }
+}
+
 // Afficher l'écran de choix d'interface (Étape C)
 function showInterfaceChoice() {
   if (!state.lang1 || !state.lang2) return;
@@ -2573,6 +2847,19 @@ function showInterfaceChoice() {
   // Sauvegarder les langues dans localStorage
   localStorage.setItem('lang1', state.lang1);
   localStorage.setItem('lang2', state.lang2);
+
+  // Sauvegarder lang1 (langue préférée) sur le serveur si l'utilisateur est connecté
+  if (state.user) {
+    saveLanguagePreferenceToServer(state.lang1);
+  }
+
+  // Afficher le bouton Admin uniquement pour les admins
+  const adminBtn = document.getElementById('adminAccessBtn');
+  if (adminBtn && state.user && state.user.role === 'admin') {
+    adminBtn.style.display = 'inline-block';
+  } else if (adminBtn) {
+    adminBtn.style.display = 'none';
+  }
 
   // Masquer la sélection de langues et afficher le choix d'interface
   document.getElementById('languageSelection').classList.add('hidden');
@@ -2590,12 +2877,24 @@ function selectInterfaceMode(mode) {
   // Sauvegarder le mode choisi
   localStorage.setItem('interface_mode', mode);
 
-  if (mode === 'translation') {
-    // Mode Traduction Simple
-    startTranslation();
-  } else if (mode === 'communication') {
-    // Mode Communication (Groupes/DMs)
-    startCommunication();
+  // Vérifier si les langues sont déjà configurées
+  const savedLang1 = localStorage.getItem('lang1');
+  const savedLang2 = localStorage.getItem('lang2');
+
+  if (savedLang1 && savedLang2 && LANGUAGES[savedLang1] && LANGUAGES[savedLang2]) {
+    // Langues déjà configurées, lancer directement le mode
+    state.lang1 = savedLang1;
+    state.lang2 = savedLang2;
+
+    if (mode === 'translation') {
+      startTranslation();
+    } else if (mode === 'communication') {
+      startCommunication();
+    }
+  } else {
+    // Langues pas encore configurées, afficher la sélection de langues d'abord
+    document.getElementById('interfaceChoice').classList.add('hidden');
+    document.getElementById('languageSelection').classList.remove('hidden');
   }
 }
 
@@ -2612,6 +2911,13 @@ function startTranslation() {
 
   // Initialiser le mode switch UI pour refléter le mode par défaut (PTT)
   initializeModeUI();
+
+  // Initialiser les dots indicateurs (mobile)
+  setTimeout(() => {
+    if (typeof initPageIndicators === 'function') {
+      initPageIndicators();
+    }
+  }, 100);
 
   // Demander la permission microphone
   setTimeout(() => {
@@ -2697,7 +3003,7 @@ function displayCommunicationGroups(groups) {
   const container = document.getElementById('commGroupsList');
 
   if (groups.length === 0) {
-    container.innerHTML = '<p style="color: #888; padding: 20px 0;">Aucun groupe pour le moment.<br>Créez votre premier groupe ou rejoignez-en un !</p>';
+    container.innerHTML = '<p class="comm-empty-message">Aucun groupe pour le moment.<br>Créez votre premier groupe ou rejoignez-en un !</p>';
     return;
   }
 
@@ -2713,15 +3019,15 @@ function displayCommunicationGroups(groups) {
     const visibilityText = group.visibility === 'public' ? 'Public' : 'Privé';
 
     return `
-      <div style="position: relative; background: rgba(255,255,255,0.08); padding: 16px; border-radius: 12px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1);" onclick="openGroupChat('${group.id}')" onmouseover="this.style.background='rgba(255,255,255,0.15)'; this.style.borderColor='rgba(0,255,157,0.3)';" onmouseout="this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.1)';">
+      <div class="comm-group-item" onclick="openGroupChat('${group.id}')">
         ${badgeHTML}
-        <div style="color: #fff; font-weight: bold; font-size: 1.1em; margin-bottom: 8px;">
+        <div class="group-name">
           <span title="${visibilityText}">${visibilityIcon}</span> ${group.name}
         </div>
-        <div style="color: #888; font-size: 0.9em; margin-bottom: 4px;">
+        <div class="group-info">
           👥 ${group.members.length} membre${group.members.length > 1 ? 's' : ''}
         </div>
-        <div style="color: #666; font-size: 0.85em;">
+        <div class="group-date">
           📅 Créé le ${new Date(group.createdAt).toLocaleDateString()}
         </div>
       </div>
@@ -2734,7 +3040,7 @@ function displayCommunicationDMs(conversations) {
   const container = document.getElementById('commDMsList');
 
   if (conversations.length === 0) {
-    container.innerHTML = '<p style="color: #888; padding: 20px 0;">Aucune conversation.<br>Envoyez un message à un ami pour démarrer !</p>';
+    container.innerHTML = '<p class="comm-empty-message">Aucune conversation.<br>Envoyez un message à un ami pour démarrer !</p>';
     return;
   }
 
@@ -2745,18 +3051,18 @@ function displayCommunicationDMs(conversations) {
     const onlineIndicator = getOnlineIndicator(conv.otherUser.email);
 
     return `
-      <div onclick="openDMChat('${conv.otherUser.email}')" style="padding: 16px; background: rgba(255,255,255,0.08); border-radius: 12px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1);" onmouseover="this.style.background='rgba(255,255,255,0.15)'; this.style.borderColor='rgba(100,180,255,0.3)';" onmouseout="this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.1)';">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 50px; height: 50px; position: relative; flex-shrink: 0;">
+      <div class="comm-dm-item" onclick="openDMChat('${conv.otherUser.email}')">
+        <div class="dm-container">
+          <div class="dm-avatar">
             ${generateAvatarHTML(conv.otherUser, 50)}
           </div>
-          <div style="flex: 1; min-width: 0;">
-            <div style="font-weight: bold; color: #fff; margin-bottom: 4px; display: flex; align-items: center; font-size: 1.05em;">
+          <div class="dm-content">
+            <div class="dm-name">
               ${onlineIndicator}${conv.otherUser.displayName}
             </div>
-            <div style="color: #888; font-size: 0.9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lastMsgText}</div>
+            <div class="dm-message">${lastMsgText}</div>
           </div>
-          <div style="color: #888; font-size: 0.85em; white-space: nowrap;">${lastMsgTime}</div>
+          <div class="dm-time">${lastMsgTime}</div>
         </div>
       </div>
     `;
@@ -2765,14 +3071,30 @@ function displayCommunicationDMs(conversations) {
 
 // Afficher les paramètres de communication
 function showCommunicationSettings() {
-  // Afficher le panneau des paramètres (réutilise le panneau existant)
-  showSettingsPanel();
+  // Afficher le panneau de profil qui contient les paramètres
+  showProfilePanel();
 }
 
 // Réinitialiser le choix d'interface (retour à l'écran de sélection)
 function resetInterfaceChoice() {
   // Masquer l'interface Communication Home
   document.getElementById('communicationHome').classList.add('hidden');
+
+  // Masquer tous les panneaux et modales de l'interface de traduction
+  const panelsToHide = [
+    'groupChatPanel', 'dmChatPanel', 'groupsPanel', 'dmsPanel',
+    'friendsPanel', 'profilePanel', 'adminPanel', 'settingsPanel',
+    'permissionModal'
+  ];
+  panelsToHide.forEach(panelId => {
+    const panel = document.getElementById(panelId);
+    if (panel) panel.classList.add('hidden');
+  });
+
+  // Arrêter l'enregistrement audio si actif
+  if (state.isRecording) {
+    stopRecording();
+  }
 
   // Effacer le choix d'interface du localStorage
   localStorage.removeItem('interface_mode');
@@ -2859,17 +3181,52 @@ function showPricingPage() {
 
 function hidePricingPage() {
   document.getElementById('pricingPage').classList.add('hidden');
-  document.getElementById('languageSelection').classList.remove('hidden');
+  document.getElementById('interfaceChoice').classList.remove('hidden');
 }
 
-function subscribePlan(tier) {
-  // Rediriger vers la page de paiement appropriée
-  const region = detectUserRegion();
+async function subscribePlan(tier) {
+  // Vérifier que l'utilisateur est connecté
+  if (!state.user) {
+    alert('Veuillez vous connecter pour souscrire à un abonnement.');
+    return;
+  }
 
-  if (region === 'asia') {
-    alert('WeChat Pay: Fonctionnalité en cours d\'implémentation.\nVeuillez contacter l\'administrateur.');
-  } else {
-    alert('PayPal: Fonctionnalité en cours d\'implémentation.\nVeuillez contacter l\'administrateur.');
+  try {
+    // Afficher un indicateur de chargement
+    const button = event?.target;
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Chargement...';
+    }
+
+    // Créer une session Checkout Stripe
+    const response = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      },
+      body: JSON.stringify({ tier })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.url) {
+      // Rediriger vers Stripe Checkout
+      window.location.href = data.url;
+    } else {
+      throw new Error(data.error || 'Échec de la création de la session de paiement');
+    }
+  } catch (error) {
+    console.error('Erreur lors de la souscription:', error);
+    alert('Erreur: ' + error.message);
+
+    // Réinitialiser le bouton
+    const button = event?.target;
+    if (button) {
+      button.disabled = false;
+      button.textContent = 'S\'abonner';
+    }
   }
 }
 
@@ -3297,26 +3654,23 @@ function analyzeVolume() {
   return rms;
 }
 
-// Mettre à jour le VU-mètre visuel
+// Mettre à jour le VU-mètre visuel (ligne horizontale)
 function updateVUMeter(volume) {
   const vuMeter = document.getElementById('vuMeter');
   if (!vuMeter) return;
 
-  // Convertir le volume (0-1) en niveau de barres (0-10)
-  const level = Math.min(10, Math.floor(volume * 1000));
+  // Convertir le volume (0-1) en pourcentage (0-100%)
+  const volumePercent = Math.min(100, volume * 1000);
 
-  // Mettre à jour chaque barre
-  const bars = vuMeter.querySelectorAll('.vu-meter-bar');
-  bars.forEach((bar, index) => {
-    const barLevel = index + 1;
-    if (barLevel <= level) {
-      bar.classList.add('active');
-      bar.style.height = '100%';
-    } else {
-      bar.classList.remove('active');
-      bar.style.height = '0%';
-    }
-  });
+  // Mettre à jour la largeur de la barre via une variable CSS
+  vuMeter.style.setProperty('--vu-width', `${volumePercent}%`);
+
+  // Animer si le volume est détecté
+  if (volumePercent > 10) {
+    vuMeter.classList.add('active');
+  } else {
+    vuMeter.classList.remove('active');
+  }
 }
 
 // Détection automatique de la voix (VAD Loop)
@@ -3824,8 +4178,8 @@ async function showProfilePanel() {
       const sub = data.subscription;
 
       // Afficher le palier
-      const tierIcons = { free: '🆓', premium: '⭐', enterprise: '💎', admin: '👑' };
-      const tierNames = { free: 'Gratuit', premium: 'Premium', enterprise: 'Enterprise', admin: 'Admin' };
+      const tierIcons = { free: '🆓', personnel: '👤', premium: '⭐', enterprise: '💎', admin: '👑' };
+      const tierNames = { free: 'Gratuit', personnel: 'Personnel', premium: 'Premium', enterprise: 'Enterprise', admin: 'Admin' };
       document.getElementById('profileTier').textContent =
         `${tierIcons[sub.tier] || '📦'} ${tierNames[sub.tier] || sub.tier.toUpperCase()}`;
 
@@ -4070,10 +4424,8 @@ window.addEventListener('load', () => {
   console.log(`🌐 Langue détectée: ${currentUILang}`);
 
   // Vérifier si l'utilisateur est déjà connecté
-  if (!checkAuth()) {
-    // Afficher l'écran de connexion
-    elements.loginContainer.classList.remove('hidden');
-  }
+  // Si pas de token, la page de connexion est déjà visible par défaut
+  checkAuth();
 });
 
 // Gestion du réveil de l'application (mobile/iOS)
@@ -4374,14 +4726,7 @@ let groupsData = {
 };
 
 function showGroupsPanel() {
-  // Si en mode Communication, retourner à la page d'accueil Communication
-  const interfaceMode = localStorage.getItem('interface_mode');
-  if (interfaceMode === 'communication') {
-    backToCommunicationHome();
-    return;
-  }
-
-  // Sinon, afficher le panneau latéral traditionnel
+  // En mode Communication ou non, afficher le panneau latéral
   document.getElementById('groupsPanel').classList.remove('hidden');
   loadGroupsData();
 }
@@ -4400,10 +4745,10 @@ let currentDMMessages = [];
 
 // Afficher le panneau des DMs
 function showDMsPanel() {
-  // Si en mode Communication, retourner à la page d'accueil Communication
+  // Si en mode Communication, ouvrir la modal de sélection d'utilisateur
   const interfaceMode = localStorage.getItem('interface_mode');
   if (interfaceMode === 'communication') {
-    backToCommunicationHome();
+    showNewDMModal();
     return;
   }
 
@@ -4415,6 +4760,85 @@ function showDMsPanel() {
 // Fermer le panneau des DMs
 function closeDMsPanel() {
   document.getElementById('dmsPanel').classList.add('hidden');
+}
+
+// Afficher la modal de sélection d'utilisateur pour nouveau DM
+function showNewDMModal() {
+  document.getElementById('newDMModal').classList.remove('hidden');
+  loadUsersList();
+}
+
+// Fermer la modal de sélection d'utilisateur
+function closeNewDMModal() {
+  document.getElementById('newDMModal').classList.add('hidden');
+}
+
+// Charger la liste des utilisateurs pour nouveau DM
+async function loadUsersList() {
+  const content = document.getElementById('userSelectionContent');
+
+  try {
+    content.innerHTML = '<div style="text-align: center; padding: 20px;">Chargement...</div>';
+
+    const response = await fetch(`${API_BASE_URL}/api/users/list`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to load users');
+    }
+
+    const data = await response.json();
+
+    if (data.users.length === 0) {
+      content.innerHTML = '<div style="text-align: center; padding: 20px; color: #888;">Aucun utilisateur disponible</div>';
+      return;
+    }
+
+    // Afficher la liste des utilisateurs
+    let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
+
+    for (const user of data.users) {
+      const avatarUrl = user.avatar || '/icon-192.png';
+      const roleIcon = user.role === 'admin' ? '👑' : '';
+
+      html += `
+        <div style="display: flex; align-items: center; gap: 15px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; transition: background 0.2s;"
+             onclick="startDMWithUser('${user.email}')"
+             onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+             onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+          <img src="${avatarUrl}" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+          <div style="flex: 1;">
+            <div style="font-weight: bold; color: var(--accent-primary);">${roleIcon} ${user.name}</div>
+            <div style="font-size: 0.85em; color: #888;">${user.email}</div>
+          </div>
+          <div style="color: var(--accent-secondary); font-size: 1.2em;">→</div>
+        </div>
+      `;
+    }
+
+    html += '</div>';
+    content.innerHTML = html;
+
+  } catch (error) {
+    logger.error('Error loading users list', error);
+    content.innerHTML = '<div style="text-align: center; padding: 20px; color: #f44;">Erreur lors du chargement des utilisateurs</div>';
+  }
+}
+
+// Démarrer une conversation DM avec un utilisateur
+async function startDMWithUser(recipientEmail) {
+  try {
+    // Fermer la modal
+    closeNewDMModal();
+
+    // Ouvrir le chat DM avec cet utilisateur
+    await openDMChat(recipientEmail);
+
+  } catch (error) {
+    console.error('Error starting DM', error);
+    alert('Erreur lors du démarrage de la conversation');
+  }
 }
 
 // Charger les conversations DM
@@ -4926,7 +5350,7 @@ function archiveCurrentDM() {
 
   // Générer le conversationId (même logique que le backend)
   const emails = [state.user.email, currentDMUser.email].sort();
-  const conversationId = emails.join('_');
+  const conversationId = emails.join('|||');
 
   archiveDM(conversationId);
 }
@@ -5702,3 +6126,99 @@ window.addEventListener('beforeinstallprompt', (e) => {
   console.log('💡 Installation PWA disponible');
   // On pourrait afficher un bouton "Installer l'app" ici
 });
+
+// ===================================
+// GESTION DU RETOUR STRIPE CHECKOUT
+// ===================================
+
+// Vérifier les paramètres URL pour les retours Stripe
+function checkStripePaymentStatus() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const paymentStatus = urlParams.get('payment');
+  const sessionId = urlParams.get('session_id');
+
+  if (paymentStatus === 'success' && sessionId) {
+    // Paiement réussi
+    console.log('✅ Paiement Stripe réussi, session:', sessionId);
+
+    // Afficher un message de succès
+    setTimeout(() => {
+      alert('✅ Paiement réussi ! Votre abonnement a été activé.\n\nMerci de votre confiance ! 🎉');
+
+      // Nettoyer l'URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      // Recharger les informations utilisateur
+      if (currentUser) {
+        loadUserInfo();
+      }
+    }, 500);
+  } else if (paymentStatus === 'cancelled') {
+    // Paiement annulé
+    console.log('❌ Paiement Stripe annulé');
+
+    setTimeout(() => {
+      alert('❌ Paiement annulé.\n\nVous pouvez réessayer à tout moment depuis la page des tarifs.');
+
+      // Nettoyer l'URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }, 500);
+  }
+}
+
+// Appeler au chargement de la page
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', checkStripePaymentStatus);
+} else {
+  checkStripePaymentStatus();
+}
+
+// ===================================
+// GESTION DES DOTS INDICATEURS (MOBILE)
+// ===================================
+
+// Initialiser la gestion des dots pour le scroll horizontal mobile
+function initPageIndicators() {
+  const container = document.querySelector('.container');
+  const dots = document.querySelectorAll('.page-dot');
+
+  if (!container || !dots.length) return;
+
+  // Mettre à jour les dots en fonction du scroll
+  function updateDots() {
+    const scrollLeft = container.scrollLeft;
+    const containerWidth = container.offsetWidth;
+    const currentPage = Math.round(scrollLeft / containerWidth);
+
+    dots.forEach((dot, index) => {
+      if (index === currentPage) {
+        dot.classList.add('active');
+      } else {
+        dot.classList.remove('active');
+      }
+    });
+  }
+
+  // Écouter le scroll
+  container.addEventListener('scroll', updateDots);
+
+  // Permettre de cliquer sur les dots pour naviguer
+  dots.forEach((dot, index) => {
+    dot.addEventListener('click', () => {
+      const containerWidth = container.offsetWidth;
+      container.scrollTo({
+        left: index * containerWidth,
+        behavior: 'smooth'
+      });
+    });
+  });
+}
+
+// Initialiser au chargement et après connexion
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(initPageIndicators, 100);
+  });
+} else {
+  setTimeout(initPageIndicators, 100);
+}

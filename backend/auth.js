@@ -665,10 +665,32 @@ class AuthManager {
 
     // Vérifier si demande déjà envoyée
     if (!toUser.friendRequests) toUser.friendRequests = [];
+    if (!fromUser.friendRequests) fromUser.friendRequests = [];
 
     const existingRequest = toUser.friendRequests.find(req => req.from === fromEmail);
     if (existingRequest) {
       return { success: false, message: 'Demande d\'ami déjà envoyée' };
+    }
+
+    // CORRECTION: Vérifier si demande croisée (TO a déjà envoyé une demande à FROM)
+    const crossRequest = fromUser.friendRequests.find(req => req.from === toEmail);
+    if (crossRequest) {
+      // Demande croisée détectée : les deux veulent être amis
+      // Supprimer la demande existante
+      fromUser.friendRequests = fromUser.friendRequests.filter(req => req.from !== toEmail);
+
+      // Ajouter comme amis mutuellement
+      if (!fromUser.friends.includes(toEmail)) {
+        fromUser.friends.push(toEmail);
+      }
+      if (!toUser.friends.includes(fromEmail)) {
+        toUser.friends.push(fromEmail);
+      }
+
+      this.saveUsers();
+      logger.auth('Friend request auto-accepted (cross-request)', fromEmail, true, { to: toEmail });
+
+      return { success: true, message: 'Demande acceptée automatiquement', autoAccepted: true };
     }
 
     // Ajouter la demande

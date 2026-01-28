@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RealTranslate - Brisez les barrières linguistiques en temps réel</title>
+  <meta name="description" content="Communiquez sans limites avec RealTranslate. Traduction instantanée et fluide pour vos conversations, messages et appels.">
+  <link rel="stylesheet" href="landing.css">
+  <link rel="manifest" href="/manifest.json">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="14" stroke="url(#gradient)" stroke-width="2"/>
+          <path d="M10 16L14 20L22 12" stroke="url(#gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+              <stop offset="0%" stop-color="#00ff9d"/>
+              <stop offset="100%" stop-color="#00a2ff"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="logo-text">RealTranslate</span>
+      </div>
+      <div class="nav-links">
+        <select id="language-selector" class="language-selector">
+          <option value="fr">🇫🇷 Français</option>
+          <option value="en">🇬🇧 English</option>
+          <option value="es">🇪🇸 Español</option>
+          <option value="it">🇮🇹 Italiano</option>
+          <option value="de">🇩🇪 Deutsch</option>
+          <option value="zh">🇨🇳 中文</option>
+          <option value="ja">🇯🇵 日本語</option>
+          <option value="pt">🇧🇷 Português</option>
+          <option value="ar">🇸🇦 العربية</option>
+          <option value="ru">🇷🇺 Русский</option>
+        </select>
+        <a href="pricing.html" class="nav-link" data-i18n="nav.pricing">Tarifs</a>
+        <a href="index.html" class="btn-login" data-i18n="nav.login">Se connecter</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-container">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          <span data-i18n="hero.title">Parlez au monde,</span>
+          <span class="gradient-text" data-i18n="hero.titleHighlight">sans barrières</span>
+        </h1>
+        <p class="hero-subtitle" data-i18n="hero.subtitle">
+          La traduction instantanée qui comprend vraiment vos conversations.
+          RealTranslate traduit en temps réel pour que vous puissiez vous concentrer sur l'essentiel : communiquer.
+        </p>
+        <div class="hero-cta">
+          <a href="index.html" class="btn-primary" data-i18n="hero.ctaPrimary">Commencer gratuitement</a>
+          <a href="#how-it-works" class="btn-secondary" data-i18n="hero.ctaSecondary">Voir comment ça marche</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="stat-number">50+</div>
+            <div class="stat-label" data-i18n="hero.stats.languages">Langues supportées</div>
+          </div>
+          <div class="stat">
+            <div class="stat-number">< 2s</div>
+            <div class="stat-label" data-i18n="hero.stats.speed">Temps de traduction</div>
+          </div>
+          <div class="stat">
+            <div class="stat-number">24/7</div>
+            <div class="stat-label" data-i18n="hero.stats.availability">Disponibilité</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="chat-mockup">
+          <div class="message message-left">
+            <div class="message-bubble">Hello! How are you?</div>
+            <div class="message-translation">Bonjour ! Comment allez-vous ?</div>
+          </div>
+          <div class="message message-right">
+            <div class="message-bubble">Je vais bien, merci !</div>
+            <div class="message-translation">I'm fine, thank you!</div>
+          </div>
+          <div class="message message-left">
+            <div class="message-bubble">¿Te gustaría tomar un café?</div>
+            <div class="message-translation">Voudrais-tu prendre un café ?</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- What Section -->
+  <section class="section what-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title" data-i18n="what.title">Qu'est-ce que RealTranslate ?</h2>
+        <p class="section-description" data-i18n="what.description">
+          Une plateforme de communication intelligente qui brise les barrières linguistiques
+        </p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3 data-i18n="what.features.instant.title">Traduction instantanée</h3>
+          <p data-i18n="what.features.instant.description">Vos messages sont traduits en temps réel, sans délai perceptible. L'IA s'adapte au contexte de votre conversation.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💬</div>
+          <h3 data-i18n="what.features.multilingual.title">Chat multilingue</h3>
+          <p data-i18n="what.features.multilingual.description">Créez des groupes où chaque membre parle sa langue. RealTranslate traduit automatiquement pour tout le monde.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎯</div>
+          <h3 data-i18n="what.features.context.title">Contexte intelligent</h3>
+          <p data-i18n="what.features.context.description">Notre IA comprend le ton, les expressions idiomatiques et le contexte culturel pour des traductions naturelles.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3 data-i18n="what.features.security.title">Sécurité garantie</h3>
+          <p data-i18n="what.features.security.description">Chiffrement de bout en bout. Vos conversations restent privées et sécurisées.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Section -->
+  <section class="section why-section">
+    <div class="container">
+      <div class="two-column">
+        <div class="column-content">
+          <h2 class="section-title" data-i18n="why.title">Pourquoi RealTranslate ?</h2>
+          <div class="why-list">
+            <div class="why-item">
+              <div class="why-icon">✓</div>
+              <div class="why-text">
+                <h4 data-i18n="why.items.noMisunderstandings.title">Fini les malentendus</h4>
+                <p data-i18n="why.items.noMisunderstandings.description">Plus besoin de copier-coller dans un traducteur. Tout se fait naturellement.</p>
+              </div>
+            </div>
+            <div class="why-item">
+              <div class="why-icon">✓</div>
+              <div class="why-text">
+                <h4 data-i18n="why.items.saveTime.title">Gagnez du temps</h4>
+                <p data-i18n="why.items.saveTime.description">Concentrez-vous sur votre message, pas sur la traduction. Jusqu'à 80% de temps gagné.</p>
+              </div>
+            </div>
+            <div class="why-item">
+              <div class="why-icon">✓</div>
+              <div class="why-text">
+                <h4 data-i18n="why.items.workGlobally.title">Travaillez globalement</h4>
+                <p data-i18n="why.items.workGlobally.description">Collaborez avec des équipes internationales sans friction linguistique.</p>
+              </div>
+            </div>
+            <div class="why-item">
+              <div class="why-icon">✓</div>
+              <div class="why-text">
+                <h4 data-i18n="why.items.stayNatural.title">Restez naturel</h4>
+                <p data-i18n="why.items.stayNatural.description">Parlez dans votre langue maternelle. Vos interlocutors aussi.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="column-visual">
+          <div class="stats-card">
+            <div class="stats-item">
+              <div class="stats-number">80%</div>
+              <div class="stats-text" data-i18n="why.stats.timeSaved">de temps gagné en communication</div>
+            </div>
+            <div class="stats-item">
+              <div class="stats-number">95%</div>
+              <div class="stats-text" data-i18n="why.stats.accuracy">de précision contextuelle</div>
+            </div>
+            <div class="stats-item">
+              <div class="stats-number">0</div>
+              <div class="stats-text" data-i18n="why.stats.barriers">barrière linguistique</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="section how-section" id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title" data-i18n="how.title">Comment ça marche ?</h2>
+        <p class="section-description" data-i18n="how.description">3 étapes simples pour commencer à communiquer sans limites</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3 data-i18n="how.steps.step1.title">Créez votre compte</h3>
+            <p data-i18n="how.steps.step1.description">Inscrivez-vous en 30 secondes. Choisissez votre langue préférée.</p>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3 data-i18n="how.steps.step2.title">Invitez vos contacts</h3>
+            <p data-i18n="how.steps.step2.description">Ajoutez vos collègues, amis ou partenaires. Créez des groupes multilingues.</p>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3 data-i18n="how.steps.step3.title">Communiquez naturellement</h3>
+            <p data-i18n="how.steps.step3.description">Écrivez dans votre langue. RealTranslate fait le reste automatiquement.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Who Section -->
+  <section class="section who-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title" data-i18n="who.title">Pour qui ?</h2>
+        <p class="section-description" data-i18n="who.description">RealTranslate s'adapte à tous vos besoins de communication</p>
+      </div>
+      <div class="personas-grid">
+        <div class="persona-card">
+          <div class="persona-emoji">👔</div>
+          <h3 data-i18n="who.personas.professionals.title">Professionnels</h3>
+          <p data-i18n="who.personas.professionals.description">Équipes internationales, réunions multilingues, support client global. Collaborez sans friction.</p>
+        </div>
+        <div class="persona-card">
+          <div class="persona-emoji">🎓</div>
+          <h3 data-i18n="who.personas.students.title">Étudiants</h3>
+          <p data-i18n="who.personas.students.description">Projets internationaux, échanges académiques, apprentissage des langues. Étudiez sans limites.</p>
+        </div>
+        <div class="persona-card">
+          <div class="persona-emoji">✈️</div>
+          <h3 data-i18n="who.personas.travelers.title">Voyageurs</h3>
+          <p data-i18n="who.personas.travelers.description">Guides locaux, rencontres internationales, immersion culturelle. Voyagez en toute confiance.</p>
+        </div>
+        <div class="persona-card">
+          <div class="persona-emoji">💼</div>
+          <h3 data-i18n="who.personas.entrepreneurs.title">Entrepreneurs</h3>
+          <p data-i18n="who.personas.entrepreneurs.description">Clients internationaux, partenaires étrangers, expansion globale. Développez votre business partout.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="section cta-section">
+    <div class="container">
+      <div class="cta-content">
+        <h2 class="cta-title" data-i18n="cta.title">Prêt à communiquer sans limites ?</h2>
+        <p class="cta-subtitle" data-i18n="cta.subtitle">Rejoignez des milliers d'utilisateurs qui ont déjà brisé les barrières linguistiques</p>
+        <div class="cta-buttons">
+          <a href="index.html" class="btn-primary large" data-i18n="cta.primary">Commencer gratuitement</a>
+          <a href="pricing.html" class="btn-secondary large" data-i18n="cta.secondary">Voir les tarifs</a>
+        </div>
+        <p class="cta-note" data-i18n="cta.note">Aucune carte bancaire requise • Essai gratuit 14 jours</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-column">
+          <div class="footer-logo">
+            <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="16" r="14" stroke="url(#gradient2)" stroke-width="2"/>
+              <path d="M10 16L14 20L22 12" stroke="url(#gradient2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <defs>
+                <linearGradient id="gradient2" x1="0" y1="0" x2="32" y2="32">
+                  <stop offset="0%" stop-color="#00ff9d"/>
+                  <stop offset="100%" stop-color="#00a2ff"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <span class="logo-text">RealTranslate</span>
+          </div>
+          <p class="footer-tagline" data-i18n="footer.tagline">Communication sans frontières</p>
+        </div>
+        <div class="footer-column">
+          <h4 data-i18n="footer.product">Produit</h4>
+          <a href="#how-it-works" data-i18n="footer.howItWorks">Comment ça marche</a>
+          <a href="pricing.html" data-i18n="footer.pricing">Tarifs</a>
+          <a href="index.html" data-i18n="footer.login">Se connecter</a>
+        </div>
+        <div class="footer-column">
+          <h4 data-i18n="footer.resources">Ressources</h4>
+          <a href="#" data-i18n="footer.documentation">Documentation</a>
+          <a href="#" data-i18n="footer.blog">Blog</a>
+          <a href="#" data-i18n="footer.support">Support</a>
+        </div>
+        <div class="footer-column">
+          <h4 data-i18n="footer.legal">Légal</h4>
+          <a href="#" data-i18n="footer.privacy">Confidentialité</a>
+          <a href="#" data-i18n="footer.terms">Conditions</a>
+          <a href="#" data-i18n="footer.security">Sécurité</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 RealTranslate. <span data-i18n="footer.copyright">Tous droits réservés.</span></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="landing.js"></script>
+</body>
+</html>

@@ -669,6 +669,33 @@
       background: linear-gradient(135deg, rgba(255, 107, 107, 0.5), rgba(255, 157, 0, 0.5));
     }
 
+    /* Page Indicators (Mobile only) */
+    .page-indicators {
+      display: none;
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      flex-direction: row;
+      gap: 8px;
+      z-index: 99;
+    }
+
+    .page-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .page-dot.active {
+      background: var(--accent-primary);
+      width: 24px;
+      border-radius: 4px;
+    }
+
     /* Mobile Controls (Hidden on desktop) */
     .mobile-controls {
       display: none;
@@ -916,9 +943,10 @@
       background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
       z-index: 9999;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       padding: 20px;
+      overflow-y: auto;
     }
 
     .lang-box {
@@ -1106,16 +1134,14 @@
       50% { opacity: 0.5; transform: scale(1.2); }
     }
 
-    /* VU-Mètre Micro */
+    /* VU-Mètre Micro - Ligne horizontale simple */
     .vu-meter {
-      padding: 10px 20px;
-      text-align: center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
-      background: rgba(0, 0, 0, 0.3);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0;
+      height: 3px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
     }
 
     .vu-meter.hidden {
@@ -1123,48 +1149,36 @@
     }
 
     .vu-meter-label {
-      font-size: 0.85em;
-      color: #888;
-      min-width: 100px;
+      display: none;
     }
 
     .vu-meter-bars {
-      display: flex;
-      align-items: flex-end;
-      gap: 4px;
-      height: 30px;
+      display: none;
     }
 
     .vu-meter-bar {
-      width: 6px;
-      height: 0%;
-      background: linear-gradient(to top, #00ff9d, #00d4aa);
-      border-radius: 3px;
-      transition: height 0.1s ease;
-      opacity: 0.3;
+      display: none;
     }
 
-    .vu-meter-bar.active {
-      opacity: 1;
+    /* Nouvelle barre de progression pour vu-mètre horizontal */
+    .vu-meter::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: var(--vu-width, 0%);
+      background: var(--accent-primary);
+      transition: width 0.1s ease;
     }
 
-    .vu-meter-bar[data-level="1"],
-    .vu-meter-bar[data-level="2"],
-    .vu-meter-bar[data-level="3"] {
-      background: linear-gradient(to top, #00ff9d, #00d4aa);
+    .vu-meter.active::before {
+      animation: vuPulse 0.3s ease-in-out;
     }
 
-    .vu-meter-bar[data-level="4"],
-    .vu-meter-bar[data-level="5"],
-    .vu-meter-bar[data-level="6"],
-    .vu-meter-bar[data-level="7"] {
-      background: linear-gradient(to top, #ffa500, #ff9d00);
-    }
-
-    .vu-meter-bar[data-level="8"],
-    .vu-meter-bar[data-level="9"],
-    .vu-meter-bar[data-level="10"] {
-      background: linear-gradient(to top, #ff6b6b, #ff3d3d);
+    @keyframes vuPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
     }
 
     /* Communication Home Styles */
@@ -1305,21 +1319,122 @@
     .comm-list {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       max-height: 500px;
       overflow-y: auto;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 255, 157, 0.3) rgba(255, 255, 255, 0.05);
+    }
+
+    .comm-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .comm-list::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .comm-list::-webkit-scrollbar-thumb {
+      background: rgba(0, 255, 157, 0.3);
+      border-radius: 3px;
+    }
+
+    .comm-list::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 255, 157, 0.5);
     }
 
     .comm-empty-message {
       color: #888;
       text-align: center;
-      padding: 40px 0;
+      padding: 20px 0;
+      font-size: 0.95em;
+      line-height: 1.5;
+    }
+
+    /* Styles pour les items de groupes et DMs */
+    .comm-group-item,
+    .comm-dm-item {
+      position: relative;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .comm-group-item:hover,
+    .comm-dm-item:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(0, 255, 157, 0.3);
+    }
+
+    .comm-group-item .group-name {
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.1em;
+      margin-bottom: 8px;
+    }
+
+    .comm-group-item .group-info {
+      color: #888;
+      font-size: 0.9em;
+      margin-bottom: 4px;
+    }
+
+    .comm-group-item .group-date {
+      color: #666;
+      font-size: 0.85em;
+    }
+
+    .comm-dm-item .dm-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .comm-dm-item .dm-avatar {
+      width: 50px;
+      height: 50px;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .comm-dm-item .dm-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .comm-dm-item .dm-name {
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      font-size: 1.05em;
+    }
+
+    .comm-dm-item .dm-message {
+      color: #888;
+      font-size: 0.9em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .comm-dm-item .dm-time {
+      color: #888;
+      font-size: 0.85em;
+      white-space: nowrap;
     }
 
     .comm-quick-actions {
-      margin-top: 30px;
+      margin-top: 20px;
       display: flex;
-      gap: 15px;
+      gap: 12px;
       justify-content: center;
       flex-wrap: wrap;
     }
@@ -1378,28 +1493,33 @@
     /* Responsive Communication Home - Mobile */
     @media (max-width: 768px) {
       .communication-home-container {
-        padding: 20px 15px;
+        padding: 12px 10px;
       }
 
       .comm-header {
-        margin-bottom: 25px;
+        margin-bottom: 15px;
       }
 
       .comm-title {
-        font-size: 1.8em;
-        margin-bottom: 8px;
+        font-size: 1.5em;
+        margin-bottom: 4px;
       }
 
       .comm-subtitle {
-        font-size: 0.9em;
+        display: none; /* Masquer le sous-titre sur mobile */
       }
 
       .comm-header-actions {
-        gap: 10px;
+        gap: 8px;
       }
 
       .comm-lang-badge {
-        padding: 8px 12px;
+        padding: 6px 10px;
+        font-size: 0.9em;
+      }
+
+      .comm-lang-label {
+        display: none; /* Masquer le label "Langue" */
       }
 
       .comm-user-name,
@@ -1408,32 +1528,43 @@
       }
 
       .comm-btn {
-        padding: 10px;
+        padding: 8px;
+        min-width: 40px;
+      }
+
+      .comm-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8em;
       }
 
       .comm-section {
-        padding: 20px 15px;
-        border-radius: 15px;
+        padding: 12px 10px;
+        border-radius: 12px;
       }
 
       .comm-section-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 12px;
       }
 
       .comm-section-title {
-        font-size: 1.2em;
+        font-size: 1.1em;
       }
 
       .comm-section-title-text {
-        display: none;
+        display: inline; /* Garder le texte visible pour clarté */
+        font-size: 0.9em;
       }
 
       .comm-action-btn {
-        width: 100%;
-        justify-content: center;
-        padding: 12px 20px;
+        width: auto;
+        padding: 8px 12px;
+        font-size: 0.85em;
+        white-space: nowrap;
       }
 
       .btn-text {
@@ -1441,18 +1572,64 @@
       }
 
       .comm-list {
-        max-height: 400px;
+        max-height: calc(100vh - 420px); /* Hauteur dynamique basée sur viewport */
+        min-height: 150px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch; /* Scroll fluide sur iOS */
+        gap: 8px;
+      }
+
+      /* Optimisation des items de groupes et DMs sur mobile */
+      .comm-group-item,
+      .comm-dm-item {
+        padding: 12px;
+        border-radius: 10px;
+      }
+
+      .comm-group-item .group-name {
+        font-size: 1em;
+        margin-bottom: 6px;
+      }
+
+      .comm-group-item .group-info {
+        font-size: 0.85em;
+      }
+
+      .comm-group-item .group-date {
+        font-size: 0.8em;
+      }
+
+      .comm-dm-item .dm-container {
+        gap: 10px;
+      }
+
+      .comm-dm-item .dm-avatar {
+        width: 40px;
+        height: 40px;
+      }
+
+      .comm-dm-item .dm-name {
+        font-size: 0.95em;
+      }
+
+      .comm-dm-item .dm-message {
+        font-size: 0.85em;
+      }
+
+      .comm-dm-item .dm-time {
+        font-size: 0.8em;
       }
 
       .comm-quick-actions {
-        gap: 10px;
+        gap: 8px;
+        margin-top: 15px;
       }
 
       .comm-quick-btn {
         flex: 1;
         min-width: 0;
-        padding: 12px 15px;
-        font-size: 0.9em;
+        padding: 10px 12px;
+        font-size: 0.85em;
       }
 
       .comm-quick-text {
@@ -1462,46 +1639,135 @@
 
     /* Very Small Mobile */
     @media (max-width: 480px) {
+      .communication-home-container {
+        padding: 10px 8px;
+      }
+
+      .comm-header {
+        margin-bottom: 12px;
+      }
+
       .comm-title {
-        font-size: 1.4em;
+        font-size: 1.3em;
+        margin-bottom: 0;
+      }
+
+      .comm-title-section {
+        margin-bottom: 8px;
       }
 
       .comm-header-actions {
-        flex-direction: column;
+        flex-direction: row;
         width: 100%;
-        gap: 8px;
+        gap: 6px;
+        flex-wrap: wrap;
       }
 
       .comm-btn {
-        width: 100%;
-        justify-content: center;
+        padding: 6px;
+        min-width: 36px;
+      }
+
+      .comm-avatar {
+        width: 24px;
+        height: 24px;
+        font-size: 0.75em;
       }
 
       .comm-lang-badge {
-        width: 100%;
-        text-align: center;
+        padding: 6px 8px;
+        font-size: 0.85em;
+        flex: 0 0 auto;
       }
 
       .comm-section {
-        padding: 15px;
+        padding: 10px 8px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+      }
+
+      .comm-grid {
+        gap: 10px;
+      }
+
+      .comm-section-header {
+        margin-bottom: 10px;
+        gap: 6px;
       }
 
       .comm-section-title {
-        font-size: 1.1em;
+        font-size: 1em;
+      }
+
+      .comm-section-title-text {
+        font-size: 0.85em;
       }
 
       .comm-action-btn {
+        padding: 6px 10px;
+        font-size: 0.8em;
+      }
+
+      .comm-list {
+        max-height: calc(100vh - 380px);
+        min-height: 120px;
+        gap: 6px;
+      }
+
+      /* Optimisation des items pour très petits écrans */
+      .comm-group-item,
+      .comm-dm-item {
         padding: 10px;
+        border-radius: 8px;
+      }
+
+      .comm-group-item .group-name {
+        font-size: 0.95em;
+        margin-bottom: 5px;
+      }
+
+      .comm-group-item .group-info {
+        font-size: 0.8em;
+        margin-bottom: 3px;
+      }
+
+      .comm-group-item .group-date {
+        font-size: 0.75em;
+      }
+
+      .comm-dm-item .dm-container {
+        gap: 8px;
+      }
+
+      .comm-dm-item .dm-avatar {
+        width: 36px;
+        height: 36px;
+      }
+
+      .comm-dm-item .dm-name {
         font-size: 0.9em;
+        margin-bottom: 3px;
+      }
+
+      .comm-dm-item .dm-message {
+        font-size: 0.8em;
+      }
+
+      .comm-dm-item .dm-time {
+        font-size: 0.75em;
       }
 
       .comm-quick-actions {
-        flex-direction: column;
+        flex-direction: row;
         width: 100%;
+        gap: 6px;
+        margin-top: 12px;
       }
 
       .comm-quick-btn {
-        width: 100%;
+        flex: 1;
+        padding: 8px 10px;
+        font-size: 0.8em;
       }
     }
 
@@ -1728,13 +1994,50 @@
 
     /* Mobile Responsive */
     @media (max-width: 1024px) {
-      /* Layout - 1 colonne sur tablette */
+      /* Layout - Scroll horizontal sur mobile */
       .container {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto;
-        gap: 15px;
-        padding: 15px;
+        display: flex;
+        flex-direction: row;
+        gap: 0;
+        padding: 0;
         padding-bottom: 100px; /* Espace pour controls mobiles */
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch; /* Smooth scroll sur iOS */
+        scroll-behavior: smooth;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE et Edge */
+      }
+
+      /* Masquer la scrollbar (WebKit) */
+      .container::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* Chaque panel fait toute la largeur */
+      .panel {
+        min-width: 100vw;
+        max-width: 100vw;
+        flex-shrink: 0;
+        scroll-snap-align: start;
+        border-radius: 0;
+        padding: 20px;
+        padding-bottom: 140px; /* Espace pour contrôles mobiles + dots */
+        margin: 0;
+        height: 100%;
+        max-height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Panel content avec scroll interne */
+      .panel-content {
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
+        padding-bottom: 20px; /* Espace supplémentaire en bas */
       }
 
       /* Cacher contrôles centraux */
@@ -1742,26 +2045,21 @@
         display: none;
       }
 
-      /* Montrer contrôles mobiles */
+      /* Montrer contrôles mobiles et indicateurs */
       .mobile-controls {
         display: flex;
       }
 
-      /* Réorganiser l'ordre des panneaux */
-      .lang1-panel {
-        grid-row: 1;
-      }
-
-      .lang2-panel {
-        grid-row: 2;
+      .page-indicators {
+        display: flex;
       }
 
       /* Header */
       header {
-        padding: 15px 10px;
+        padding: 10px 15px;
         display: flex;
-        flex-direction: column;
-        gap: 10px;
+        flex-direction: row;
+        justify-content: space-between;
         align-items: center;
       }
 
@@ -1770,26 +2068,26 @@
       }
 
       .header-content {
-        text-align: center;
+        display: none;
       }
 
       .user-menu {
         width: 100%;
-        justify-content: center;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
       }
 
-      h1 {
-        font-size: 1.5em;
+      /* Montrer uniquement provider badge et bouton retour */
+      .user-info,
+      .admin-btn,
+      .logout-btn {
+        display: none !important;
       }
 
-      .subtitle {
-        font-size: 0.85em;
-      }
-
-      .user-menu {
-        font-size: 0.85em;
-        gap: 8px;
-        flex-wrap: wrap;
+      .profile-btn {
+        padding: 8px 16px;
+        font-size: 0.9em;
       }
 
       /* Panels */
@@ -1816,8 +2114,8 @@
 
       /* Status Bar */
       .status-bar {
-        font-size: 1.1em;
-        padding: 15px;
+        font-size: 0.9em;
+        padding: 8px 15px;
       }
 
       /* Volume Indicator - Plus haut pour ne pas cacher les controls */
@@ -1827,14 +2125,58 @@
       }
 
       /* Admin Panel */
+      .admin-panel {
+        padding: 10px;
+      }
+
       .admin-content {
-        padding: 20px;
+        padding: 20px 15px;
         max-height: 85vh;
       }
 
+      .admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+      }
+
+      .admin-header h2 {
+        font-size: 1.5em;
+      }
+
+      .admin-section {
+        margin-bottom: 20px;
+      }
+
+      .admin-section h3 {
+        font-size: 1.1em;
+      }
+
+      .users-table {
+        font-size: 0.9em;
+      }
+
+      .users-table th,
+      .users-table td {
+        padding: 8px;
+      }
+
+      .create-user-form {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
       /* Language Selection */
+      .language-selection {
+        padding: 10px;
+      }
+
       .lang-box {
         padding: 30px 20px;
+        margin-top: 0;
+        margin-bottom: 0;
       }
 
       .lang-grid {
@@ -1883,6 +2225,61 @@
         height: 140px;
         bottom: 120px;
       }
+
+      /* Admin Panel pour très petits écrans */
+      .admin-panel {
+        padding: 5px;
+      }
+
+      .admin-content {
+        padding: 15px 10px;
+        border-radius: 15px;
+      }
+
+      .admin-header h2 {
+        font-size: 1.3em;
+      }
+
+      .admin-section h3 {
+        font-size: 1em;
+      }
+
+      .users-table {
+        font-size: 0.8em;
+      }
+
+      .users-table th,
+      .users-table td {
+        padding: 6px;
+      }
+
+      .close-admin-btn {
+        padding: 8px 15px;
+        font-size: 0.9em;
+      }
+
+      /* Modal responsive */
+      .modal-content {
+        padding: 25px 20px;
+        max-width: 90%;
+      }
+
+      .modal-content h2 {
+        font-size: 1.3em;
+        margin-bottom: 15px;
+      }
+
+      .modal-content button {
+        padding: 12px 30px;
+        font-size: 1em;
+      }
+    }
+
+    /* Desktop - Centre le contenu verticalement */
+    @media (min-width: 769px) {
+      .language-selection {
+        align-items: center;
+      }
     }
 
     /* Animation pour l'indicateur "en train d'écrire..." */
@@ -1905,7 +2302,23 @@
         content: '...';
       }
     }
+
+    /* Visually hidden but accessible to screen readers */
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
   </style>
+
+  <!-- Stripe.js -->
+  <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
   <!-- Login Screen -->
@@ -1986,7 +2399,7 @@
       <form id="registerForm" onsubmit="return false;">
         <div class="input-group">
           <label for="registerName">Nom d'affichage</label>
-          <input type="text" id="registerName" placeholder="Votre nom" required>
+          <input type="text" id="registerName" placeholder="Votre nom" autocomplete="name" required>
         </div>
 
         <div class="input-group">
@@ -2096,7 +2509,7 @@
 
       <div class="input-group">
         <label for="accessTokenInput">Jeton d'accès</label>
-        <input type="text" id="accessTokenInput" placeholder="AT-xxxxxxxxxxxxxxxxxx" style="font-family: monospace;">
+        <input type="text" id="accessTokenInput" placeholder="AT-xxxxxxxxxxxxxxxxxx" autocomplete="off" style="font-family: monospace;">
       </div>
 
       <div style="display: flex; gap: 10px; margin-top: 20px;">
@@ -2109,7 +2522,7 @@
   <!-- Main App (hidden until logged in) -->
   <div id="mainApp" class="hidden">
     <!-- Language Selection Screen -->
-    <div id="languageSelection" class="language-selection">
+    <div id="languageSelection" class="language-selection hidden">
       <div class="lang-box">
         <h2>🌍 RealTranslate</h2>
         <p>Choisissez vos langues de traduction</p>
@@ -2211,6 +2624,22 @@
           </div>
         </div>
 
+        <!-- Boutons d'action -->
+        <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+          <button onclick="showProfilePanel()" style="padding: 12px 24px; background: linear-gradient(135deg, rgba(0,255,157,0.2), rgba(0,200,120,0.2)); color: #00ff9d; border: 2px solid rgba(0,255,157,0.3); border-radius: 10px; cursor: pointer; font-size: 1em; font-weight: bold; transition: all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            ⚙️ Mon Profil
+          </button>
+          <button onclick="showPricingPage()" style="padding: 12px 24px; background: linear-gradient(135deg, rgba(255,212,59,0.2), rgba(255,152,0,0.2)); color: #ffd43b; border: 2px solid rgba(255,212,59,0.3); border-radius: 10px; cursor: pointer; font-size: 1em; font-weight: bold; transition: all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            💎 Voir les Tarifs
+          </button>
+          <button id="adminAccessBtn" onclick="showAdminPanel()" style="padding: 12px 24px; background: linear-gradient(135deg, rgba(255,59,59,0.2), rgba(200,0,0,0.2)); color: #ff6b6b; border: 2px solid rgba(255,59,59,0.3); border-radius: 10px; cursor: pointer; font-size: 1em; font-weight: bold; transition: all 0.2s; display: none;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            🔧 Administration
+          </button>
+          <button onclick="logout()" style="padding: 12px 24px; background: linear-gradient(135deg, rgba(255,107,107,0.2), rgba(255,59,59,0.2)); color: #ff6b6b; border: 2px solid rgba(255,107,107,0.3); border-radius: 10px; cursor: pointer; font-size: 1em; font-weight: bold; transition: all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            ↗ Déconnexion
+          </button>
+        </div>
+
         <div style="text-align: center;">
           <button onclick="backToLanguageSelection()" style="padding: 12px 30px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; cursor: pointer; font-size: 1em;">
             ← Retour
@@ -2232,10 +2661,6 @@
               <div class="comm-lang-label">Langue</div>
               <div class="comm-lang-value" id="commLangDisplay">🇫🇷 Français</div>
             </div>
-            <button onclick="showProfilePanel()" class="comm-btn comm-profile-btn">
-              <span id="commUserAvatar" class="comm-avatar"></span>
-              <span id="commUserName" class="comm-user-name">Profil</span>
-            </button>
             <button onclick="showCommunicationSettings()" class="comm-btn comm-settings-btn">⚙️ <span class="comm-settings-text">Paramètres</span></button>
           </div>
         </div>
@@ -2272,15 +2697,34 @@
               <p class="comm-empty-message">Chargement de vos conversations...</p>
             </div>
           </div>
+
+          <!-- Amis Section -->
+          <div class="comm-section">
+            <div class="comm-section-header">
+              <h3 class="comm-section-title">
+                <span>👥</span> <span class="comm-section-title-text">Mes Amis</span>
+              </h3>
+              <button onclick="showFriendsPanel()" class="comm-action-btn">
+                <span class="btn-icon">➕</span> <span class="btn-text">Gérer Amis</span>
+              </button>
+            </div>
+
+            <div id="commFriendsList" class="comm-list">
+              <p class="comm-empty-message">Chargement de vos amis...</p>
+            </div>
+          </div>
         </div>
 
         <!-- Quick Actions -->
         <div class="comm-quick-actions">
+          <button onclick="showFriendsPanel()" class="comm-quick-btn comm-quick-btn-primary">
+            <span>👥</span> <span class="comm-quick-text">Gérer mes amis</span>
+          </button>
           <button onclick="browsePublicGroups(); showGroupsPanel();" class="comm-quick-btn comm-quick-btn-primary">
             <span>🌐</span> <span class="comm-quick-text">Découvrir les groupes publics</span>
           </button>
           <button onclick="resetInterfaceChoice()" class="comm-quick-btn comm-quick-btn-secondary">
-            <span>🔄</span> <span class="comm-quick-text">Changer de mode</span>
+            <span>←</span> <span class="comm-quick-text">Retour au menu</span>
           </button>
         </div>
       </div>
@@ -2409,13 +2853,18 @@
           <div style="display: flex; justify-content: center; align-items: center; gap: 40px; flex-wrap: wrap;">
             <div style="text-align: center;">
               <div style="font-size: 3em; margin-bottom: 8px;">💳</div>
+              <div style="color: #ccc; font-weight: bold;">Carte Bancaire</div>
+              <div style="color: #888; font-size: 0.85em;">Stripe Checkout</div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 3em; margin-bottom: 8px;">🔵</div>
               <div style="color: #ccc; font-weight: bold;">PayPal</div>
-              <div style="color: #888; font-size: 0.85em;" data-i18n="pricing-europe-region">Europe & International</div>
+              <div style="color: #888; font-size: 0.85em;" data-i18n="pricing-europe-region">À venir</div>
             </div>
             <div style="text-align: center;">
               <div style="font-size: 3em; margin-bottom: 8px;">💚</div>
               <div style="color: #ccc; font-weight: bold;">WeChat Pay</div>
-              <div style="color: #888; font-size: 0.85em;" data-i18n="pricing-asia-region">Chine & Asie du Sud-Est</div>
+              <div style="color: #888; font-size: 0.85em;" data-i18n="pricing-asia-region">À venir</div>
             </div>
           </div>
         </div>
@@ -2485,11 +2934,8 @@
         </div>
         <span class="user-info" id="userInfo"></span>
         <button class="admin-btn hidden" id="adminBtn" onclick="showAdminPanel()">👤 Admin</button>
-        <button class="profile-btn" id="friendsBtn" onclick="showFriendsPanel()">👥 Amis</button>
-        <button class="profile-btn" id="dmsBtn" onclick="showDMsPanel()">💬 Messages</button>
-        <button class="profile-btn" id="groupsBtn" onclick="showGroupsPanel()">👨‍👩‍👧‍👦 Groupes</button>
-        <button class="profile-btn" id="profileBtn" onclick="showProfilePanel()">⚙️ Profil</button>
-        <button class="logout-btn" onclick="logout()">↗ Logout</button>
+        <button class="profile-btn" id="changeModeBtn" onclick="resetInterfaceChoice()" title="Revenir au menu principal">← Retour</button>
+        <button class="logout-btn" onclick="logout()">↗ Déconnexion</button>
       </div>
     </header>
 
@@ -2499,22 +2945,8 @@
     <span id="statusText">Initialisation...</span>
   </div>
 
-  <!-- VU-Mètre Micro (placé sous la status bar) -->
-  <div id="vuMeter" class="vu-meter hidden">
-    <div class="vu-meter-label">Niveau micro:</div>
-    <div class="vu-meter-bars">
-      <div class="vu-meter-bar" data-level="1"></div>
-      <div class="vu-meter-bar" data-level="2"></div>
-      <div class="vu-meter-bar" data-level="3"></div>
-      <div class="vu-meter-bar" data-level="4"></div>
-      <div class="vu-meter-bar" data-level="5"></div>
-      <div class="vu-meter-bar" data-level="6"></div>
-      <div class="vu-meter-bar" data-level="7"></div>
-      <div class="vu-meter-bar" data-level="8"></div>
-      <div class="vu-meter-bar" data-level="9"></div>
-      <div class="vu-meter-bar" data-level="10"></div>
-    </div>
-  </div>
+  <!-- VU-Mètre Micro - Ligne horizontale simple -->
+  <div id="vuMeter" class="vu-meter hidden"></div>
 
   <!-- Main Container -->
   <div class="container">
@@ -2567,6 +2999,12 @@
     </div>
   </div>
 
+  <!-- Page Indicators (Mobile only) -->
+  <div class="page-indicators">
+    <span class="page-dot active" data-page="0"></span>
+    <span class="page-dot" data-page="1"></span>
+  </div>
+
   <!-- Mobile Controls (Hidden on desktop) -->
   <div class="mobile-controls">
     <button class="mobile-control-btn active" id="micBtnMobile" onclick="toggleMicrophone()">
@@ -2605,6 +3043,9 @@
         <button id="tabSubscriptions" onclick="switchAdminTab('subscriptions')" style="flex: 1; padding: 12px 20px; background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 1em;">
           💳 Abonnements & Jetons
         </button>
+        <button id="tabGroups" onclick="switchAdminTab('groups')" style="flex: 1; padding: 12px 20px; background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 1em;">
+          💬 Groupes
+        </button>
         <button id="tabLogs" onclick="switchAdminTab('logs')" style="flex: 1; padding: 12px 20px; background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 1em;">
           📋 Logs
         </button>
@@ -2618,10 +3059,12 @@
         <div id="adminMessage" class="hidden" style="margin-bottom: 15px;"></div>
         <form class="create-user-form" onsubmit="return false;">
           <div class="input-group" style="margin-bottom: 0;">
-            <input type="email" id="newUserEmail" placeholder="Email" required>
+            <label for="newUserEmail" class="visually-hidden">Email</label>
+            <input type="email" id="newUserEmail" placeholder="Email" autocomplete="email" required>
           </div>
           <div class="input-group" style="margin-bottom: 0;">
-            <input type="password" id="newUserPassword" placeholder="Mot de passe" required>
+            <label for="newUserPassword" class="visually-hidden">Mot de passe</label>
+            <input type="password" id="newUserPassword" placeholder="Mot de passe" autocomplete="new-password" required>
           </div>
           <div class="input-group" style="margin-bottom: 0;">
             <select id="newUserRole">
@@ -2661,14 +3104,17 @@
               <option value="admin">👑 Admin</option>
             </select>
             <div style="flex: 1; min-width: 150px;">
-              <label style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Max utilisations</label>
-              <input type="number" id="tokenMaxUses" value="1" min="1" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+              <label for="tokenMaxUses" style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Max utilisations</label>
+              <input type="number" id="tokenMaxUses" value="1" min="1" autocomplete="off" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
             </div>
             <div style="flex: 1; min-width: 150px;">
-              <label style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Validité (jours)</label>
-              <input type="number" id="tokenExpiryDays" value="30" min="1" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+              <label for="tokenExpiryDays" style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Validité (jours)</label>
+              <input type="number" id="tokenExpiryDays" value="30" min="1" autocomplete="off" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
             </div>
-            <input type="text" id="tokenDescription" placeholder="Description (optionnelle)" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+            <div style="flex: 1; min-width: 200px;">
+              <label for="tokenDescription" class="visually-hidden">Description</label>
+              <input type="text" id="tokenDescription" placeholder="Description (optionnelle)" autocomplete="off" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+            </div>
             <button class="create-user-btn" onclick="generateAccessToken()" style="margin: 0; align-self: flex-end;">🎫 Générer</button>
           </div>
         </div>
@@ -2694,7 +3140,8 @@
           <div style="margin-bottom: 15px;">
             <p style="color: #888; font-size: 0.9em; margin-bottom: 10px;">Mettre à jour l'abonnement d'un utilisateur</p>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-              <input type="email" id="subscriptionEmail" placeholder="Email de l'utilisateur" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+              <label for="subscriptionEmail" class="visually-hidden">Email de l'utilisateur</label>
+              <input type="email" id="subscriptionEmail" placeholder="Email de l'utilisateur" autocomplete="email" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
               <select id="subscriptionTier" style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
                 <option value="free">🆓 Gratuit (5/25/5)</option>
                 <option value="premium">⭐ Premium (20/100/20) - 9.99€</option>
@@ -2709,7 +3156,54 @@
         </div>
       </div>
 
-      <!-- TAB 3: LOGS -->
+      <!-- TAB 3: GROUPES -->
+      <div id="adminTabGroups" style="display: none;">
+        <!-- All Groups Section -->
+        <div class="admin-section">
+          <h3>💬 Tous les Groupes</h3>
+          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <button class="create-user-btn" onclick="loadAllGroupsAdmin()" style="margin: 0;">🔄 Actualiser</button>
+            <div style="flex: 1; display: flex; gap: 10px; align-items: center;">
+              <label style="color: #888; white-space: nowrap;">Filtrer:</label>
+              <select id="groupFilterType" onchange="loadAllGroupsAdmin()" style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+                <option value="all">Tous les groupes</option>
+                <option value="public">🌐 Publics uniquement</option>
+                <option value="private">🔒 Privés uniquement</option>
+              </select>
+            </div>
+          </div>
+          <div id="adminGroupsContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 500px; overflow-y: auto;">
+            <div style="text-align: center; padding: 20px; color: #888;">
+              <p>Cliquez sur Actualiser pour charger les groupes</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group Statistics -->
+        <div class="admin-section">
+          <h3>📊 Statistiques</h3>
+          <div id="groupStatsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div style="background: rgba(0,255,157,0.1); border: 2px solid #00ff9d; border-radius: 10px; padding: 15px; text-align: center;">
+              <div style="font-size: 2em; font-weight: bold; color: #00ff9d;" id="totalGroupsCount">-</div>
+              <div style="color: #888; margin-top: 5px;">Total groupes</div>
+            </div>
+            <div style="background: rgba(100,180,255,0.1); border: 2px solid #64b4ff; border-radius: 10px; padding: 15px; text-align: center;">
+              <div style="font-size: 2em; font-weight: bold; color: #64b4ff;" id="publicGroupsCount">-</div>
+              <div style="color: #888; margin-top: 5px;">Groupes publics</div>
+            </div>
+            <div style="background: rgba(255,107,107,0.1); border: 2px solid #ff6b6b; border-radius: 10px; padding: 15px; text-align: center;">
+              <div style="font-size: 2em; font-weight: bold; color: #ff6b6b;" id="privateGroupsCount">-</div>
+              <div style="color: #888; margin-top: 5px;">Groupes privés</div>
+            </div>
+            <div style="background: rgba(255,212,59,0.1); border: 2px solid #ffd43b; border-radius: 10px; padding: 15px; text-align: center;">
+              <div style="font-size: 2em; font-weight: bold; color: #ffd43b;" id="totalMembersCount">-</div>
+              <div style="color: #888; margin-top: 5px;">Total membres</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: LOGS -->
       <div id="adminTabLogs" style="display: none;">
           <!-- Logs Viewer Section -->
         <div class="admin-section">
@@ -2727,8 +3221,8 @@
                 </select>
               </div>
               <div style="flex: 1; min-width: 200px;">
-                <label style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Filtrer par date/heure (optionnel)</label>
-                <input type="datetime-local" id="logDateFilter" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+                <label for="logDateFilter" style="display: block; color: #888; font-size: 0.85em; margin-bottom: 3px;">Filtrer par date/heure (optionnel)</label>
+                <input type="datetime-local" id="logDateFilter" autocomplete="off" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
               </div>
               <button class="create-user-btn" onclick="loadLogs()" style="margin: 0;">🔄 Actualiser</button>
               <button class="create-user-btn" onclick="exportLogs()" style="margin: 0; background: #ffd43b; color: #000;">📥 Exporter</button>
@@ -2803,7 +3297,7 @@
                 ?
               </div>
               <div style="flex: 1;">
-                <input type="file" id="avatarInput" accept="image/*" style="display: none;" onchange="handleAvatarSelection(event)">
+                <input type="file" id="avatarInput" accept="image/*" aria-label="Choisir une photo de profil" style="display: none;" onchange="handleAvatarSelection(event)">
                 <button class="create-user-btn" onclick="document.getElementById('avatarInput').click()" style="margin-bottom: 10px;">
                   📷 Choisir une photo
                 </button>
@@ -2822,7 +3316,8 @@
           <div id="displayNameMessage" class="hidden" style="margin-bottom: 15px;"></div>
           <form class="create-user-form" onsubmit="return false;">
             <div class="input-group" style="margin-bottom: 0;">
-              <input type="text" id="newDisplayName" placeholder="Nouveau nom d'affichage" required minlength="2" maxlength="50">
+              <label for="newDisplayName" class="visually-hidden">Nouveau nom d'affichage</label>
+              <input type="text" id="newDisplayName" placeholder="Nouveau nom d'affichage" autocomplete="name" required minlength="2" maxlength="50">
             </div>
             <button class="create-user-btn" onclick="updateDisplayName()">Mettre à jour</button>
           </form>
@@ -2839,13 +3334,16 @@
           <div id="changePasswordMessage" class="hidden" style="margin-bottom: 15px;"></div>
           <form class="create-user-form" onsubmit="return false;">
             <div class="input-group" style="margin-bottom: 0;">
-              <input type="password" id="currentPassword" placeholder="Mot de passe actuel" required>
+              <label for="currentPassword" class="visually-hidden">Mot de passe actuel</label>
+              <input type="password" id="currentPassword" placeholder="Mot de passe actuel" autocomplete="current-password" required>
             </div>
             <div class="input-group" style="margin-bottom: 0;">
-              <input type="password" id="newPassword" placeholder="Nouveau mot de passe" required>
+              <label for="newPassword" class="visually-hidden">Nouveau mot de passe</label>
+              <input type="password" id="newPassword" placeholder="Nouveau mot de passe" autocomplete="new-password" required>
             </div>
             <div class="input-group" style="margin-bottom: 0;">
-              <input type="password" id="confirmNewPassword" placeholder="Confirmer le nouveau mot de passe" required>
+              <label for="confirmNewPassword" class="visually-hidden">Confirmer le nouveau mot de passe</label>
+              <input type="password" id="confirmNewPassword" placeholder="Confirmer le nouveau mot de passe" autocomplete="new-password" required>
             </div>
             <button class="create-user-btn" onclick="changePassword()">Changer le mot de passe</button>
           </form>
@@ -2877,7 +3375,8 @@
           <div id="deleteAccountMessage" class="hidden" style="margin-bottom: 15px;"></div>
           <form class="create-user-form" onsubmit="return false;">
             <div class="input-group" style="margin-bottom: 0;">
-              <input type="password" id="deleteAccountPassword" placeholder="Confirmer avec votre mot de passe" required>
+              <label for="deleteAccountPassword" class="visually-hidden">Confirmer avec votre mot de passe</label>
+              <input type="password" id="deleteAccountPassword" placeholder="Confirmer avec votre mot de passe" autocomplete="current-password" required>
             </div>
             <button class="create-user-btn" onclick="deleteAccount()" style="background: #ff6b6b; color: #fff;">🗑️ Supprimer mon compte</button>
           </form>
@@ -2900,7 +3399,8 @@
         <div style="margin-bottom: 15px;">
           <p id="searchUsersDesc" style="color: #888; font-size: 0.9em; margin-bottom: 10px;">Recherchez des utilisateurs par leur nom d'affichage exact pour leur envoyer une demande d'ami.</p>
           <div style="display: flex; gap: 10px;">
-            <input type="text" id="searchUserInput" placeholder="Nom d'affichage exact" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;">
+            <label for="searchUserInput" class="visually-hidden">Nom d'affichage exact</label>
+            <input type="text" id="searchUserInput" placeholder="Nom d'affichage exact" autocomplete="off" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;">
             <button class="create-user-btn" id="searchUsersBtn" onclick="searchUsers()" style="margin: 0;">Rechercher</button>
           </div>
         </div>
@@ -2922,6 +3422,23 @@
         <h3>✅ Mes amis</h3>
         <div id="friendsListContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 400px; overflow-y: auto;">
           <div id="friendsListContent" style="color: #888;">Chargement...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New DM User Selection Modal -->
+  <div id="newDMModal" class="admin-panel hidden">
+    <div class="admin-content">
+      <div class="admin-header">
+        <h2>✉️ Nouveau message privé</h2>
+        <button class="close-admin-btn" onclick="closeNewDMModal()">✕ Fermer</button>
+      </div>
+
+      <div class="admin-section">
+        <h3>👥 Sélectionner un utilisateur</h3>
+        <div id="userSelectionContainer" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 500px; overflow-y: auto;">
+          <div id="userSelectionContent" style="color: #888;">Chargement...</div>
         </div>
       </div>
     </div>
@@ -2991,11 +3508,12 @@
       <!-- Message Input -->
       <div class="admin-section" style="flex-shrink: 0;">
         <div style="display: flex; gap: 10px; align-items: stretch;">
-          <input type="file" id="dmFileInput" accept="image/*,.pdf,.doc,.docx,.txt,.mp3,.mp4,.webm,.ogg" style="display: none;" onchange="handleDMFileSelection(event)">
+          <input type="file" id="dmFileInput" accept="image/*,.pdf,.doc,.docx,.txt,.mp3,.mp4,.webm,.ogg" aria-label="Sélectionner un fichier" style="display: none;" onchange="handleDMFileSelection(event)">
           <button id="dmFileBtn" class="create-user-btn" onclick="document.getElementById('dmFileInput').click()" style="margin: 0; padding: 12px 16px; background: #4CAF50; min-width: 60px; display: flex; align-items: center; justify-content: center; font-size: 1.2em;" title="Partager un fichier">
             📎
           </button>
-          <input type="text" id="dmMessageInput" placeholder="Tapez votre message..." style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;" onkeypress="if(event.key === 'Enter') sendDM()" oninput="handleDMTyping()">
+          <label for="dmMessageInput" class="visually-hidden">Tapez votre message</label>
+          <input type="text" id="dmMessageInput" placeholder="Tapez votre message..." autocomplete="off" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;" onkeypress="if(event.key === 'Enter') sendDM()" oninput="handleDMTyping()">
           <button class="create-user-btn" id="dmSendBtn" onclick="sendDM()" style="margin: 0; padding: 12px 24px;">Envoyer</button>
         </div>
 
@@ -3024,7 +3542,8 @@
         <div id="createGroupMessage" class="hidden" style="margin-bottom: 15px;"></div>
         <form class="create-user-form" onsubmit="return false;">
           <div class="input-group" style="margin-bottom: 0;">
-            <input type="text" id="groupName" placeholder="Nom du groupe" required minlength="2" maxlength="50">
+            <label for="groupName" class="visually-hidden">Nom du groupe</label>
+            <input type="text" id="groupName" placeholder="Nom du groupe" autocomplete="off" required minlength="2" maxlength="50">
           </div>
           <div style="margin: 15px 0;">
             <label style="color: #888; font-size: 0.9em; display: block; margin-bottom: 10px;">Visibilité du groupe:</label>
@@ -3101,7 +3620,8 @@
       <!-- Search Bar -->
       <div class="admin-section" style="flex-shrink: 0; padding: 10px 0;">
         <div style="display: flex; gap: 10px; align-items: center;">
-          <input type="text" id="chatSearchInput" placeholder="🔍 Rechercher dans les messages..." style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 0.9em;" oninput="searchMessages()">
+          <label for="chatSearchInput" class="visually-hidden">Rechercher dans les messages</label>
+          <input type="text" id="chatSearchInput" placeholder="🔍 Rechercher dans les messages..." autocomplete="off" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 0.9em;" oninput="searchMessages()">
           <button id="clearSearchBtn" onclick="clearSearch()" style="display: none; background: rgba(255,107,107,0.2); border: 1px solid #ff6b6b; color: #ff6b6b; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9em;">✕</button>
           <span id="searchResultsCount" style="color: #888; font-size: 0.85em; white-space: nowrap; display: none;"></span>
         </div>
@@ -3119,14 +3639,15 @@
 
         <!-- Message Input -->
         <div style="display: flex; gap: 10px; align-items: stretch;">
-          <input type="file" id="chatFileInput" accept="image/*,.pdf,.doc,.docx,.txt,.mp3,.mp4,.webm,.ogg" style="display: none;" onchange="handleFileSelection(event)">
+          <input type="file" id="chatFileInput" accept="image/*,.pdf,.doc,.docx,.txt,.mp3,.mp4,.webm,.ogg" aria-label="Sélectionner un fichier" style="display: none;" onchange="handleFileSelection(event)">
           <button id="chatFileBtn" class="create-user-btn" onclick="document.getElementById('chatFileInput').click()" style="margin: 0; padding: 12px 16px; background: #4CAF50; min-width: 60px; display: flex; align-items: center; justify-content: center; font-size: 1.2em;" title="Partager un fichier">
             📎
           </button>
           <button id="chatPttBtn" class="create-user-btn" onmousedown="startChatPTT()" onmouseup="stopChatPTT()" ontouchstart="startChatPTT(event)" ontouchend="stopChatPTT(event)" style="margin: 0; padding: 12px 16px; background: #ff6b6b; min-width: 60px; display: flex; align-items: center; justify-content: center; font-size: 1.2em;">
             🎤
           </button>
-          <input type="text" id="chatMessageInput" placeholder="Tapez votre message..." style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;" onkeypress="if(event.key === 'Enter') sendMessage()">
+          <label for="chatMessageInput" class="visually-hidden">Tapez votre message</label>
+          <input type="text" id="chatMessageInput" placeholder="Tapez votre message..." autocomplete="off" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 1em;" onkeypress="if(event.key === 'Enter') sendMessage()">
           <button class="create-user-btn" id="chatSendBtn" onclick="sendMessage()" style="margin: 0; padding: 12px 24px;">Envoyer</button>
         </div>
 
