@@ -1,5 +1,37 @@
 // Configuration
 const API_BASE_URL = window.location.origin;
+
+// ===================================
+// SÉCURITÉ XSS - Échappement HTML
+// ===================================
+
+/**
+ * Échappe les caractères HTML spéciaux pour prévenir les attaques XSS
+ * @param {string} str - Chaîne à échapper
+ * @returns {string} - Chaîne échappée
+ */
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  const div = document.createElement('div');
+  div.textContent = String(str);
+  return div.innerHTML;
+}
+
+/**
+ * Échappe les attributs HTML (pour les valeurs d'attributs)
+ * @param {string} str - Chaîne à échapper
+ * @returns {string} - Chaîne échappée pour utilisation dans attributs
+ */
+function escapeAttr(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 const VAD_CONFIG = {
   VOLUME_THRESHOLD: 0.015,     // Seuil de détection de voix (plus sensible)
   SILENCE_DURATION: 1000,      // Durée de silence pour arrêter (ms) - plus rapide
@@ -208,11 +240,12 @@ function updateAvatarPreview(avatarUrl) {
 function generateAvatarHTML(user, size = 40) {
   if (user.avatar) {
     const fullUrl = user.avatar.startsWith('http') ? user.avatar : `${API_BASE_URL}${user.avatar}`;
-    return `<img src="${fullUrl}" alt="${user.displayName || user.email}" style="width: ${size}px; height: ${size}px; border-radius: 50%; object-fit: cover;">`;
+    return `<img src="${escapeAttr(fullUrl)}" alt="${escapeAttr(user.displayName || user.email)}" style="width: ${size}px; height: ${size}px; border-radius: 50%; object-fit: cover;">`;
   } else {
     // Avatar par défaut avec initiales
-    const initials = user.displayName ? user.displayName.substring(0, 2).toUpperCase() : user.email.substring(0, 2).toUpperCase();
-    return `<div style="width: ${size}px; height: ${size}px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); display: flex; align-items: center; justify-content: center; font-size: ${size * 0.4}px; color: #fff; font-weight: bold;">${initials}</div>`;
+    const displayName = user.displayName || user.email || '';
+    const initials = displayName.substring(0, 2).toUpperCase();
+    return `<div style="width: ${size}px; height: ${size}px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); display: flex; align-items: center; justify-content: center; font-size: ${size * 0.4}px; color: #fff; font-weight: bold;">${escapeHtml(initials)}</div>`;
   }
 }
 
@@ -222,12 +255,15 @@ function generateAvatarHTML(user, size = 40) {
 
 // Mettre en évidence les mentions dans un texte
 function highlightMentions(text, mentions = []) {
-  if (!text) return text;
+  if (!text) return '';
 
-  // Regex pour détecter les @mentions
+  // IMPORTANT: Échapper le texte d'abord pour prévenir XSS
+  const escapedText = escapeHtml(text);
+
+  // Regex pour détecter les @mentions (sur le texte échappé)
   const mentionRegex = /@(\w+)/g;
 
-  return text.replace(mentionRegex, (match, username) => {
+  return escapedText.replace(mentionRegex, (match, username) => {
     // Style pour les mentions
     return `<span style="background: rgba(var(--accent-primary-rgb, 0, 255, 157), 0.2); color: var(--accent-primary); font-weight: bold; padding: 2px 4px; border-radius: 4px;">${match}</span>`;
   });
@@ -315,7 +351,7 @@ function refreshOnlineIndicators() {
   // Rafraîchir le titre du chat DM actuel si ouvert
   if (currentDMUser && !document.getElementById('dmChatPanel').classList.contains('hidden')) {
     const onlineIndicator = getOnlineIndicator(currentDMUser.email);
-    document.getElementById('dmChatTitle').innerHTML = `💬 <span style="display: inline-flex; align-items: center;">${onlineIndicator}${currentDMUser.displayName}</span>`;
+    document.getElementById('dmChatTitle').innerHTML = `💬 <span style="display: inline-flex; align-items: center;">${onlineIndicator}${escapeHtml(currentDMUser.displayName)}</span>`;
   }
 }
 
@@ -1518,25 +1554,25 @@ function displayAdminGroups(groups) {
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
           <div style="flex: 1;">
             <div style="font-weight: bold; color: #fff; font-size: 1.1em; margin-bottom: 5px;">
-              ${visibilityIcon} ${group.name}
+              ${visibilityIcon} ${escapeHtml(group.name)}
             </div>
             <div style="color: #888; font-size: 0.9em;">
-              <span>👤 Créateur: ${group.creator}</span>
+              <span>👤 Créateur: ${escapeHtml(group.creator)}</span>
               <span style="margin-left: 15px;">👥 ${group.memberCount} membre(s)</span>
               <span style="margin-left: 15px;">📅 ${createdDate}</span>
             </div>
           </div>
           <div style="display: flex; gap: 10px;">
-            <button onclick="viewGroupDetails('${group.id}')" style="padding: 8px 15px; background: rgba(100,180,255,0.2); border: 1px solid #64b4ff; color: #64b4ff; border-radius: 6px; cursor: pointer; font-size: 0.9em; transition: all 0.2s;" onmouseover="this.style.background='rgba(100,180,255,0.3)'" onmouseout="this.style.background='rgba(100,180,255,0.2)'">
+            <button onclick="viewGroupDetails('${escapeAttr(group.id)}')" style="padding: 8px 15px; background: rgba(100,180,255,0.2); border: 1px solid #64b4ff; color: #64b4ff; border-radius: 6px; cursor: pointer; font-size: 0.9em; transition: all 0.2s;" onmouseover="this.style.background='rgba(100,180,255,0.3)'" onmouseout="this.style.background='rgba(100,180,255,0.2)'">
               📊 Détails
             </button>
-            <button onclick="deleteGroupAdmin('${group.id}', '${group.name.replace(/'/g, "\\'")}'))" style="padding: 8px 15px; background: rgba(255,107,107,0.2); border: 1px solid #ff6b6b; color: #ff6b6b; border-radius: 6px; cursor: pointer; font-size: 0.9em; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,107,107,0.3)'" onmouseout="this.style.background='rgba(255,107,107,0.2)'">
+            <button onclick="deleteGroupAdmin('${escapeAttr(group.id)}', '${escapeAttr(group.name)}')" style="padding: 8px 15px; background: rgba(255,107,107,0.2); border: 1px solid #ff6b6b; color: #ff6b6b; border-radius: 6px; cursor: pointer; font-size: 0.9em; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,107,107,0.3)'" onmouseout="this.style.background='rgba(255,107,107,0.2)'">
               🗑️ Supprimer
             </button>
           </div>
         </div>
         <div style="font-size: 0.85em; color: #aaa;">
-          ID: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px; font-family: monospace;">${group.id}</code>
+          ID: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px; font-family: monospace;">${escapeHtml(group.id)}</code>
         </div>
       </div>
     `;
@@ -3019,10 +3055,10 @@ function displayCommunicationGroups(groups) {
     const visibilityText = group.visibility === 'public' ? 'Public' : 'Privé';
 
     return `
-      <div class="comm-group-item" onclick="openGroupChat('${group.id}')">
+      <div class="comm-group-item" onclick="openGroupChat('${escapeAttr(group.id)}')">
         ${badgeHTML}
         <div class="group-name">
-          <span title="${visibilityText}">${visibilityIcon}</span> ${group.name}
+          <span title="${visibilityText}">${visibilityIcon}</span> ${escapeHtml(group.name)}
         </div>
         <div class="group-info">
           👥 ${group.members.length} membre${group.members.length > 1 ? 's' : ''}
@@ -3051,16 +3087,16 @@ function displayCommunicationDMs(conversations) {
     const onlineIndicator = getOnlineIndicator(conv.otherUser.email);
 
     return `
-      <div class="comm-dm-item" onclick="openDMChat('${conv.otherUser.email}')">
+      <div class="comm-dm-item" onclick="openDMChat('${escapeAttr(conv.otherUser.email)}')">
         <div class="dm-container">
           <div class="dm-avatar">
             ${generateAvatarHTML(conv.otherUser, 50)}
           </div>
           <div class="dm-content">
             <div class="dm-name">
-              ${onlineIndicator}${conv.otherUser.displayName}
+              ${onlineIndicator}${escapeHtml(conv.otherUser.displayName)}
             </div>
-            <div class="dm-message">${lastMsgText}</div>
+            <div class="dm-message">${escapeHtml(lastMsgText)}</div>
           </div>
           <div class="dm-time">${lastMsgTime}</div>
         </div>
@@ -4553,13 +4589,13 @@ function displayFriendRequests(requests) {
   container.innerHTML = requests.map(req => `
     <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
       <div>
-        <div style="color: #fff; font-weight: bold;">${req.fromDisplayName}</div>
-        <div style="color: #888; font-size: 0.85em;">${req.from}</div>
+        <div style="color: #fff; font-weight: bold;">${escapeHtml(req.fromDisplayName)}</div>
+        <div style="color: #888; font-size: 0.85em;">${escapeHtml(req.from)}</div>
         <div style="color: #666; font-size: 0.8em; margin-top: 4px;">${new Date(req.sentAt).toLocaleDateString()}</div>
       </div>
       <div style="display: flex; gap: 8px;">
-        <button onclick="acceptFriendRequest('${req.from}')" style="background: #00ff9d; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;">✓ ${t('accept')}</button>
-        <button onclick="rejectFriendRequest('${req.from}')" style="background: #ff6b6b; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">✕ ${t('reject')}</button>
+        <button onclick="acceptFriendRequest('${escapeAttr(req.from)}')" style="background: #00ff9d; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;">✓ ${t('accept')}</button>
+        <button onclick="rejectFriendRequest('${escapeAttr(req.from)}')" style="background: #ff6b6b; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">✕ ${t('reject')}</button>
       </div>
     </div>
   `).join('');
@@ -4576,10 +4612,10 @@ function displayFriendsList(friends) {
   container.innerHTML = friends.map(friend => `
     <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
       <div>
-        <div style="color: #fff; font-weight: bold;">${friend.displayName}</div>
-        <div style="color: #888; font-size: 0.85em;">${friend.email}</div>
+        <div style="color: #fff; font-weight: bold;">${escapeHtml(friend.displayName)}</div>
+        <div style="color: #888; font-size: 0.85em;">${escapeHtml(friend.email)}</div>
       </div>
-      <button onclick="removeFriend('${friend.email}')" style="background: #ff6b6b; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">${t('remove')}</button>
+      <button onclick="removeFriend('${escapeAttr(friend.email)}')" style="background: #ff6b6b; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">${t('remove')}</button>
     </div>
   `).join('');
 }
@@ -4605,10 +4641,10 @@ async function searchUsers() {
       contentDiv.innerHTML = data.users.map(user => `
         <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <div style="color: #fff; font-weight: bold;">${user.displayName}</div>
-            <div style="color: #888; font-size: 0.85em;">${user.email}</div>
+            <div style="color: #fff; font-weight: bold;">${escapeHtml(user.displayName)}</div>
+            <div style="color: #888; font-size: 0.85em;">${escapeHtml(user.email)}</div>
           </div>
-          <button onclick="sendFriendRequest('${user.email}')" style="background: #00ff9d; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;">+ ${t('addFriend')}</button>
+          <button onclick="sendFriendRequest('${escapeAttr(user.email)}')" style="background: #00ff9d; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;">+ ${t('addFriend')}</button>
         </div>
       `).join('');
     } else {
@@ -4876,16 +4912,16 @@ function displayDMsList(conversations) {
     const onlineIndicator = getOnlineIndicator(conv.otherUser.email);
 
     return `
-      <div onclick="openDMChat('${conv.otherUser.email}')" style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+      <div onclick="openDMChat('${escapeAttr(conv.otherUser.email)}')" style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
         <div style="display: flex; align-items: center; gap: 12px;">
           <div style="width: 50px; height: 50px; position: relative;">
             ${generateAvatarHTML(conv.otherUser, 50)}
           </div>
           <div style="flex: 1; min-width: 0;">
             <div style="font-weight: bold; color: #fff; margin-bottom: 4px; display: flex; align-items: center;">
-              ${onlineIndicator}${conv.otherUser.displayName}
+              ${onlineIndicator}${escapeHtml(conv.otherUser.displayName)}
             </div>
-            <div style="color: #888; font-size: 0.9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lastMsgText}</div>
+            <div style="color: #888; font-size: 0.9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(lastMsgText)}</div>
           </div>
           <div style="color: #888; font-size: 0.85em; white-space: nowrap;">${lastMsgTime}</div>
         </div>
@@ -4917,7 +4953,7 @@ async function openDMChat(userEmail) {
 
     // Mise à jour de l'UI
     const onlineIndicator = getOnlineIndicator(currentDMUser.email);
-    document.getElementById('dmChatTitle').innerHTML = `💬 <span style="display: inline-flex; align-items: center;">${onlineIndicator}${currentDMUser.displayName}</span>`;
+    document.getElementById('dmChatTitle').innerHTML = `💬 <span style="display: inline-flex; align-items: center;">${onlineIndicator}${escapeHtml(currentDMUser.displayName)}</span>`;
     document.getElementById('dmUserName').textContent = currentDMUser.displayName;
     document.getElementById('dmUserEmail').textContent = currentDMUser.email;
     document.getElementById('dmUserAvatar').innerHTML = generateAvatarHTML(currentDMUser, 40);
@@ -4962,9 +4998,9 @@ function displayDMMessages(messages) {
       <div style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: ${isOwnMessage ? 'flex-end' : 'flex-start'};">
         <div style="display: inline-block; max-width: 70%;">
           <div style="background: ${isOwnMessage ? 'var(--message-bg-own)' : 'var(--message-bg-other)'}; color: ${isOwnMessage ? 'var(--message-text-own)' : 'var(--message-text-other)'}; padding: 10px 14px; border-radius: 12px; word-wrap: break-word;">
-            ${msg.fileInfo ? '' : `<div>${translation}</div>`}
+            ${msg.fileInfo ? '' : `<div>${escapeHtml(translation)}</div>`}
             ${msg.fileInfo ? generateFileDisplay(msg.fileInfo) : ''}
-            ${msg.fileInfo && translation ? `<div style="margin-top: 8px;">${translation}</div>` : ''}
+            ${msg.fileInfo && translation ? `<div style="margin-top: 8px;">${escapeHtml(translation)}</div>` : ''}
             <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(msg.timestamp).toLocaleTimeString()}</div>
           </div>
         </div>
@@ -5100,10 +5136,10 @@ function displayFriendsSelection(friends) {
 
   container.innerHTML = friends.map(friend => `
     <label style="display: flex; align-items: center; padding: 8px; cursor: pointer; border-radius: 6px; margin-bottom: 8px; background: rgba(255,255,255,0.03);" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
-      <input type="checkbox" value="${friend.email}" style="margin-right: 10px; width: 18px; height: 18px; cursor: pointer;">
+      <input type="checkbox" value="${escapeAttr(friend.email)}" style="margin-right: 10px; width: 18px; height: 18px; cursor: pointer;">
       <div>
-        <div style="color: #fff;">${friend.displayName}</div>
-        <div style="color: #666; font-size: 0.8em;">${friend.email}</div>
+        <div style="color: #fff;">${escapeHtml(friend.displayName)}</div>
+        <div style="color: #666; font-size: 0.8em;">${escapeHtml(friend.email)}</div>
       </div>
     </label>
   `).join('');
@@ -5130,10 +5166,10 @@ function displayGroupsList(groups) {
     const visibilityText = group.visibility === 'public' ? 'Public' : 'Privé';
 
     return `
-      <div style="position: relative; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;" onclick="openGroupChat('${group.id}')" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+      <div style="position: relative; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;" onclick="openGroupChat('${escapeAttr(group.id)}')" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
         ${badgeHTML}
         <div style="color: #fff; font-weight: bold; margin-bottom: 4px;">
-          <span title="${visibilityText}">${visibilityIcon}</span> ${group.name}
+          <span title="${visibilityText}">${visibilityIcon}</span> ${escapeHtml(group.name)}
         </div>
         <div style="color: #888; font-size: 0.85em;">${group.members.length} ${t('members')}</div>
         <div style="color: #666; font-size: 0.8em; margin-top: 4px;">${t('createdOn')} ${new Date(group.createdAt).toLocaleDateString()}</div>
@@ -5245,12 +5281,12 @@ function displayPublicGroups(groups) {
   content.innerHTML = groups.map(group => {
     const buttonHtml = group.isMember
       ? `<button disabled style="background: #888; cursor: not-allowed; padding: 6px 12px; border: none; border-radius: 6px; color: #fff; font-size: 0.85em;">✓ Déjà membre</button>`
-      : `<button onclick="joinPublicGroup('${group.id}')" style="background: #00ff9d; cursor: pointer; padding: 6px 12px; border: none; border-radius: 6px; color: #000; font-weight: bold; font-size: 0.85em;">➕ Rejoindre</button>`;
+      : `<button onclick="joinPublicGroup('${escapeAttr(group.id)}')" style="background: #00ff9d; cursor: pointer; padding: 6px 12px; border: none; border-radius: 6px; color: #000; font-weight: bold; font-size: 0.85em;">➕ Rejoindre</button>`;
 
     return `
       <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <div style="font-weight: bold; color: #fff; margin-bottom: 4px;">🌐 ${group.name}</div>
+          <div style="font-weight: bold; color: #fff; margin-bottom: 4px;">🌐 ${escapeHtml(group.name)}</div>
           <div style="color: #888; font-size: 0.85em;">${group.memberCount} membre(s)</div>
         </div>
         ${buttonHtml}
@@ -5390,10 +5426,10 @@ function displayArchivedGroups(groups) {
   content.innerHTML = groups.map(group => `
     <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
       <div>
-        <div style="font-weight: bold; color: #fff; margin-bottom: 4px;">📦 ${group.name}</div>
+        <div style="font-weight: bold; color: #fff; margin-bottom: 4px;">📦 ${escapeHtml(group.name)}</div>
         <div style="color: #888; font-size: 0.85em;">${group.members.length} membre(s)</div>
       </div>
-      <button onclick="archiveGroup('${group.id}', false)" style="background: #00ff9d; cursor: pointer; padding: 6px 12px; border: none; border-radius: 6px; color: #000; font-weight: bold; font-size: 0.85em;">↩️ Restaurer</button>
+      <button onclick="archiveGroup('${escapeAttr(group.id)}', false)" style="background: #00ff9d; cursor: pointer; padding: 6px 12px; border: none; border-radius: 6px; color: #000; font-weight: bold; font-size: 0.85em;">↩️ Restaurer</button>
     </div>
   `).join('');
 }
@@ -5437,11 +5473,11 @@ function displayArchivedDMs(conversations) {
           ${generateAvatarHTML(conv.otherUser, 40)}
         </div>
         <div>
-          <div style="font-weight: bold; color: #fff; margin-bottom: 4px;">📦 ${conv.otherUser.displayName}</div>
-          <div style="color: #888; font-size: 0.85em;">${conv.otherUser.email}</div>
+          <div style="font-weight: bold; color: #fff; margin-bottom: 4px;">📦 ${escapeHtml(conv.otherUser.displayName)}</div>
+          <div style="color: #888; font-size: 0.85em;">${escapeHtml(conv.otherUser.email)}</div>
         </div>
       </div>
-      <button onclick="archiveDM('${conv.conversationId}', false)" style="background: #00ff9d; cursor: pointer; padding: 6px 12px; border: none; border-radius: 6px; color: #000; font-weight: bold; font-size: 0.85em;">↩️ Restaurer</button>
+      <button onclick="archiveDM('${escapeAttr(conv.conversationId)}', false)" style="background: #00ff9d; cursor: pointer; padding: 6px 12px; border: none; border-radius: 6px; color: #000; font-weight: bold; font-size: 0.85em;">↩️ Restaurer</button>
     </div>
   `).join('');
 }
@@ -5727,20 +5763,20 @@ function displayMessages(messages) {
     const isOwnMessage = msg.from === state.user.email;
 
     return `
-      <div style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: ${isOwnMessage ? 'flex-end' : 'flex-start'};" data-message-id="${msg.id}">
+      <div style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: ${isOwnMessage ? 'flex-end' : 'flex-start'};" data-message-id="${escapeAttr(msg.id)}">
         <div style="position: relative; display: inline-block; max-width: 70%;">
           <div style="background: ${isOwnMessage ? '#00ff9d' : 'rgba(255,255,255,0.1)'}; color: ${isOwnMessage ? '#000' : '#fff'}; padding: 10px 14px; border-radius: 12px; word-wrap: break-word;">
-            <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${msg.fromDisplayName}</div>
+            <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${escapeHtml(msg.fromDisplayName)}</div>
             ${msg.fileInfo ? '' : `<div>${highlightedTranslation}</div>`}
             ${msg.fileInfo ? generateFileDisplay(msg.fileInfo) : ''}
             ${msg.fileInfo && translation ? `<div style="margin-top: 8px;">${highlightedTranslation}</div>` : ''}
             <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(msg.timestamp).toLocaleTimeString()}</div>
           </div>
           <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: ${isOwnMessage ? 'flex-end' : 'flex-start'}; flex-wrap: wrap;">
-            ${!msg.fileInfo ? `<button onclick="playMessageAudio('${translation.replace(/'/g, "\\'")}', '${userLang}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('listen')}">🔊</button>` : ''}
-            ${!msg.fileInfo ? `<button onclick="copyMessage('${translation.replace(/'/g, "\\'")}', '${msg.id || Date.now()}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('copy')}">📋</button>` : ''}
+            ${!msg.fileInfo ? `<button onclick="playMessageAudio('${escapeAttr(translation)}', '${userLang}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('listen')}">🔊</button>` : ''}
+            ${!msg.fileInfo ? `<button onclick="copyMessage('${escapeAttr(translation)}', '${escapeAttr(msg.id || Date.now())}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('copy')}">📋</button>` : ''}
             ${generateReactionButtons(msg.id)}
-            ${isOwnMessage ? `<button onclick="deleteMessage('${msg.id}')" style="background: rgba(255,107,107,0.2); border: 1px solid #ff6b6b; color: #ff6b6b; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="Supprimer">🗑️</button>` : ''}
+            ${isOwnMessage ? `<button onclick="deleteMessage('${escapeAttr(msg.id)}')" style="background: rgba(255,107,107,0.2); border: 1px solid #ff6b6b; color: #ff6b6b; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="Supprimer">🗑️</button>` : ''}
           </div>
           ${generateReactionsDisplay(msg.reactions, msg.id)}
         </div>
@@ -5763,20 +5799,20 @@ function appendMessage(message) {
   const isOwnMessage = message.from === state.user.email;
 
   const messageHTML = `
-    <div style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: ${isOwnMessage ? 'flex-end' : 'flex-start'};" data-message-id="${message.id}">
+    <div style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: ${isOwnMessage ? 'flex-end' : 'flex-start'};" data-message-id="${escapeAttr(message.id)}">
       <div style="position: relative; display: inline-block; max-width: 70%;">
         <div style="background: ${isOwnMessage ? '#00ff9d' : 'rgba(255,255,255,0.1)'}; color: ${isOwnMessage ? '#000' : '#fff'}; padding: 10px 14px; border-radius: 12px; word-wrap: break-word;">
-          <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${message.fromDisplayName}</div>
+          <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 4px; opacity: 0.8;">${escapeHtml(message.fromDisplayName)}</div>
           ${message.fileInfo ? '' : `<div>${highlightedTranslation}</div>`}
           ${message.fileInfo ? generateFileDisplay(message.fileInfo) : ''}
           ${message.fileInfo && highlightedTranslation ? `<div style="margin-top: 8px;">${highlightedTranslation}</div>` : ''}
           <div style="font-size: 0.75em; margin-top: 4px; opacity: 0.6;">${new Date(message.timestamp).toLocaleTimeString()}</div>
         </div>
         <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: ${isOwnMessage ? 'flex-end' : 'flex-start'}; flex-wrap: wrap;">
-          ${!message.fileInfo ? `<button onclick="playMessageAudio('${translation.replace(/'/g, "\\'")}', '${userLang}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('listen')}">🔊</button>` : ''}
-          ${!message.fileInfo ? `<button onclick="copyMessage('${translation.replace(/'/g, "\\'")}', '${message.id || Date.now()}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('copy')}">📋</button>` : ''}
+          ${!message.fileInfo ? `<button onclick="playMessageAudio('${escapeAttr(translation)}', '${userLang}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('listen')}">🔊</button>` : ''}
+          ${!message.fileInfo ? `<button onclick="copyMessage('${escapeAttr(translation)}', '${escapeAttr(message.id || Date.now())}')" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="${t('copy')}">📋</button>` : ''}
           ${generateReactionButtons(message.id)}
-          ${isOwnMessage ? `<button onclick="deleteMessage('${message.id}')" style="background: rgba(255,107,107,0.2); border: 1px solid #ff6b6b; color: #ff6b6b; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="Supprimer">🗑️</button>` : ''}
+          ${isOwnMessage ? `<button onclick="deleteMessage('${escapeAttr(message.id)}')" style="background: rgba(255,107,107,0.2); border: 1px solid #ff6b6b; color: #ff6b6b; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;" title="Supprimer">🗑️</button>` : ''}
         </div>
         ${generateReactionsDisplay(message.reactions, message.id)}
       </div>

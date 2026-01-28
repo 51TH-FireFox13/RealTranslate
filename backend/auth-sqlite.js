@@ -5,8 +5,14 @@
 
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { usersDB, tokensDB, friendsDB, groupsDB, archivedDB, quotasDB } from './database.js';
 import { logger } from './logger.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Rôles disponibles
 export const ROLES = {
@@ -259,15 +265,43 @@ class AuthManagerSQLite {
   ensureDefaultAdmin() {
     const admin = usersDB.getByEmail('admin@realtranslate.com');
     if (!admin) {
+      // Générer un mot de passe aléatoire sécurisé (16 caractères)
+      const randomPassword = crypto.randomBytes(12).toString('base64').slice(0, 16);
+
       logger.info('Creating default admin user');
+      logger.warn('='.repeat(60));
+      logger.warn('IMPORTANT: Default admin account created');
+      logger.warn(`Email: admin@realtranslate.com`);
+      logger.warn(`Password: ${randomPassword}`);
+      logger.warn('Please change this password immediately after first login!');
+      logger.warn('='.repeat(60));
+
       usersDB.create({
         email: 'admin@realtranslate.com',
-        password: this.hashPassword('admin123'),
+        password: this.hashPassword(randomPassword),
         name: 'Administrator',
         displayName: 'Administrator',
         role: ROLES.ADMIN,
         subscriptionTier: 'admin'
       });
+
+      // Aussi écrire dans un fichier temporaire pour récupération
+      try {
+        const adminCredentialsPath = path.join(__dirname, '..', '.admin-credentials-CHANGE-ME.txt');
+        fs.writeFileSync(
+          adminCredentialsPath,
+          `RealTranslate Admin Credentials (CHANGE IMMEDIATELY)\n` +
+          `================================================\n` +
+          `Email: admin@realtranslate.com\n` +
+          `Password: ${randomPassword}\n` +
+          `Generated: ${new Date().toISOString()}\n` +
+          `\nDELETE THIS FILE AFTER CHANGING PASSWORD!\n`
+        );
+        logger.warn(`Admin credentials also written to: .admin-credentials-CHANGE-ME.txt`);
+      } catch (err) {
+        // Si impossible d'écrire le fichier, le password est dans les logs
+        logger.error('Could not write admin credentials file', { error: err.message });
+      }
     }
   }
 

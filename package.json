@@ -1,5 +1,15 @@
 {
-  "dependencies": {
-    "bcrypt": "^6.0.0"
+  "name": "realtranslate",
+  "version": "1.0.0",
+  "description": "RealTranslate - Communication multilingue en temps réel",
+  "private": true,
+  "workspaces": [
+    "backend"
+  ],
+  "scripts": {
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm run dev",
+    "test": "cd backend && npm test",
+    "install:all": "npm install && cd backend && npm install"
   }
 }
